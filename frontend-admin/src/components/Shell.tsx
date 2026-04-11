@@ -1,4 +1,6 @@
+import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
+import { useLang } from '../i18n';
 
 const NAV_ITEMS = [
   { to: '/', end: true, icon: '📊', label: 'סקירה כללית' },
@@ -19,6 +21,7 @@ const NAV_ITEMS = [
 
 export function Shell({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
+  const { lang, toggle, t } = useLang();
 
   const handleLogout = () => {
     localStorage.removeItem('admin_access_token');
@@ -26,7 +29,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="app-shell" dir="rtl">
+    <div className="app-shell" dir={lang === 'he' ? 'rtl' : 'ltr'}>
       <aside className="sidebar" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '100vh' }}>
         <div>
           <div style={{ padding: '4px 0 16px', borderBottom: '1px solid #f0f0f0', marginBottom: 12 }}>
@@ -48,14 +51,22 @@ export function Shell({ children }: { children: React.ReactNode }) {
             ))}
           </nav>
         </div>
-        <button
-          onClick={handleLogout}
-          style={{ margin: '16px 0', padding: '10px 12px', background: '#fee2e2', color: '#991b1b', border: 'none', borderRadius: 10, cursor: 'pointer', fontWeight: 500, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}
-        >
-          <span>🚪</span> יציאה
-        </button>
+        <div>
+          <button
+            onClick={toggle}
+            style={{ margin: '8px 0 4px', padding: '8px 12px', background: '#f3f4f6', color: '#374151', border: '1px solid #e5e7eb', borderRadius: 10, cursor: 'pointer', fontWeight: 600, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}
+          >
+            <span>🌐</span> {t('switch_lang')}
+          </button>
+          <button
+            onClick={handleLogout}
+            style={{ margin: '4px 0 16px', padding: '10px 12px', background: '#fee2e2', color: '#991b1b', border: 'none', borderRadius: 10, cursor: 'pointer', fontWeight: 500, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}
+          >
+            <span>🚪</span> {lang === 'he' ? 'יציאה' : 'Logout'}
+          </button>
+        </div>
       </aside>
-      <main className="main" dir="rtl">{children}</main>
+      <main className="main" dir={lang === 'he' ? 'rtl' : 'ltr'}>{children}</main>
     </div>
   );
 }

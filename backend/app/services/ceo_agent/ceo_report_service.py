@@ -19,12 +19,12 @@ class CEOReportService:
         open_security_alerts = db.query(SecurityAlert).filter(SecurityAlert.status == 'open').count()
         high_security_alerts = db.query(SecurityAlert).filter(SecurityAlert.status == 'open', SecurityAlert.severity.in_(['high','critical'])).count()
 
-        static_summary = 'Operational control room is stable. Prioritize outreach-ready businesses, approval items, payment confirmations, and review open security alerts.'
+        static_summary = 'חדר הבקרה התפעולי יציב. יש לתעדף עסקים מוכנים לפנייה, פריטי אישור, אישורי תשלום ובדיקת התראות אבטחה פתוחות.'
         static_actions = [
-            'Open the outreach-ready queue and send the next batch of WhatsApp messages.',
-            'Clear high-confidence approval items to unblock campaign and template improvements.',
-            'Confirm pending payments and move ready businesses into activation.',
-            'Review the security watchlist and open alerts before enabling more public login volume.',
+            'פתח את תור הפנייה המוכנה ושלח את האצווה הבאה של הודעות וואטסאפ.',
+            'טפל בפריטי אישור בעלי ביטחון גבוה כדי לשחרר שיפורי קמפיין ותבנית.',
+            'אשר תשלומים ממתינים והעבר עסקים מוכנים להפעלה.',
+            'עיין ברשימת החשד ובהתראות הפתוחות לפני הרחבת נפח הכניסה הציבורית.',
         ]
 
         summary = self._llm_executive_summary(
@@ -63,8 +63,8 @@ class CEOReportService:
         try:
             from app.services.llm.router_service import LLMRouterService
             prompt = (
-                "You are a senior business intelligence assistant for a local-business SaaS platform.\n"
-                "Write a concise CEO executive summary (3-5 sentences, English) based on today's operational metrics:\n"
+                "אתה עוזר בכיר לבינה עסקית בפלטפורמת SaaS לעסקים מקומיים.\n"
+                "כתוב תקציר מנהלים תמציתי (3-5 משפטים, בעברית) המבוסס על המדדים התפעוליים של היום:\n"
                 f"- Approvals pending: {metrics.get('approvals_pending', 0)}\n"
                 f"- Payments pending: {metrics.get('payments_pending', 0)}\n"
                 f"- Expiring draft sites: {metrics.get('expiring_drafts', 0)}\n"
@@ -72,7 +72,7 @@ class CEOReportService:
                 f"- Qualified leads: {metrics.get('qualified_leads', 0)}\n"
                 f"- Open security alerts: {metrics.get('open_security_alerts', 0)}\n"
                 f"- High/critical security alerts: {metrics.get('high_security_alerts', 0)}\n\n"
-                "Focus on risks, opportunities, and the single most important action. No bullet points."
+                "התמקד בסיכונים, הזדמנויות והפעולה החשובה ביותר. ללא נקודות תבליט."
             )
             return LLMRouterService().call("generate_site_copy", prompt)
         except Exception:

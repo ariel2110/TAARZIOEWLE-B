@@ -24,7 +24,7 @@ export default function LoginPage() {
                 <Card>
                     <div style={{ textAlign: 'center', marginBottom: 24 }}>
                         <div style={{ fontSize: 40 }}>🏢</div>
-                        <SectionTitle>LocalBiz Admin v27</SectionTitle>
+                        <SectionTitle>SiteNest Admin</SectionTitle>
                         <p style={{ color: '#666', marginTop: 4 }}>כניסה לממשק ניהול</p>
                     </div>
                     {error && <p style={{ color: '#c00', marginBottom: 16, textAlign: 'center' }}>{error}</p>}

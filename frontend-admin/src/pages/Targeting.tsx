@@ -1,6 +1,7 @@
 
 import { useEffect, useState } from 'react';
 import { Button, Card, Input, SectionTitle } from '../components/ui';
+import { useLang } from '../i18n';
 import { Profile, Campaign, Lead, CampaignResults, getProfiles, getCampaigns, searchLeads, assignLeadToCampaign, getCampaignResults } from '../services/queries';
 
 export default function TargetingPage() {
@@ -11,6 +12,7 @@ export default function TargetingPage() {
   const [campaignResults, setCampaignResults] = useState<CampaignResults | null>(null);
   const [city, setCity] = useState('');
   const [category, setCategory] = useState('');
+  const { t } = useLang();
   useEffect(() => {
     Promise.all([getProfiles(), getCampaigns(), searchLeads()]).then(([p, c, r]) => { setProfiles(p); setCampaigns(c); setResults(r); if (c[0]) { setSelectedCampaign(c[0].id); getCampaignResults(c[0].id).then(setCampaignResults); } }).catch(console.error);
   }, []);
@@ -24,34 +26,34 @@ export default function TargetingPage() {
   return (
     <div className="two-col">
       <Card>
-        <SectionTitle>Targeting Console</SectionTitle>
+        <SectionTitle>{t('targeting_console')}</SectionTitle>
         <div className="grid-two">
-          <div><label>City</label><Input value={city} onChange={(e) => setCity(e.target.value)} placeholder="e.g. Ramat Gan" /></div>
-          <div><label>Category</label><Input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="e.g. beauty" /></div>
+          <div><label>{t('city')}</label><Input value={city} onChange={(e) => setCity(e.target.value)} placeholder={t('city_placeholder')} /></div>
+          <div><label>{t('category')}</label><Input value={category} onChange={(e) => setCategory(e.target.value)} placeholder={t('category_placeholder')} /></div>
         </div>
         <div style={{ display:'flex', gap:8, marginTop:12 }}>
-          <Button onClick={runSearch}>Run search</Button>
-          <Button onClick={() => { setCity('Ramat Gan'); setCategory('beauty'); }}>Beauty · Ramat Gan</Button>
-          <Button onClick={() => { setCity('Petah Tikva'); setCategory('garages'); }}>Garages · Petah Tikva</Button>
+          <Button onClick={runSearch}>{t('run_search')}</Button>
+          <Button onClick={() => { setCity('רמת גן'); setCategory('beauty'); }}>{t('beauty_rg')}</Button>
+          <Button onClick={() => { setCity('פתח תקווה'); setCategory('garages'); }}>{t('garages_pt')}</Button>
         </div>
-        <p><strong>Profiles:</strong> {profiles.length}</p>
-        <ul>{profiles.map(p => <li key={p.id}>{p.name} · {p.city} · {p.radius_km}km</li>)}</ul>
-        <p><strong>Campaigns:</strong> {campaigns.length}</p>
+        <p><strong>{t('profiles_label')}:</strong> {profiles.length}</p>
+        <ul>{profiles.map(p => <li key={p.id}>{p.name} · {p.city} · {p.radius_km}{t('km_label')}</li>)}</ul>
+        <p><strong>{t('campaigns_label')}:</strong> {campaigns.length}</p>
         <div className="table-list">
           {campaigns.map(c => (
             <div key={c.id}>
               <strong>{c.name}</strong>
               <div className="muted">{c.status}</div>
-              <Button onClick={() => { setSelectedCampaign(c.id); getCampaignResults(c.id).then(setCampaignResults); }}>Use campaign</Button>
+              <Button onClick={() => { setSelectedCampaign(c.id); getCampaignResults(c.id).then(setCampaignResults); }}>{t('use_campaign')}</Button>
             </div>
           ))}
         </div>
-        {campaignResults ? <div className="card subtle"><strong>Campaign results:</strong><p>Leads: {campaignResults.lead_count} · Businesses: {campaignResults.business_count}</p></div> : null}
+        {campaignResults ? <div className="card subtle"><strong>{t('campaign_results')}:</strong><p>{t('leads_label')}: {campaignResults.lead_count} · {t('businesses')}: {campaignResults.business_count}</p></div> : null}
       </Card>
       <Card>
-        <SectionTitle>Segment Result Preview</SectionTitle>
+        <SectionTitle>{t('segment_preview')}</SectionTitle>
         <div className="table-list">
-          {results.map(l => <div key={l.id}><strong>{l.imported_name}</strong><div className="muted">{l.city || '—'} · {l.category || '—'} · score {l.score} · {l.website_url ? 'has website' : 'no website'} · campaign {l.campaign_id || '—'}</div><Button onClick={() => assign(l.id)}>Assign to selected campaign</Button></div>)}
+          {results.map(l => <div key={l.id}><strong>{l.imported_name}</strong><div className="muted">{l.city || '—'} · {l.category || '—'} · {t('score_label')} {l.score} · {l.website_url ? t('has_website') : t('no_website')} · {t('campaign_label')} {l.campaign_id || '—'}</div><Button onClick={() => assign(l.id)}>{t('assign_campaign')}</Button></div>)}
         </div>
       </Card>
     </div>

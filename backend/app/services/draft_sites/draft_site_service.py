@@ -58,10 +58,9 @@ class DraftSiteService:
         return db.query(DraftSite).filter(DraftSite.id == draft_id).first()
 
     def _generate_html(self, raw: dict) -> str:
-        """Try the 3-stage AI pipeline first; fall back to the static template."""
-        import json as _json
+        """Try the AI pipeline first; fall back to the static template."""
 
-        # Build a raw-text summary for the pipeline (mimics Google Maps data)
+        # Build raw text input for GPT-4o (mimics Google Maps listing)
         pipeline_input_parts = [
             f"Name: {raw.get('name') or raw.get('site_title', '')}",
             f"Phone: {raw.get('phone', '')}",
@@ -83,16 +82,25 @@ class DraftSiteService:
 
         pipeline_input = "\n".join(pipeline_input_parts)
 
+        # Build enrichment dict: all structured data for the pipeline (reviews, hours, etc.)
+        enrichment = {
+            'top_review': raw.get('top_review') or '',
+            'reviews': raw.get('reviews') or ([raw['top_review']] if raw.get('top_review') else []),
+            'rating': raw.get('rating'),
+            'reviews_count': raw.get('reviews_count') or 0,
+            'opening_hours': raw.get('opening_hours') or [],
+        }
+
         try:
             from app.services.generator.autosite_pipeline_service import AutoSitePipelineService
-            html = AutoSitePipelineService().run(pipeline_input)
+            html = AutoSitePipelineService().run(pipeline_input, enrichment=enrichment)
             if html and len(html) > 500:
                 return html
         except Exception:
             import logging
             logging.getLogger(__name__).info("AutoSite pipeline unavailable, using static template fallback")
 
-        # Fallback: use our own static template
+        # Fallback: our own static template
         context = ContextBuilder().build(raw)
         return TemplateRenderService().render(context)
 

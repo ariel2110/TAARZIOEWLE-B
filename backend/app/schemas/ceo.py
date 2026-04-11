@@ -29,3 +29,18 @@ class CEOTaskCreate(BaseModel):
     source: str
     title: str
     note: str | None = None
+
+
+class GrokThinkRequest(BaseModel):
+    message: str | None = None  # Optional message from Ariel; if None, Grok does an autonomous analysis
+
+
+class GrokExecuteRequest(BaseModel):
+    action_type: str
+    target_component: str = ""
+    new_value: str = ""
+
+
+class GrokExecuteResponse(BaseModel):
+    status: str           # "success" | "error" | "acknowledged" | "pending_approval"
+    message: str

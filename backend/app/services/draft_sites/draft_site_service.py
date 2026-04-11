@@ -57,8 +57,10 @@ class DraftSiteService:
     def get_draft(self, db: Session, draft_id: int) -> DraftSite | None:
         return db.query(DraftSite).filter(DraftSite.id == draft_id).first()
 
-    def _generate_html(self, raw: dict) -> str:
-        """Try the AI pipeline first; fall back to the static template."""
+    def _generate_html(self, raw: dict) -> tuple[str, str | None]:
+        """Try the AI pipeline first; fall back to the static template.
+        Returns (html, outreach_message_with_placeholder).
+        """
 
         # Build raw text input for GPT-4o (mimics Google Maps listing)
         pipeline_input_parts = [
@@ -93,16 +95,16 @@ class DraftSiteService:
 
         try:
             from app.services.generator.autosite_pipeline_service import AutoSitePipelineService
-            html = AutoSitePipelineService().run(pipeline_input, enrichment=enrichment)
-            if html and len(html) > 500:
-                return html
+            result = AutoSitePipelineService().run(pipeline_input, enrichment=enrichment)
+            if result and result.html and len(result.html) > 500:
+                return result.html, result.outreach_message
         except Exception:
             import logging
             logging.getLogger(__name__).info("AutoSite pipeline unavailable, using static template fallback")
 
         # Fallback: our own static template
         context = ContextBuilder().build(raw)
-        return TemplateRenderService().render(context)
+        return TemplateRenderService().render(context), None
 
     def _build_enriched_context(self, db: Session, item: DraftSite) -> dict:
         """Merge draft fields, business data, and enrichment cache into one context dict."""
@@ -165,7 +167,7 @@ class DraftSiteService:
             return None
 
         raw = self._build_enriched_context(db, item)
-        html = self._generate_html(raw)
+        html, outreach_message = self._generate_html(raw)
 
         out_dir = Path(__file__).resolve().parents[2] / 'static_sites' / 'drafts'
         out_dir.mkdir(parents=True, exist_ok=True)
@@ -174,6 +176,34 @@ class DraftSiteService:
         item.preview_url = f'/static/drafts/draft_{item.id}.html'
         item.status = 'published_preview'
         db.add(ActivityLog(actor_type='system', entity_type='draft_site', entity_id=item.id, action_type='draft_preview_generated', summary=item.preview_url))
+
+        # ── Auto-create AI-generated outreach message ─────────────────────────
+        if outreach_message and item.business_id:
+            try:
+                from app.core.config import settings
+                base_url = getattr(settings, 'api_base_url', 'https://api.sitenest.site')
+                full_demo_url = f"{base_url}{item.preview_url}"
+                final_message = outreach_message.replace('[DEMO_LINK]', full_demo_url)
+
+                from app.models.outreach_message import OutreachMessage as OutreachModel
+                business = db.query(Business).filter(Business.id == item.business_id).first()
+                outreach = OutreachModel(
+                    business_id=item.business_id,
+                    draft_site_id=item.id,
+                    channel='whatsapp',
+                    status='draft',
+                    message_template_key='ai_generated_v1',
+                    content=final_message,
+                    outbound_target=business.phone if business else None,
+                    city_context=business.city if business else None,
+                    category_context=business.category if business else None,
+                )
+                db.add(outreach)
+                db.add(ActivityLog(actor_type='system', entity_type='outreach_message', entity_id=0, action_type='ai_outreach_created', summary=f'business_id={item.business_id}'))
+            except Exception:
+                import logging
+                logging.getLogger(__name__).exception("Failed to create AI outreach message")
+
         db.commit()
         db.refresh(item)
         return item

@@ -114,6 +114,27 @@ export const movePaymentToActivation = (paymentId: number) => apiPost(`/admin/pa
 export const createCeoTask = (source: string, title: string, note?: string) => apiPost('/admin/ceo/task-from-recommendation', { source, title, note });
 export const addCeoDecisionNote = (note: string) => apiPost('/admin/ceo/decision-note', { note });
 
+// ── Grok CEO ──────────────────────────────────────────────────────────────────
+export type GrokExecutionPayload = {
+  action_type: string;
+  target_component: string;
+  new_value: string;
+};
+export type GrokCEOResponse = {
+  understanding_and_analysis: string;
+  strategic_insight: string;
+  proposed_action_plan: string;
+  system_execution_payload: GrokExecutionPayload;
+  message_to_ariel: string;
+};
+export type GrokExecuteResult = { status: string; message: string };
+
+export const askGrok = (message?: string) =>
+  apiPost<GrokCEOResponse>('/admin/ceo/grok-think', { message: message ?? null });
+
+export const executeGrokAction = (payload: GrokExecutionPayload) =>
+  apiPost<GrokExecuteResult>('/admin/ceo/grok-execute', payload);
+
 export type Feedback = { id: number; target_type: string; target_id?: number | null; quick_rating: string; open_feedback?: string | null; feedback_status: string; analysis_category?: string | null; suggested_scope?: string | null; ceo_response?: string | null; action_hint?: string | null; preference_candidate: boolean; };
 export const getFeedback = () => apiGet<Feedback[]>('/admin/feedback');
 export const createFeedback = (payload: Record<string, unknown>) => apiPost('/admin/feedback', payload);

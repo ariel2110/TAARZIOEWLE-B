@@ -3,12 +3,17 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.api.deps import get_current_admin
 from app.db.session import get_db
-from app.schemas.ceo import CEOReport, CEOHealth, CEONoteCreate, CEOTaskCreate
+from app.schemas.ceo import (
+    CEOReport, CEOHealth, CEONoteCreate, CEOTaskCreate,
+    GrokThinkRequest, GrokExecuteRequest, GrokExecuteResponse,
+)
 from app.services.ceo_agent.ceo_report_service import CEOReportService
+from app.services.ceo_agent.ceo_grok_service import CEOGrokService
 from app.models.user import User
 
 router = APIRouter(prefix='/admin/ceo', tags=['admin-ceo'])
 service = CEOReportService()
+grok_service = CEOGrokService()
 
 
 @router.get('/daily-digest', response_model=CEOReport)
@@ -29,3 +34,30 @@ def task_from_recommendation(payload: CEOTaskCreate, db: Session = Depends(get_d
 @router.post('/decision-note')
 def decision_note(payload: CEONoteCreate, db: Session = Depends(get_db), _: User = Depends(get_current_admin)):
     return service.add_note(db, payload.note)
+
+
+# ── Grok CEO endpoints ────────────────────────────────────────────────────────
+
+@router.post('/grok-think')
+def grok_think(
+    payload: GrokThinkRequest,
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_admin),
+):
+    """Invoke Grok as the AI CEO. Returns a structured Hebrew proposal."""
+    return grok_service.think(db, payload.message)
+
+
+@router.post('/grok-execute', response_model=GrokExecuteResponse)
+def grok_execute(
+    payload: GrokExecuteRequest,
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_admin),
+):
+    """Execute an approved Grok action (or route to approval queue)."""
+    return grok_service.execute(
+        db,
+        action_type=payload.action_type,
+        target_component=payload.target_component,
+        new_value=payload.new_value,
+    )

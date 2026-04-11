@@ -1,11 +1,20 @@
 """AutoSite Multi-Agent Generation Pipeline
 ==========================================
-Three specialized AI agents work in an optimized flow to produce a
-beautiful, conversion-focused Hebrew landing page for a local business.
+Four specialized AI agents work together to produce a ready-to-send
+Hebrew landing page + personalized WhatsApp outreach message.
 
-  Stage 1a | GPT-4o            | Content Manager & Hebrew Copywriter (parallel)
-  Stage 1b | Gemini 2.0 Flash  | Style & Design Director             (parallel)
-  Stage 2  | Claude 3.5 Sonnet | Master Builder  (content + design -> full HTML)
+  Stage 1a │ GPT-4o (primary) / Grok (fallback)  │ Content Manager
+           │ Raw Maps text → content.json           │ (parallel)
+           │ + personalized WhatsApp outreach msg   │
+
+  Stage 1b │ Gemini 2.5 Flash                      │ Style Director
+           │ Business profile → design.json         │ (parallel)
+
+  Stage 2  │ Claude Sonnet 4-6                      │ Master Builder
+           │ content.json + design.json → HTML      │
+
+  Stage 4  │ Python Backend (DraftSiteService)      │ Operations Manager
+           │ Save HTML, assign URL, store outreach  │
 """
 from __future__ import annotations
 
@@ -18,18 +27,21 @@ from dataclasses import dataclass, field
 logger = logging.getLogger(__name__)
 
 
-# ── Typed data contracts between agents ──────────────────────────────────────
+# ── Typed data contracts ──────────────────────────────────────────────────────
 
 @dataclass
 class ContentBundle:
-    """Output of Stage 1a (GPT-4o): complete Hebrew marketing copy."""
+    """Output of Stage 1a (GPT-4o/Grok): full Hebrew copy + outreach message."""
     business_name: str = ""
+    industry_type: str = ""          # e.g. "Electrician", "Restaurant" — English
     hero_headline: str = ""
     hero_subheadline: str = ""
     about_us: str = ""
     services: list[str] = field(default_factory=list)
+    top_reviews: list[dict] = field(default_factory=list)  # [{reviewer_name, review_text, stars}]
     contact_phone: str = ""
     call_to_action: str = ""
+    whatsapp_outreach_message: str = ""  # personalized message with [DEMO_LINK] placeholder
 
 
 @dataclass
@@ -42,61 +54,88 @@ class DesignConfig:
     ui_instructions: str = "Use a clean professional design with modern typography."
 
 
+@dataclass
+class PipelineResult:
+    """Full output returned by AutoSitePipelineService.run()"""
+    html: str
+    outreach_message: str | None = None   # ready to send (no [DEMO_LINK] yet)
+    content: ContentBundle | None = None
+
+
 # ── System Prompts ─────────────────────────────────────────────────────────────
 
-_GPT4O_CONTENT_SYSTEM = (
-    "You are an elite direct-response copywriter and a strict data structurer.\n"
-    "Your objective is to analyze raw Google Maps data of a local Israeli business and write "
-    "high-converting, persuasive marketing copy for a single-page landing page.\n"
-    "The entire output MUST be in fluent, natural HEBREW, but the JSON keys must remain in English.\n\n"
-    "CRITICAL RULES:\n"
-    "1. You MUST output strictly and exclusively in valid JSON format.\n"
-    "2. DO NOT include any conversational text before or after the JSON.\n"
-    "3. DO NOT wrap the output in markdown blocks like ```json. Just return the raw JSON object.\n\n"
-    'REQUIRED JSON STRUCTURE:\n'
-    '{\n'
-    '  "business_name": "<Exact business name>",\n'
-    '  "hero_headline": "<A powerful, catchy main headline in Hebrew>",\n'
-    '  "hero_subheadline": "<A short, persuasive sub-headline in Hebrew>",\n'
-    '  "about_us": "<A compelling paragraph in Hebrew highlighting their strengths>",\n'
-    '  "services": ["<Service 1>", "<Service 2>", "<Service 3>"],\n'
-    '  "contact_phone": "<Extract phone number, leave empty if none>",\n'
-    '  "call_to_action": "<Strong action button text in Hebrew>"\n'
-    '}'
-)
+_CONTENT_AGENT_SYSTEM = """\
+You are an elite direct-response copywriter and a strict data processor.
+Your objective is to analyze raw Google Maps data of a local Israeli business and output marketing copy for a landing page, along with a personalized outreach message.
+The entire output MUST be in fluent, natural HEBREW, but the JSON keys must remain in English.
 
-_GEMINI_DESIGN_SYSTEM = (
-    "You are an expert Art Director and UI/UX Designer.\n"
-    "Analyze the provided local business description and output a JSON configuration "
-    "detailing the visual identity for their website.\n\n"
-    "CRITICAL RULES:\n"
-    "1. Output strictly valid JSON only — no markdown, no explanations.\n\n"
-    'REQUIRED JSON STRUCTURE:\n'
-    '{\n'
-    '  "theme_vibe": "<One word: Modern/Rustic/Corporate/Playful/Elegant>",\n'
-    '  "primary_color_hex": "<Dominant brand color in HEX, e.g. #1E3A8A>",\n'
-    '  "secondary_color_hex": "<Complementary accent color in HEX>",\n'
-    '  "background_style": "<light or dark>",\n'
-    '  "ui_instructions_for_developer": "<1-2 sentences on exact aesthetic>"\n'
-    '}'
-)
+CRITICAL RULES:
+1. You are communicating with a machine. You MUST output strictly and exclusively in valid JSON format.
+2. DO NOT include any conversational text, greetings, or explanations before or after the JSON.
+3. ABSOLUTELY NO MARKDOWN. Do not wrap the output in ```json blocks. Start immediately with { and end with }.
 
-_CLAUDE_BUILDER_SYSTEM = (
-    "You are a world-class elite Frontend UI/UX Developer.\n"
-    "Generate a high-converting, fully responsive Hebrew landing page based on the provided JSON.\n\n"
-    "CRITICAL TECHNICAL CONSTRAINTS:\n"
-    "1. Output ONLY raw valid HTML. No explanations, no markdown wrappers.\n"
-    "2. The very first characters MUST be <!DOCTYPE html> and the very last MUST be </html>.\n\n"
-    "DESIGN & ARCHITECTURE RULES:\n"
-    "1. Use HTML5 and Tailwind CSS via CDN (<script src=\"https://cdn.tailwindcss.com\"></script>).\n"
-    "2. The page MUST be strictly RTL with dir=\"rtl\" on the <html> tag.\n"
-    "3. Import Google Font 'Heebo' for Hebrew typography.\n"
-    "4. PAGE SECTIONS ORDER: Hero -> Services -> Reviews Carousel -> About -> Contact -> Footer.\n"
-    "5. REVIEWS CAROUSEL: CSS-only auto-scrolling. Each card: star rating, quote text, avatar placeholder.\n"
-    "6. UI Elements: soft gradients, subtle shadows, rounded corners, mobile-first responsive.\n"
-    "7. Floating sticky WhatsApp button at bottom-left corner.\n"
-    "8. Apply design.json colors precisely — primary_color_hex as the dominant brand color."
-)
+REQUIRED JSON STRUCTURE:
+{
+  "business_name": "<Exact business name>",
+  "industry_type": "<e.g., Restaurant, Plumber, Lawyer - IN ENGLISH>",
+  "hero_headline": "<A powerful, catchy main headline in Hebrew designed to capture attention>",
+  "hero_subheadline": "<A short, persuasive sub-headline in Hebrew explaining the value proposition>",
+  "about_us": "<A compelling, trustworthy paragraph in Hebrew highlighting their strengths based on reviews>",
+  "services": [
+    "<Service 1 in Hebrew>",
+    "<Service 2 in Hebrew>",
+    "<Service 3 in Hebrew>"
+  ],
+  "top_reviews": [
+    {
+      "reviewer_name": "<Name>",
+      "review_text": "<Short positive snippet in Hebrew>",
+      "stars": 5
+    }
+  ],
+  "contact_phone": "<Extract phone number, leave empty if none>",
+  "call_to_action": "<Strong action button text in Hebrew, e.g. 'קבלו הצעת מחיר עכשיו'>",
+  "whatsapp_outreach_message": "<Write a short (3-4 sentences), friendly, and highly persuasive WhatsApp message in Hebrew addressed to the business owner. Tell them you noticed they have great reviews but no website, and that you built them a free demo. Be direct, casual, and warm. Use placeholder [DEMO_LINK] for the URL.>"
+}"""
+
+_GEMINI_DESIGN_SYSTEM = """\
+You are an expert Art Director and UI/UX Designer.
+Analyze the provided local business description and output a JSON configuration detailing the visual identity for their website.
+
+CRITICAL RULES:
+1. Output strictly valid JSON only — no markdown, no explanations.
+
+REQUIRED JSON STRUCTURE:
+{
+  "theme_vibe": "<One word: Modern/Rustic/Corporate/Playful/Elegant>",
+  "primary_color_hex": "<Dominant brand color in HEX, e.g. #1E3A8A>",
+  "secondary_color_hex": "<Complementary accent color in HEX>",
+  "background_style": "<light or dark>",
+  "ui_instructions_for_developer": "<1-2 sentences on exact aesthetic>"
+}"""
+
+_CLAUDE_BUILDER_SYSTEM = """\
+You are a world-class elite Frontend UI/UX Developer.
+Generate a high-converting, fully responsive Hebrew landing page based on the provided JSON.
+
+CRITICAL TECHNICAL CONSTRAINTS:
+1. Output ONLY raw valid HTML. No explanations, no markdown wrappers.
+2. The very first characters MUST be <!DOCTYPE html> and the very last MUST be </html>.
+
+DESIGN & ARCHITECTURE RULES:
+1. Use HTML5 and Tailwind CSS via CDN (<script src="https://cdn.tailwindcss.com"></script>).
+2. The page MUST be strictly RTL with dir="rtl" on the <html> tag (Hebrew content).
+3. Import Google Font 'Heebo' for Hebrew typography.
+4. PAGE SECTIONS ORDER: Hero → Services → Reviews Carousel → About → Contact → Footer.
+5. REVIEWS CAROUSEL: CSS-only auto-scrolling horizontal carousel. Each card includes:
+   - Star rating (★ icons in gold), reviewer name, review quote text.
+   - White background, soft shadow (shadow-lg), rounded-2xl, padding.
+   - If top_reviews array is empty, show a single placeholder testimonial.
+6. Show a Google rating badge above the carousel (e.g. "⭐ 4.8 / 5 — 120 ביקורות").
+7. UI Elements: soft gradients, subtle shadows, rounded corners, mobile-first responsive.
+8. Floating sticky WhatsApp button at bottom-left corner (green circle, WA icon).
+9. Apply design.json colors precisely — primary_color_hex as the dominant brand color.
+10. Hero section: large gradient background, prominent headline, CTA button."""
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -126,28 +165,26 @@ def _parse_json(raw: str) -> dict | None:
 # ── Pipeline ──────────────────────────────────────────────────────────────────
 
 class AutoSitePipelineService:
-    """Orchestrates the multi-agent AutoSite pipeline.
+    """
+    Orchestrates the 4-agent AutoSite pipeline.
 
-    html = AutoSitePipelineService().run(
-        raw_maps_data,
-        enrichment={
-            'top_review': '...',
-            'reviews': ['...'],
-            'rating': 4.8,
-            'reviews_count': 120,
-            'opening_hours': [...],
-        }
-    )
-    Returns full HTML string, or None on failure.
+    Usage:
+        result = AutoSitePipelineService().run(raw_maps_data, enrichment={...})
+        result.html              # full Tailwind HTML page
+        result.outreach_message  # WhatsApp message with [DEMO_LINK] placeholder
+        result.content           # ContentBundle with all structured data
     """
 
-    def run(self, raw_maps_data: str, *, enrichment: dict | None = None) -> str | None:
-        logger.info("[Pipeline] Starting parallel AutoSite generation")
+    def run(self, raw_maps_data: str, *, enrichment: dict | None = None) -> PipelineResult | None:
+        logger.info("[Pipeline] Starting 3-stage AutoSite generation")
         enrichment = enrichment or {}
         try:
-            design: DesignConfig = DesignConfig()  # pre-set safe fallback
+            design: DesignConfig = DesignConfig()
             content: ContentBundle | None = None
 
+            # ── Stage 1: Parallel ─────────────────────────────────────────────
+            # Stage 1a: GPT-4o (primary) / Grok (auto-fallback) → content + outreach
+            # Stage 1b: Gemini → design config
             with ThreadPoolExecutor(max_workers=2) as pool:
                 f_content = pool.submit(self._stage1a_content, raw_maps_data)
                 f_design = pool.submit(self._stage1b_design, raw_maps_data)
@@ -156,60 +193,81 @@ class AutoSitePipelineService:
                 try:
                     design = f_design.result(timeout=30)
                 except Exception:
-                    logger.info("[Stage 1b] Design future timed-out or raised, using DesignConfig defaults")
+                    logger.info("[Stage 1b] Design timed-out / failed — using DesignConfig defaults")
                     design = DesignConfig()
 
             if not content:
-                logger.warning("[Pipeline] Stage 1a (content) failed — aborting")
+                logger.warning("[Pipeline] Stage 1a failed — aborting")
                 return None
 
-            logger.info("[Pipeline] Stage 1a OK headline=%r", (content.hero_headline or "")[:50])
-            logger.info("[Pipeline] Stage 1b design.vibe=%r", design.theme_vibe)
+            logger.info("[Pipeline] Stage 1a OK — business=%r industry=%s", content.business_name, content.industry_type)
+            logger.info("[Pipeline] Stage 1b OK — vibe=%r color=%s", design.theme_vibe, design.primary_color_hex)
 
+            # ── Stage 2: Claude → HTML ────────────────────────────────────────
             html = self._stage2_build(content, design, enrichment)
             if not html:
                 logger.warning("[Pipeline] Stage 2 (Claude HTML) failed — aborting")
                 return None
 
-            logger.info("[Pipeline] Stage 2 OK, HTML %d bytes", len(html))
-            return html
+            logger.info("[Pipeline] Stage 2 OK — %d bytes", len(html))
+
+            return PipelineResult(
+                html=html,
+                outreach_message=content.whatsapp_outreach_message or None,
+                content=content,
+            )
 
         except Exception:
             logger.exception("[Pipeline] Unhandled top-level error")
             return None
 
-    # ── Stage 1a: GPT-4o ─────────────────────────────────────────────────────
+    # ── Stage 1a: GPT-4o (primary) / Grok (auto-fallback via router) ─────────
 
     def _stage1a_content(self, raw: str) -> ContentBundle | None:
         try:
             from app.services.llm.router_service import LLMRouterService
-            logger.info("[Stage 1a] GPT-4o Content Manager — generating copy JSON")
+            logger.info("[Stage 1a] GPT-4o Content Manager — generating copy + outreach JSON")
             response = LLMRouterService().call(
                 "generate_site_copy",
                 f"Raw Google Maps Data:\n{raw}",
-                system=_GPT4O_CONTENT_SYSTEM,
-                model="grok-3-mini",
-                max_tokens=900,
+                system=_CONTENT_AGENT_SYSTEM,
+                max_tokens=1200,
                 json_mode=True,
             )
             data = _parse_json(response or "")
             if not data:
-                logger.warning("[Stage 1a] No parseable JSON from GPT-4o (response=%r)", (response or "")[:200])
+                logger.warning("[Stage 1a] No parseable JSON (response=%r)", (response or "")[:200])
                 return None
+
+            # parse top_reviews safely
+            raw_reviews = data.get("top_reviews") or []
+            top_reviews: list[dict] = []
+            if isinstance(raw_reviews, list):
+                for r in raw_reviews:
+                    if isinstance(r, dict):
+                        top_reviews.append({
+                            "reviewer_name": r.get("reviewer_name", ""),
+                            "review_text": r.get("review_text", ""),
+                            "stars": int(r.get("stars", 5)),
+                        })
+
             return ContentBundle(
                 business_name=data.get("business_name", ""),
+                industry_type=data.get("industry_type", ""),
                 hero_headline=data.get("hero_headline", ""),
                 hero_subheadline=data.get("hero_subheadline", ""),
                 about_us=data.get("about_us", ""),
                 services=list(data.get("services") or []),
+                top_reviews=top_reviews,
                 contact_phone=data.get("contact_phone", ""),
                 call_to_action=data.get("call_to_action", "צור קשר עכשיו"),
+                whatsapp_outreach_message=data.get("whatsapp_outreach_message", ""),
             )
         except Exception:
             logger.exception("[Stage 1a] Unhandled error")
             return None
 
-    # ── Stage 1b: Gemini ─────────────────────────────────────────────────────
+    # ── Stage 1b: Gemini → design config ─────────────────────────────────────
 
     def _stage1b_design(self, raw: str) -> DesignConfig:
         """Always returns a DesignConfig — never raises."""
@@ -233,12 +291,12 @@ class AutoSitePipelineService:
                     background_style=data.get("background_style", "light"),
                     ui_instructions=data.get("ui_instructions_for_developer", ""),
                 )
-            logger.info("[Stage 1b] Design response unparseable, using defaults")
+            logger.info("[Stage 1b] Unparseable design response — using defaults")
         except Exception:
-            logger.info("[Stage 1b] Design agent failed (Gemini quota?), using defaults")
+            logger.info("[Stage 1b] Design agent failed (quota?) — using defaults")
         return DesignConfig()
 
-    # ── Stage 2: Claude ───────────────────────────────────────────────────────
+    # ── Stage 2: Claude → Master Builder ─────────────────────────────────────
 
     def _stage2_build(
         self,
@@ -254,12 +312,13 @@ class AutoSitePipelineService:
             wa_url = f"https://wa.me/{phone_clean}" if phone_clean else "#"
             tel_url = f"tel:{phone_clean}" if phone_clean else "#"
 
-            reviews_raw: list[str] = []
-            enrichment_reviews = enrichment.get("reviews") or []
-            if isinstance(enrichment_reviews, list):
-                reviews_raw = [r for r in enrichment_reviews if isinstance(r, str) and len(r) > 20]
-            if not reviews_raw and enrichment.get("top_review"):
-                reviews_raw = [enrichment["top_review"]]
+            # Merge AI-generated reviews with enrichment reviews
+            reviews_for_claude: list[dict] = list(content.top_reviews)
+            if not reviews_for_claude:
+                # fallback: wrap enrichment top_review in same format
+                top_review_text = enrichment.get("top_review") or ""
+                if top_review_text:
+                    reviews_for_claude = [{"reviewer_name": "לקוח מרוצה", "review_text": top_review_text, "stars": 5}]
 
             rating = enrichment.get("rating")
             reviews_count = enrichment.get("reviews_count") or 0
@@ -269,17 +328,18 @@ class AutoSitePipelineService:
 
             content_json = json.dumps({
                 "business_name": content.business_name,
+                "industry_type": content.industry_type,
                 "hero_headline": content.hero_headline,
                 "hero_subheadline": content.hero_subheadline,
                 "about_us": content.about_us,
                 "services": content.services,
+                "top_reviews": reviews_for_claude[:8],
                 "contact_phone": content.contact_phone,
                 "call_to_action": content.call_to_action,
                 "whatsapp_url": wa_url,
                 "tel_url": tel_url,
                 "rating": rating,
                 "reviews_count": reviews_count,
-                "reviews": reviews_raw[:10],
                 "opening_hours": opening_hours[:7],
             }, ensure_ascii=False, indent=2)
 
@@ -293,14 +353,8 @@ class AutoSitePipelineService:
 
             prompt = (
                 "Please build the complete site.\n\n"
-                f"Use this verified content:\n{content_json}\n\n"
-                f"Strictly follow these design guidelines:\n{design_json}\n\n"
-                "REVIEWS CAROUSEL RULES:\n"
-                "- Build a horizontal auto-scrolling carousel (CSS animation, no JS library).\n"
-                "- Each card: white background, soft shadow, rounded-2xl, star rating, review quote text.\n"
-                "- If only one review is in the JSON, display it as a single featured testimonial.\n"
-                f"- Show Google rating badge: {rating or 'N/A'} / 5 — {reviews_count} ביקורות\n"
-                "- Carousel section background: subtle gray or secondary color at very low opacity."
+                f"CONTENT JSON:\n{content_json}\n\n"
+                f"DESIGN INSTRUCTIONS JSON:\n{design_json}"
             )
 
             response = LLMRouterService().call(
@@ -317,7 +371,6 @@ class AutoSitePipelineService:
                 m = re.search(r"<!DOCTYPE.*</html>", html, re.DOTALL | re.IGNORECASE)
                 if m:
                     html = m.group()
-            # Ensure proper HTML closure
             if html and not html.lower().rstrip().endswith("</html>"):
                 html = html.rstrip() + "\n</html>"
             return html

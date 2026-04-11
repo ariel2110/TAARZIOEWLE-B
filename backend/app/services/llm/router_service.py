@@ -17,7 +17,7 @@ class LLMRouterService:
     TASK_PROVIDER_MAP: dict[str, str] = {
         # Pipeline stages
         "analyze_business_data":  "gemini",    # Stage 1b — Style & Design Director
-        "generate_site_copy":     "xai",       # Stage 1a — Content Manager (Grok)
+        "generate_site_copy":     "openai",    # Stage 1a — Content Manager (GPT-4o primary, Grok fallback)
         "build_site_html":        "anthropic", # Stage 2  — Master Builder (Claude)
         # Legacy / standalone tasks
         "review_generated_copy":  "anthropic",
@@ -45,10 +45,11 @@ class LLMRouterService:
         primary = self.route(task_type)
 
         # Build candidate list: preferred provider first, then fallbacks
+        # Order: primary → xai → gemini → openai → anthropic (skipping primary duplicates)
         all_providers = [
+            ("openai",   getattr(settings, "openai_api_key", None)),
             ("xai",      getattr(settings, "xai_api_key", None)),
             ("gemini",   getattr(settings, "gemini_api_key", None)),
-            ("openai",   getattr(settings, "openai_api_key", None)),
             ("anthropic",getattr(settings, "anthropic_api_key", None)),
         ]
         ordered = [(p, k) for p, k in all_providers if p == primary] + \

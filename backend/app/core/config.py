@@ -49,6 +49,7 @@ class Settings(BaseSettings):
     anthropic_api_key: str | None = Field(default=None)
     gemini_api_key: str | None = Field(default=None)
     xai_api_key: str | None = Field(default=None)
+    api_base_url: str = Field(default='https://api.sitenest.site')
     llm_default_model: str = Field(default='gpt-4o')
 
     # OTP / delivery

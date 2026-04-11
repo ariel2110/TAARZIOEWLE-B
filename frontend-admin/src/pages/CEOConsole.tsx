@@ -3,10 +3,12 @@ import { useEffect, useState, useCallback } from 'react';
 import { SectionTitle } from '../components/ui';
 import {
   Digest, Health, QueueSummary, QueueItem, Approval,
+  GrokCEOResponse, GrokExecutionPayload,
   getDigest, getHealth, getQueueSummary, getQueueItems,
   getApprovals, approve, reject,
   addCeoDecisionNote, runQueueAction,
   buildBusinessWhatsApp,
+  askGrok, executeGrokAction,
 } from '../services/queries';
 
 const WA_PHONE = (import.meta.env.VITE_SITENEST_WA_PHONE || '972546363350') as string;
@@ -247,6 +249,219 @@ function ApprovalsSection({ onDone }: { onDone: () => void }) {
 }
 
 // ────────────────────────────────────────────────────────────────────
+// Grok CEO Panel
+// ────────────────────────────────────────────────────────────────────
+function GrokCEOPanel() {
+  const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [response, setResponse] = useState<GrokCEOResponse | null>(null);
+  const [execStatus, setExecStatus] = useState<string | null>(null);
+  const [executing, setExecuting] = useState(false);
+
+  const handleAsk = async () => {
+    setLoading(true);
+    setResponse(null);
+    setExecStatus(null);
+    try {
+      const res = await askGrok(message.trim() || undefined);
+      setResponse(res);
+    } catch {
+      setExecStatus('❌ שגיאה בחיבור לגרוק');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleApprove = async () => {
+    if (!response) return;
+    setExecuting(true);
+    try {
+      const result = await executeGrokAction(response.system_execution_payload as GrokExecutionPayload);
+      setExecStatus(result.message);
+      setResponse(null);
+    } catch {
+      setExecStatus('❌ שגיאה בביצוע הפעולה');
+    } finally {
+      setExecuting(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setResponse(null);
+    setExecStatus(null);
+  };
+
+  const hasAction = response?.system_execution_payload?.action_type &&
+    response.system_execution_payload.action_type !== 'NONE';
+
+  return (
+    <div style={{
+      background: 'linear-gradient(135deg, #0f0f1a, #1a1a2e)',
+      border: '2px solid #7c3aed',
+      borderRadius: 16,
+      padding: '20px 22px',
+      marginBottom: 24,
+      color: 'white',
+    }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18 }}>
+        <div style={{ fontSize: 32 }}>🤖</div>
+        <div>
+          <div style={{ fontWeight: 800, fontSize: 18, color: '#a78bfa' }}>גרוק — מנכ"ל AI</div>
+          <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>מנתח את המערכת ומציע מהלכים אסטרטגיים בעברית</div>
+        </div>
+      </div>
+
+      {/* Input area */}
+      {!response && (
+        <div style={{ marginBottom: 14 }}>
+          <textarea
+            value={message}
+            onChange={e => setMessage(e.target.value)}
+            placeholder="כתוב הנחיה לגרוק... או השאר ריק לניתוח אוטומטי של המצב הנוכחי"
+            rows={3}
+            style={{
+              width: '100%',
+              background: '#1e1b4b',
+              border: '1.5px solid #4c1d95',
+              borderRadius: 10,
+              padding: '10px 14px',
+              fontSize: 14,
+              color: 'white',
+              resize: 'vertical',
+              fontFamily: 'inherit',
+              direction: 'rtl',
+              boxSizing: 'border-box',
+            }}
+          />
+          <button
+            onClick={handleAsk}
+            disabled={loading}
+            style={{
+              marginTop: 10,
+              background: loading ? '#4c1d95' : '#7c3aed',
+              color: 'white',
+              border: 'none',
+              borderRadius: 10,
+              padding: '10px 28px',
+              fontSize: 15,
+              fontWeight: 700,
+              cursor: loading ? 'not-allowed' : 'pointer',
+              opacity: loading ? 0.7 : 1,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}
+          >
+            {loading ? (
+              <><span style={{ display: 'inline-block', animation: 'spin 1s linear infinite' }}>⏳</span> גרוק חושב...</>
+            ) : '💬 שאל את גרוק'}
+          </button>
+        </div>
+      )}
+
+      {/* Response */}
+      {response && (
+        <div style={{ direction: 'rtl' }}>
+          {/* Understanding */}
+          <div style={{ background: '#1e1b4b', borderRadius: 10, padding: '12px 16px', marginBottom: 12 }}>
+            <div style={{ fontWeight: 700, fontSize: 12, color: '#818cf8', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 1 }}>🎯 מה גרוק הבין</div>
+            <div style={{ fontSize: 14, lineHeight: 1.7, color: '#e0e7ff' }}>{response.understanding_and_analysis}</div>
+          </div>
+
+          {/* Strategic insight */}
+          <div style={{ background: '#14301a', border: '1px solid #166534', borderRadius: 10, padding: '12px 16px', marginBottom: 12 }}>
+            <div style={{ fontWeight: 700, fontSize: 12, color: '#4ade80', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 1 }}>💡 תובנה אסטרטגית</div>
+            <div style={{ fontSize: 14, lineHeight: 1.7, color: '#d1fae5' }}>{response.strategic_insight}</div>
+          </div>
+
+          {/* Action plan */}
+          <div style={{ background: '#172554', border: '1px solid #1e40af', borderRadius: 10, padding: '12px 16px', marginBottom: 12 }}>
+            <div style={{ fontWeight: 700, fontSize: 12, color: '#60a5fa', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 1 }}>📋 תוכנית פעולה</div>
+            <div style={{ fontSize: 14, lineHeight: 1.7, color: '#dbeafe' }}>{response.proposed_action_plan}</div>
+          </div>
+
+          {/* Message to Ariel */}
+          <div style={{ background: '#1c1917', border: '1.5px solid #d97706', borderRadius: 10, padding: '14px 16px', marginBottom: 16 }}>
+            <div style={{ fontWeight: 700, fontSize: 12, color: '#fbbf24', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 1 }}>📩 הודעה לאריאל</div>
+            <div style={{ fontSize: 15, lineHeight: 1.7, color: '#fef3c7', fontWeight: 500 }}>{response.message_to_ariel}</div>
+          </div>
+
+          {/* Payload preview */}
+          {hasAction && (
+            <div style={{ background: '#0f172a', border: '1px solid #334155', borderRadius: 10, padding: '10px 14px', marginBottom: 14 }}>
+              <div style={{ fontWeight: 700, fontSize: 11, color: '#64748b', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 1 }}>⚙️ פעולה מוצעת</div>
+              <div style={{ fontSize: 12, color: '#94a3b8', fontFamily: 'monospace' }}>
+                <span style={{ color: '#38bdf8' }}>{response.system_execution_payload.action_type}</span>
+                {response.system_execution_payload.target_component && (
+                  <> → <span style={{ color: '#a78bfa' }}>{response.system_execution_payload.target_component}</span></>
+                )}
+              </div>
+              {response.system_execution_payload.new_value && (
+                <div style={{ marginTop: 6, fontSize: 11, color: '#64748b', maxHeight: 80, overflow: 'hidden', fontFamily: 'monospace', whiteSpace: 'pre-wrap' }}>
+                  {response.system_execution_payload.new_value.substring(0, 300)}{response.system_execution_payload.new_value.length > 300 ? '...' : ''}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Action buttons */}
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            {hasAction && (
+              <button
+                onClick={handleApprove}
+                disabled={executing}
+                style={{
+                  background: executing ? '#065f46' : '#10b981',
+                  color: 'white', border: 'none', borderRadius: 10,
+                  padding: '10px 26px', fontSize: 15, fontWeight: 700,
+                  cursor: executing ? 'not-allowed' : 'pointer',
+                  opacity: executing ? 0.7 : 1,
+                }}
+              >
+                {executing ? '⏳ מבצע...' : '✅ אשר ובצע'}
+              </button>
+            )}
+            <button
+              onClick={() => { setMessage(''); handleCancel(); }}
+              disabled={executing}
+              style={{
+                background: '#fee2e2', color: '#991b1b', border: 'none',
+                borderRadius: 10, padding: '10px 26px', fontSize: 15,
+                fontWeight: 700, cursor: executing ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {hasAction ? '❌ בטל' : '🔄 שאל שוב'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Execution result */}
+      {execStatus && (
+        <div style={{
+          marginTop: 14,
+          background: execStatus.startsWith('✅') ? '#064e3b' : execStatus.startsWith('⏳') ? '#1e1b4b' : '#450a0a',
+          border: `1px solid ${execStatus.startsWith('✅') ? '#10b981' : execStatus.startsWith('⏳') ? '#818cf8' : '#ef4444'}`,
+          borderRadius: 10, padding: '10px 16px',
+          fontSize: 14, color: 'white', fontWeight: 600, direction: 'rtl',
+        }}>
+          {execStatus}
+          {execStatus && (
+            <button
+              onClick={() => { setExecStatus(null); setMessage(''); }}
+              style={{ marginRight: 10, background: 'transparent', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: 12 }}
+            >
+              ✕ סגור
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────
 // MAIN PAGE
 // ────────────────────────────────────────────────────────────────────
 export default function CEOConsolePage() {
@@ -394,6 +609,9 @@ export default function CEOConsolePage() {
           ))}
         </div>
       )}
+
+      {/* Grok CEO Panel */}
+      <GrokCEOPanel />
 
       {/* Decision note */}
       <div style={{ background: 'white', borderRadius: 14, padding: '16px 20px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', border: '1.5px solid #e5e7eb' }}>

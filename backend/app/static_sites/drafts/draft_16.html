@@ -1,91 +1,345 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <meta name="robots" content="noindex,nofollow"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>יוני צ׳חנובסקי שירותי חשמל</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <style>
-    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:"Segoe UI",Arial,"Helvetica Neue",sans-serif;color:#111827;background:#f8fafc;direction:rtl}
-    a{text-decoration:none;color:inherit}
-    img{max-width:100%}
-    @media(max-width:640px){
-      .hero-title{font-size:30px!important}
-      .cta-row{flex-direction:column!important;align-items:stretch!important}
-      .cta-row a{text-align:center}
+    * { font-family: 'Heebo', sans-serif; }
+
+    /* Carousel */
+    .carousel-track {
+      display: flex;
+      gap: 1.5rem;
+      animation: scroll-rtl 20s linear infinite;
+      width: max-content;
+    }
+    .carousel-track:hover { animation-play-state: paused; }
+    @keyframes scroll-rtl {
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+    .carousel-wrapper {
+      overflow: hidden;
+      width: 100%;
+      position: relative;
+    }
+    .carousel-wrapper::before,
+    .carousel-wrapper::after {
+      content: '';
+      position: absolute;
+      top: 0; bottom: 0;
+      width: 80px;
+      z-index: 2;
+      pointer-events: none;
+    }
+    .carousel-wrapper::before {
+      right: 0;
+      background: linear-gradient(to left, #f1f5f9, transparent);
+    }
+    .carousel-wrapper::after {
+      left: 0;
+      background: linear-gradient(to right, #f1f5f9, transparent);
+    }
+
+    /* WhatsApp */
+    .whatsapp-btn {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 1.5rem;
+      z-index: 999;
+      background: #25D366;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 20px rgba(37,211,102,0.5);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .whatsapp-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 28px rgba(37,211,102,0.6);
+    }
+
+    /* Hero gradient */
+    .hero-gradient {
+      background: linear-gradient(135deg, #1E3A8A 0%, #1e40af 50%, #2563eb 100%);
+    }
+
+    /* Section gradient bg */
+    .section-light { background-color: #f8faff; }
+
+    .card-hover {
+      transition: transform 0.25s, box-shadow 0.25s;
+    }
+    .card-hover:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 32px rgba(30,58,138,0.12);
+    }
+
+    /* Pulse ring for CTA */
+    .pulse-ring {
+      animation: pulse-ring 2s ease-out infinite;
+    }
+    @keyframes pulse-ring {
+      0%   { box-shadow: 0 0 0 0 rgba(59,130,246,0.5); }
+      70%  { box-shadow: 0 0 0 14px rgba(59,130,246,0); }
+      100% { box-shadow: 0 0 0 0 rgba(59,130,246,0); }
     }
   </style>
 </head>
-<body>
-<div style="background:#f59e0b;color:#111;padding:12px 20px;text-align:center;font-size:14px;font-weight:700;direction:rtl">⚠️ זהו אתר הדגמה — הכל כאן הוא לצורכי תצוגה בלבד | <a href="https://wa.me/972546363350?text=שלום!%20ראיתי%20את%20האתר%20הדמו%20שלכם%20עבור%20"יוני%20צ׳חנובסקי%20שירותי%20חשמל"%20🌐%0Aהאתר%20נראה%20מדהים!%20אשמח%20לשמוע%20פרטים%20על%20בניית%20האתר%20המלא%20⭐" target="_blank" style="color:#111;text-decoration:underline">לבניית האתר האמיתי — לחץ כאן</a></div>
+<body class="bg-slate-50 text-gray-800 overflow-x-hidden">
 
-<!-- ── HERO ──────────────────────────────────────────── -->
-<section style="background:linear-gradient(135deg,#1e3a5f 0%,#1d4ed8 50%,#0ea5e9 100%);padding:80px 20px 60px;text-align:center;position:relative;overflow:hidden">
-  <div style="position:absolute;inset:0;background:rgba(0,0,0,0.25)"></div>
-  <div style="position:relative;max-width:800px;margin:0 auto">
-    <div style="font-size:56px;margin-bottom:16px">⚡</div>
-    <h1 class="hero-title" style="font-size:42px;font-weight:900;color:white;line-height:1.25;text-shadow:0 2px 12px rgba(0,0,0,0.3);margin-bottom:12px">יוני צ׳חנובסקי שירותי חשמל</h1>
-    
-    <p style="font-size:16px;color:rgba(255,255,255,0.75);margin-top:10px">📍 המלך ג׳ורג׳58, תל אביב-יפו, 6433709, ישראל</p>
-    <div style="margin-top:16px"><span style="color:#f59e0b;font-size:20px;letter-spacing:2px">★★★★★</span><span style="color:rgba(255,255,255,0.85);font-size:15px;margin-right:8px">5.0 (25 ביקורות)</span></div>
-    <div class="cta-row" style="display:flex;gap:16px;justify-content:center;margin-top:32px;flex-wrap:wrap">
-      <a href="tel:0533389952" style="display:inline-flex;align-items:center;gap:10px;background:#16a34a;color:white;border-radius:50px;padding:16px 36px;font-size:18px;font-weight:700;box-shadow:0 8px 24px rgba(22,163,74,0.45)">📞 053-338-9952</a>
-      <a href="https://wa.me/972546363350?text=שלום!%20ראיתי%20את%20האתר%20הדמו%20שלכם%20עבור%20"יוני%20צ׳חנובסקי%20שירותי%20חשמל"%20🌐%0Aהאתר%20נראה%20מדהים!%20אשמח%20לשמוע%20פרטים%20על%20בניית%20האתר%20המלא%20⭐" target="_blank" style="display:inline-flex;align-items:center;gap:10px;background:#25d366;color:white;border-radius:50px;padding:16px 36px;font-size:17px;font-weight:700;box-shadow:0 8px 24px rgba(37,211,102,0.45)">💬 יצירת קשר</a>
+<!-- ========== FLOATING WHATSAPP ========== -->
+<a href="https://wa.me/972533389952" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp" class="whatsapp-btn">
+  <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M16 2C8.268 2 2 8.268 2 16c0 2.478.655 4.8 1.8 6.8L2 30l7.4-1.778A13.938 13.938 0 0016 30c7.732 0 14-6.268 14-14S23.732 2 16 2z" fill="white"/>
+    <path d="M23.003 19.395c-.315-.158-1.864-.92-2.153-1.025-.289-.105-.499-.158-.709.158-.21.315-.814 1.025-1.0 1.235-.184.21-.368.236-.683.079-.315-.158-1.33-.49-2.532-1.562-.936-.833-1.568-1.86-1.752-2.175-.184-.315-.02-.485.138-.643.143-.141.315-.368.473-.552.158-.184.21-.315.315-.524.105-.21.053-.394-.026-.552-.079-.158-.709-1.707-.972-2.338-.255-.613-.515-.53-.709-.54-.184-.008-.394-.01-.604-.01s-.552.079-.84.394c-.289.315-1.103 1.078-1.103 2.628 0 1.55 1.129 3.047 1.287 3.257.158.21 2.22 3.39 5.38 4.757.752.325 1.339.52 1.796.665.755.24 1.443.206 1.987.125.606-.09 1.864-.762 2.126-1.498.263-.737.263-1.368.184-1.498-.079-.131-.289-.21-.604-.368z" fill="#25D366"/>
+  </svg>
+</a>
+
+<!-- ========== NAVBAR ========== -->
+<nav class="bg-white shadow-sm sticky top-0 z-50">
+  <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-full flex items-center justify-center" style="background:#1E3A8A;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M13 2L4.09 12.11a1 1 0 00.82 1.61H11l-1 8 8.91-10.11a1 1 0 00-.82-1.61H13l1-8z" fill="white" stroke="white" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <span class="font-bold text-lg" style="color:#1E3A8A;">יוני צ׳חנובסקי</span>
     </div>
+    <a href="tel:972533389952" class="flex items-center gap-2 text-sm font-semibold text-white px-4 py-2 rounded-full transition-all pulse-ring" style="background:#1E3A8A;">
+      <svg width="16" height="16" fill="white" viewBox="0 0 24 24"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>
+      053-338-9952
+    </a>
   </div>
-</section>
+</nav>
 
+<!-- ========== HERO ========== -->
+<section class="hero-gradient relative overflow-hidden">
+  <!-- Decorative circles -->
+  <div class="absolute top-0 left-0 w-96 h-96 rounded-full opacity-10" style="background:radial-gradient(circle, #60a5fa, transparent); transform: translate(-30%, -30%);"></div>
+  <div class="absolute bottom-0 right-0 w-80 h-80 rounded-full opacity-10" style="background:radial-gradient(circle, #93c5fd, transparent); transform: translate(30%, 30%);"></div>
 
+  <div class="max-w-5xl mx-auto px-4 py-24 md:py-36 text-center relative z-10">
+    <!-- Badge -->
+    <div class="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm text-white text-sm font-medium px-4 py-2 rounded-full mb-6 border border-white/20">
+      <span>⚡</span>
+      <span>חשמלאי מוסמך ומנוסה בתל אביב-יפו</span>
+    </div>
 
-<!-- ── ABOUT ──────────────────────────────────────────── -->
-<section style="padding:64px 20px;background:white">
-  <div style="max-width:760px;margin:0 auto">
-    <h2 style="font-size:28px;font-weight:800;color:#111827;margin-bottom:20px;text-align:center">אודותינו</h2>
-    <p style="font-size:17px;line-height:1.85;color:#374151;text-align:center">יוני צ׳חנובסקי שירותי חשמל הוא עסק מקומי מוביל בתחום electrician, establishment בהמלך ג׳ורג׳58. אנו מתמחים במתן שירות מקצועי ואישי ללקוחותינו.</p>
-  </div>
-</section>
+    <h1 class="text-4xl md:text-6xl font-black text-white leading-tight mb-6 drop-shadow-lg">
+      חשמלאי מקצועי ואמין<br/>
+      <span style="color:#93c5fd;">בתל אביב - יפו</span>
+    </h1>
+    <p class="text-xl md:text-2xl text-blue-100 mb-10 max-w-2xl mx-auto font-light leading-relaxed">
+      שירותי חשמל ברמה גבוהה עם יחס אישי ומחירים הוגנים
+    </p>
 
+    <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+      <a href="tel:972533389952"
+         class="bg-white font-bold text-lg px-8 py-4 rounded-full shadow-xl transition-all hover:scale-105 hover:shadow-2xl flex items-center gap-3"
+         style="color:#1E3A8A;">
+        <svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>
+        צרו קשר עוד היום!
+      </a>
+      <a href="https://wa.me/972533389952" target="_blank" rel="noopener noreferrer"
+         class="border-2 border-white/60 text-white font-semibold text-lg px-8 py-4 rounded-full transition-all hover:bg-white/10 flex items-center gap-3">
+        <svg width="22" height="22" viewBox="0 0 32 32" fill="white" xmlns="http://www.w3.org/2000/svg">
+          <path d="M16 2C8.268 2 2 8.268 2 16c0 2.478.655 4.8 1.8 6.8L2 30l7.4-1.778A13.938 13.938 0 0016 30c7.732 0 14-6.268 14-14S23.732 2 16 2z"/>
+        </svg>
+        וואטסאפ
+      </a>
+    </div>
 
-            <section style="padding:60px 0;background:#fffbeb">
-              <div style="max-width:700px;margin:0 auto;padding:0 20px;text-align:center">
-                <h2 style="font-size:26px;font-weight:800;color:#111827;margin-bottom:8px">דירוג לקוחות</h2>
-                <div style="font-size:52px;font-weight:900;color:#111827;margin:12px 0">5.0</div>
-                <div style="margin-bottom:8px"><span style="color:#f59e0b;font-size:20px;letter-spacing:2px">★★★★★</span></div>
-                <div style="color:#6b7280;font-size:15px">מבוסס על 25 ביקורות בגוגל</div>
-                <blockquote style="margin:24px auto;max-width:560px;background:white;border-right:4px solid #1d4ed8;padding:16px 20px;border-radius:12px;text-align:right;color:#374151;font-style:italic;box-shadow:0 2px 8px rgba(0,0,0,0.06)">&ldquo;קיבלתי שירות מצוין מחשמלאי מקצועי, אדיב ואמין. הגיע בזמן, עבד בצורה מסודרת ונקייה, הסביר כל שלב בסבלנות ודאג שהכול יעבוד בצורה מושלמת. המחיר היה הוגן והשירות ברמה גבוהה מאוד. בהחלט אמשיך לפנות אליו בעתיד וממליץ בחום לכל מי שמחפש חשמלאי מקצועי ואמין.&rdquo;</blockquote>
-              </div>
-            </section>
-
-<!-- ── CONTACT + HOURS ────────────────────────────────── -->
-<section id="contact" style="padding:64px 20px;background:#f8fafc">
-  <div style="max-width:900px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:32px">
-    <!-- Contact card -->
-    <div style="background:white;border-radius:20px;padding:32px;box-shadow:0 4px 16px rgba(0,0,0,0.07)">
-      <h2 style="font-size:22px;font-weight:800;color:#111827;margin-bottom:20px">📞 פרטי קשר</h2>
-      <div style="display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid #f1f5f9"><span style="font-size:20px">📱</span><a href="tel:0533389952" style="font-size:17px;font-weight:700;color:#1d4ed8">053-338-9952</a></div>
-      <div style="display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid #f1f5f9"><span style="font-size:20px">📍</span><span style="font-size:15px;color:#374151">המלך ג׳ורג׳58, תל אביב-יפו, 6433709, ישראל</span></div>
-      
-      <div style="display:flex;align-items:center;gap:12px;padding:14px 0"><span style="font-size:20px">🗺️</span><a href="https://maps.google.com/?cid=12673201134836156007" target="_blank" style="font-size:15px;font-weight:600;color:#1d4ed8">הצג במפות גוגל</a></div>
-      <div style="margin-top:24px;display:flex;flex-direction:column;gap:12px">
-        <a href="tel:0533389952" style="display:flex;align-items:center;justify-content:center;gap:10px;background:#16a34a;color:white;border-radius:50px;padding:14px 20px;font-size:16px;font-weight:700">📞 התקשר עכשיו</a>
-        <a href="https://wa.me/972546363350?text=שלום!%20ראיתי%20את%20האתר%20הדמו%20שלכם%20עבור%20"יוני%20צ׳חנובסקי%20שירותי%20חשמל"%20🌐%0Aהאתר%20נראה%20מדהים!%20אשמח%20לשמוע%20פרטים%20על%20בניית%20האתר%20המלא%20⭐" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:10px;background:#25d366;color:white;border-radius:50px;padding:14px 20px;font-size:16px;font-weight:700">💬 שלח הודעת WhatsApp</a>
+    <!-- Stats -->
+    <div class="mt-14 grid grid-cols-3 gap-6 max-w-md mx-auto">
+      <div class="text-center">
+        <div class="text-3xl font-black text-white">⭐ 5</div>
+        <div class="text-blue-200 text-sm mt-1">דירוג גוגל</div>
+      </div>
+      <div class="text-center border-r border-l border-white/20">
+        <div class="text-3xl font-black text-white">25+</div>
+        <div class="text-blue-200 text-sm mt-1">ביקורות</div>
+      </div>
+      <div class="text-center">
+        <div class="text-3xl font-black text-white">24/7</div>
+        <div class="text-blue-200 text-sm mt-1">זמינות</div>
       </div>
     </div>
-    <div style="background:white;border-radius:20px;padding:32px;box-shadow:0 4px 16px rgba(0,0,0,0.07)">
-      <h2 style="font-size:22px;font-weight:800;color:#111827;margin-bottom:20px">🕐 שעות פתיחה</h2>
-      <div style="background:#f8fafc;border-radius:14px;padding:20px"><div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:14px"><span style="color:#6b7280">יום ראשון</span><span style="font-weight:600;color:#111827">פתוח 24 שעות</span></div><div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:14px"><span style="color:#6b7280">יום שני</span><span style="font-weight:600;color:#111827">פתוח 24 שעות</span></div><div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:14px"><span style="color:#6b7280">יום שלישי</span><span style="font-weight:600;color:#111827">פתוח 24 שעות</span></div><div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:14px"><span style="color:#6b7280">יום רביעי</span><span style="font-weight:600;color:#111827">פתוח 24 שעות</span></div><div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:14px"><span style="color:#6b7280">יום חמישי</span><span style="font-weight:600;color:#111827">פתוח 24 שעות</span></div><div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:14px"><span style="color:#6b7280">יום שישי</span><span style="font-weight:600;color:#111827">0:00–14:00</span></div><div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:14px"><span style="color:#6b7280">יום שבת</span><span style="font-weight:600;color:#111827">סגור</span></div></div>
+  </div>
+
+  <!-- Wave -->
+  <div class="absolute bottom-0 left-0 right-0">
+    <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" style="width:100%;height:60px;">
+      <path d="M0 80L1440 80L1440 20C1200 70 960 0 720 30C480 60 240 10 0 40Z" fill="#f8faff"/>
+    </svg>
+  </div>
+</section>
+
+<!-- ========== SERVICES ========== -->
+<section class="section-light py-20">
+  <div class="max-w-5xl mx-auto px-4">
+    <div class="text-center mb-12">
+      <span class="text-sm font-semibold uppercase tracking-widest" style="color:#3B82F6;">השירותים שלנו</span>
+      <h2 class="text-3xl md:text-4xl font-black mt-2" style="color:#1E3A8A;">מה אנחנו מציעים?</h2>
+      <div class="w-16 h-1 mx-auto mt-4 rounded-full" style="background:#3B82F6;"></div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+      <!-- Service 1 -->
+      <div class="bg-white rounded-2xl p-8 shadow-lg card-hover border border-blue-50 text-center">
+        <div class="w-16 h-16 rounded-2xl mx-auto mb-5 flex items-center justify-center" style="background:linear-gradient(135deg,#1E3A8A,#3B82F6);">
+          <svg width="30" height="30" fill="white" viewBox="0 0 24 24"><path d="M13 2L4.09 12.11a1 1 0 00.82 1.61H11l-1 8 8.91-10.11a1 1 0 00-.82-1.61H13l1-8z"/></svg>
+        </div>
+        <h3 class="text-xl font-bold mb-3" style="color:#1E3A8A;">תיקונים והתקנות חשמל</h3>
+        <p class="text-gray-500 leading-relaxed text-sm">תיקון תקלות חשמל, התקנת שקעים, מפסקים, גופי תאורה ועוד — מהיר ומקצועי.</p>
+      </div>
+
+      <!-- Service 2 -->
+      <div class="bg-white rounded-2xl p-8 shadow-lg card-hover border border-blue-50 text-center">
+        <div class="w-16 h-16 rounded-2xl mx-auto mb-5 flex items-center justify-center" style="background:linear-gradient(135deg,#1E3A8A,#3B82F6);">
+          <svg width="30" height="30" fill="white" viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20A10 10 0 0012 2zm1 17.93V18a1 1 0 00-2 0v1.93A8.001 8.001 0 014.07 13H6a1 1 0 000-2H4.07A8.001 8.001 0 0111 4.07V6a1 1 0 002 0V4.07A8.001 8.001 0 0119.93 11H18a1 1 0 000 2h1.93A8.001 8.001 0 0113 19.93zM12 8a4 4 0 100 8 4 4 0 000-8z"/></svg>
+        </div>
+        <h3 class="text-xl font-bold mb-3" style="color:#1E3A8A;">שדרוג מערכות חשמל</h3>
+        <p class="text-gray-500 leading-relaxed text-sm">שדרוג לוחות חשמל, החלפת חיווט ישן, הוספת נקודות חשמל לצרכים מודרניים.</p>
+      </div>
+
+      <!-- Service 3 -->
+      <div class="bg-white rounded-2xl p-8 shadow-lg card-hover border border-blue-50 text-center">
+        <div class="w-16 h-16 rounded-2xl mx-auto mb-5 flex items-center justify-center" style="background:linear-gradient(135deg,#1E3A8A,#3B82F6);">
+          <svg width="30" height="30" fill="white" viewBox="0 0 24 24"><path d="M9 11H7a2 2 0 000 4h2m6-4h2a2 2 0 010 4h-2m-6-4v-1a3 3 0 016 0v1m-6 4v1a3 3 0 006 0v-1m-6 0h6"/></svg>
+        </div>
+        <h3 class="text-xl font-bold mb-3" style="color:#1E3A8A;">ייעוץ ותכנון עבודות חשמל</h3>
+        <p class="text-gray-500 leading-relaxed text-sm">ייעוץ מקצועי לפני ביצוע שיפוצים, תכנון מערכות חשמל לדירות ולמשרדים.</p>
+      </div>
+
     </div>
   </div>
 </section>
 
-<!-- ── FOOTER ──────────────────────────────────────────── -->
-<footer style="background:#111827;color:rgba(255,255,255,0.6);text-align:center;padding:28px 20px;font-size:13px">
-  <div style="color:white;font-size:16px;font-weight:700;margin-bottom:6px">יוני צ׳חנובסקי שירותי חשמל</div>
-  <div>המלך ג׳ורג׳58, תל אביב-יפו, 6433709, ישראל</div>
-  <div style="margin-top:4px"><a href="tel:0533389952" style="color:rgba(255,255,255,0.7)">053-338-9952</a></div>
-  <div style="margin-top:12px;font-size:11px;color:rgba(255,255,255,0.3)">אתר זה הוא הדגמה בלבד — נוצר על ידי SiteNest</div>
-</footer>
+<!-- ========== REVIEWS ========== -->
+<section class="py-20 bg-white">
+  <div class="max-w-5xl mx-auto px-4">
+    <div class="text-center mb-8">
+      <span class="text-sm font-semibold uppercase tracking-widest" style="color:#3B82F6;">מה אומרים עלינו</span>
+      <h2 class="text-3xl md:text-4xl font-black mt-2" style="color:#1E3A8A;">ביקורות לקוחות</h2>
+      <div class="w-16 h-1 mx-auto mt-4 rounded-full" style="background:#3B82F6;"></div>
+    </div>
 
-</body>
+    <!-- Google Rating Badge -->
+    <div class="flex justify-center mb-10">
+      <div class="inline-flex items-center gap-3 bg-blue-50 border border-blue-100 rounded-2xl px-6 py-3 shadow">
+        <svg width="28" height="28" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+          <path fill="#EA4335" d="M24 9.5c3.1 0 5.9 1.1 8.1 2.9l6-6C34.5 3.1 29.5 1 24 1 14.8 1 7 6.7 3.7 14.6l7 5.4C12.4 13.6 17.7 9.5 24 9.5z"/>
+          <path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.4c-.5 2.8-2.1 5.1-4.5 6.7l7 5.4C43.2 36.6 46.1 30.9 46.1 24.5z"/>
+          <path fill="#FBBC05" d="M10.7 28.6A14.4 14.4 0 019.5 24c0-1.6.3-3.1.8-4.6l-7-5.4A23.1 23.1 0 001 24c0 3.7.9 7.2 2.4 10.3l7.3-5.7z"/>
+          <path fill="#34A853" d="M24 47c5.4 0 10-1.8 13.3-4.8l-7-5.4c-1.8 1.2-4.1 1.9-6.3 1.9-6.3 0-11.6-4.2-13.5-9.9l-7.3 5.7C7.1 41.5 14.9 47 24 47z"/>
+        </svg>
+        <div class="text-right">
+          <div class="flex items-center gap-1">
+            <span class="text-2xl font-black" style="color:#1E3A8A;">5.0</span>
+            <span class="text-gray-400 text-sm">/ 5</span>
+            <div class="flex mr-1">
+              <span class="text-yellow-400 text-lg">★★★★★</span>
+            </div>
+          </div>
+          <div class="text-gray-500 text-sm">מבוסס על 25 ביקורות גוגל</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Carousel -->
+    <div class="carousel-wrapper py-4">
+      <div class="carousel-track">
+        <!-- Review Card 1 -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 flex-shrink-0" style="width:320px;">
+          <div class="flex items-center gap-1 mb-3">
+            <span class="text-yellow-400 text-xl">★★★★★</span>
+          </div>
+          <p class="text-gray-600 leading-relaxed text-sm mb-4">"קיבלתי שירות מצוין מחשמלאי מקצועי, אדיב ואמין. המחיר היה הוגן והשירות ברמה גבוהה מאוד."</p>
+          <div class="flex items-center gap-3 border-t pt-4">
+            <div class="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm" style="background:#1E3A8A;">ל</div>
+            <div>
+              <div class="font-semibold text-sm" style="color:#1E3A8A;">לקוח מרוצה</div>
+              <div class="text-xs text-gray-400">ביקורת גוגל</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Placeholder Card 2 -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 flex-shrink-0" style="width:320px;">
+          <div class="flex items-center gap-1 mb-3">
+            <span class="text-yellow-400 text-xl">★★★★★</span>
+          </div>
+          <p class="text-gray-600 leading-relaxed text-sm mb-4">"יוני הגיע תוך שעה, טיפל בתקלה במקצועיות ובמחיר שקוף. ממליץ בחום לכל מי שצריך חשמלאי אמין!"</p>
+          <div class="flex items-center gap-3 border-t pt-4">
+            <div class="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm" style="background:#1E3A8A;">ד</div>
+            <div>
+              <div class="font-semibold text-sm" style="color:#1E3A8A;">דוד כהן</div>
+              <div class="text-xs text-gray-400">ביקורת גוגל</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Placeholder Card 3 -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 flex-shrink-0" style="width:320px;">
+          <div class="flex items-center gap-1 mb-3">
+            <span class="text-yellow-400 text-xl">★★★★★</span>
+          </div>
+          <p class="text-gray-600 leading-relaxed text-sm mb-4">"שירות מהיר ואמין! יוני ידע בדיוק מה הבעיה ותיקן הכל בצורה נקייה ומסודרת. מאוד מרוצה!"</p>
+          <div class="flex items-center gap-3 border-t pt-4">
+            <div class="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm" style="background:#1E3A8A;">מ</div>
+            <div>
+              <div class="font-semibold text-sm" style="color:#1E3A8A;">מיכל לוי</div>
+              <div class="text-xs text-gray-400">ביקורת גוגל</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Placeholder Card 4 -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 flex-shrink-0" style="width:320px;">
+          <div class="flex items-center gap-1 mb-3">
+            <span class="text-yellow-400 text-xl">★★★★★</span>
+          </div>
+          <p class="text-gray-600 leading-relaxed text-sm mb-4">"חשמלאי אמין לחלוטין, הגיע בזמן, עבד בנקיון מלא והסביר הכל. גם המחיר היה הוגן מאוד."</p>
+          <div class="flex items-center gap-3 border-t pt-4">
+            <div class="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm" style="background:#1E3A8A;">א</div>
+            <div>
+              <div class="font-semibold text-sm" style="color:#1E3A8A;">אבי ישראלי</div>
+              <div class="text-xs text-gray-400">ביקורת גוגל</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Duplicate for infinite loop -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 flex-shrink-0" style="width:320px;">
+          <div class="flex items-center gap-1 mb-3">
+            <span class="text-yellow-400 text-xl">★★★★★</span>
+          </div>
+          <p class="text-gray-600 leading-relaxed text-sm mb-4">"קיבלתי שירות מצוין מחשמלאי מקצועי, אדיב ואמין. המחיר היה הוגן והשירות ברמה גבוהה מאוד."</p>
+          <div class="flex items-center gap-3 border-t pt-4">
+            <div class="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm" style="background:#1E3A8A;">ל</div>
+            <div>
+              <div class="font-semibold text-sm" style="color:#1E3A8A;">לקוח מרוצה</div>
+              <div class="text-xs text-gray-400">ביקורת גוגל</div>
+            </div>
+          </div>
+        </div>
+        <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 flex-shrink-0" style="width:320px;">
+          <div class="flex items-center gap-1 mb-3">
+            <span class="text-yellow-400 text-xl">★★★★★</span>
+          </div>
+          <p class="text-gray-600 leading-relaxed text-sm mb-4">"יוני הגיע תוך שעה, טיפל בתקלה במקצועיות ובמחיר שקוף. ממליץ בחום לכל מי שצריך חשמלאי אמין!"</p>
+          <div class="flex items-center gap-3 border-t pt-4">
+            <div class="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm" style="background:#1E3A8A;">ד</div>
+            <div>
+              <div class="font-semibold text-sm" style="color:#1E3A8A;">דוד כהן</div>
+              <div class="text-xs text-gray-400">בי
 </html>

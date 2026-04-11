@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>מספרת טסט E2E</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    * { font-family: 'Heebo', sans-serif; }
+
+    /* Carousel */
+    .carousel-track {
+      display: flex;
+      gap: 1.5rem;
+      animation: scroll-rtl 28s linear infinite;
+      width: max-content;
+    }
+    .carousel-track:hover { animation-play-state: paused; }
+    @keyframes scroll-rtl {
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(50%); }
+    }
+    .carousel-wrapper {
+      overflow: hidden;
+      position: relative;
+      width: 100%;
+    }
+    .carousel-wrapper::before,
+    .carousel-wrapper::after {
+      content: '';
+      position: absolute;
+      top: 0; bottom: 0;
+      width: 80px;
+      z-index: 10;
+      pointer-events: none;
+    }
+    .carousel-wrapper::before {
+      right: 0;
+      background: linear-gradient(to left, #f8fafc, transparent);
+    }
+    .carousel-wrapper::after {
+      left: 0;
+      background: linear-gradient(to right, #f8fafc, transparent);
+    }
+
+    /* Hero gradient */
+    .hero-gradient {
+      background: linear-gradient(135deg, #1E3A8A 0%, #1e4fc2 50%, #3B82F6 100%);
+    }
+
+    /* Scroll smooth */
+    html { scroll-behavior: smooth; }
+
+    /* WhatsApp pulse */
+    .wa-pulse {
+      animation: waPulse 2s infinite;
+    }
+    @keyframes waPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(37,211,102,0.5); }
+      50%       { box-shadow: 0 0 0 12px rgba(37,211,102,0); }
+    }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+  <!-- =========================================================
+       NAVBAR
+  ========================================================= -->
+  <nav class="fixed top-0 right-0 left-0 z-50 bg-white/90 backdrop-blur-md shadow-sm">
+    <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+      <span class="text-xl font-bold text-[#1E3A8A]">מספרת טסט E2E</span>
+      <a href="#contact"
+         class="bg-[#1E3A8A] text-white text-sm font-semibold px-5 py-2 rounded-full hover:bg-[#3B82F6] transition-colors duration-300">
+        קבעו תור
+      </a>
+    </div>
+  </nav>
+
+  <!-- =========================================================
+       HERO
+  ========================================================= -->
+  <section class="hero-gradient min-h-screen flex items-center justify-center pt-20 pb-16 px-6 relative overflow-hidden">
+    <!-- Decorative circles -->
+    <div class="absolute top-10 left-10 w-72 h-72 bg-white/5 rounded-full blur-3xl"></div>
+    <div class="absolute bottom-10 right-10 w-96 h-96 bg-white/5 rounded-full blur-3xl"></div>
+
+    <div class="max-w-3xl mx-auto text-center relative z-10">
+      <div class="inline-flex items-center gap-2 bg-white/20 text-white text-sm font-medium px-4 py-2 rounded-full mb-6 backdrop-blur-sm">
+        ✂️ מספרה מקצועית ומוכרת
+      </div>
+      <h1 class="text-4xl md:text-6xl font-black text-white leading-tight mb-6 drop-shadow-lg">
+        תנו לשיער שלכם<br class="hidden md:block"/> את הטיפול שמגיע לו<br/>
+        <span class="text-[#93C5FD]">במספרת טסט E2E!</span>
+      </h1>
+      <p class="text-lg md:text-xl text-blue-100 mb-10 leading-relaxed max-w-xl mx-auto">
+        מומחים בכל הסגנונות עם גישה אישית וחמה לכל לקוח.
+      </p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+        <a href="#contact"
+           class="bg-white text-[#1E3A8A] font-bold px-8 py-4 rounded-full text-lg shadow-xl hover:scale-105 transition-transform duration-300">
+          קבעו תור עכשיו! ✨
+        </a>
+        <a href="#services"
+           class="border-2 border-white/60 text-white font-semibold px-8 py-4 rounded-full text-lg hover:bg-white/10 transition-colors duration-300">
+          השירותים שלנו
+        </a>
+      </div>
+    </div>
+
+    <!-- Bottom wave -->
+    <div class="absolute bottom-0 left-0 right-0">
+      <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M0,40 C360,80 1080,0 1440,40 L1440,80 L0,80 Z" fill="#f8fafc"/>
+      </svg>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       SERVICES
+  ========================================================= -->
+  <section id="services" class="py-20 px-6 bg-gray-50">
+    <div class="max-w-5xl mx-auto">
+      <div class="text-center mb-14">
+        <span class="text-[#3B82F6] font-semibold text-sm uppercase tracking-widest">מה אנחנו מציעים</span>
+        <h2 class="text-3xl md:text-4xl font-black text-[#1E3A8A] mt-2">השירותים שלנו</h2>
+        <p class="text-gray-500 mt-3 max-w-lg mx-auto">איכות ומקצועיות בכל טיפול — כי אתם מגיעים לשיא</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+
+        <!-- Service 1 -->
+        <div class="bg-white rounded-2xl shadow-lg p-8 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100">
+          <div class="w-14 h-14 bg-blue-50 rounded-xl flex items-center justify-center text-2xl mb-5">✂️</div>
+          <h3 class="text-xl font-bold text-[#1E3A8A] mb-3">תספורות אופנתיות</h3>
+          <p class="text-gray-500 text-sm leading-relaxed">תספורות עדכניות ומותאמות אישית לכל סגנון, גיל ומבנה פנים.</p>
+        </div>
+
+        <!-- Service 2 -->
+        <div class="bg-white rounded-2xl shadow-lg p-8 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100">
+          <div class="w-14 h-14 bg-blue-50 rounded-xl flex items-center justify-center text-2xl mb-5">🎨</div>
+          <h3 class="text-xl font-bold text-[#1E3A8A] mb-3">צביעת שיער מקצועית</h3>
+          <p class="text-gray-500 text-sm leading-relaxed">צביעה, הבהרה, גוונים ואומברה — עם מוצרים מהשורה הראשונה.</p>
+        </div>
+
+        <!-- Service 3 -->
+        <div class="bg-white rounded-2xl shadow-lg p-8 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100">
+          <div class="w-14 h-14 bg-blue-50 rounded-xl flex items-center justify-center text-2xl mb-5">💎</div>
+          <h3 class="text-xl font-bold text-[#1E3A8A] mb-3">עיצוב ותסרוקות לאירועים</h3>
+          <p class="text-gray-500 text-sm leading-relaxed">תסרוקות עוצרות נשימה לחתונות, בר מצוות וכל אירוע מיוחד.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       REVIEWS CAROUSEL
+  ========================================================= -->
+  <section id="reviews" class="py-20 bg-[#f0f5ff] overflow-hidden">
+    <div class="max-w-5xl mx-auto px-6 mb-10 text-center">
+      <span class="text-[#3B82F6] font-semibold text-sm uppercase tracking-widest">מה אומרים עלינו</span>
+      <h2 class="text-3xl md:text-4xl font-black text-[#1E3A8A] mt-2">ביקורות לקוחות</h2>
+
+      <!-- Google Rating Badge -->
+      <div class="inline-flex items-center gap-2 mt-5 bg-white px-6 py-3 rounded-full shadow-md border border-gray-100">
+        <span class="text-yellow-400 text-xl">⭐</span>
+        <span class="font-bold text-gray-800 text-lg">5.0 / 5</span>
+        <span class="text-gray-400 text-sm">— דירוג מצוין</span>
+      </div>
+    </div>
+
+    <!-- Carousel -->
+    <div class="carousel-wrapper">
+      <div class="carousel-track py-4 px-2">
+
+        <!-- Placeholder card 1 -->
+        <div class="bg-white shadow-lg rounded-2xl p-6 w-72 flex-shrink-0">
+          <div class="text-yellow-400 text-xl mb-3">★★★★★</div>
+          <p class="text-gray-600 text-sm leading-relaxed mb-4">"שירות מדהים! יצאתי עם תספורת שלא ציפיתי שתתאים לי כל כך. ממליצה בחום!"</p>
+          <span class="font-bold text-[#1E3A8A] text-sm">— מיכל כ.</span>
+        </div>
+
+        <!-- Placeholder card 2 -->
+        <div class="bg-white shadow-lg rounded-2xl p-6 w-72 flex-shrink-0">
+          <div class="text-yellow-400 text-xl mb-3">★★★★★</div>
+          <p class="text-gray-600 text-sm leading-relaxed mb-4">"הצוות מקצועי ונחמד, האווירה נעימה ותוצאות הצביעה פשוט מושלמות. אחזור בטח!"</p>
+          <span class="font-bold text-[#1E3A8A] text-sm">— יוסי ל.</span>
+        </div>
+
+        <!-- Placeholder card 3 -->
+        <div class="bg-white shadow-lg rounded-2xl p-6 w-72 flex-shrink-0">
+          <div class="text-yellow-400 text-xl mb-3">★★★★★</div>
+          <p class="text-gray-600 text-sm leading-relaxed mb-4">"עשיתי תסרוקת לחתונה של אחותי — כולם שאלו איפה עשיתי את השיער. ממש מרוצה!"</p>
+          <span class="font-bold text-[#1E3A8A] text-sm">— שרה מ.</span>
+        </div>
+
+        <!-- Placeholder card 4 -->
+        <div class="bg-white shadow-lg rounded-2xl p-6 w-72 flex-shrink-0">
+          <div class="text-yellow-400 text-xl mb-3">★★★★★</div>
+          <p class="text-gray-600 text-sm leading-relaxed mb-4">"מספרה מעולה! קיבלתי יחס אישי ותוצאה שהפתיעה אפילו אותי. מומלץ מאוד!"</p>
+          <span class="font-bold text-[#1E3A8A] text-sm">— דני א.</span>
+        </div>
+
+        <!-- Placeholder card 5 -->
+        <div class="bg-white shadow-lg rounded-2xl p-6 w-72 flex-shrink-0">
+          <div class="text-yellow-400 text-xl mb-3">★★★★★</div>
+          <p class="text-gray-600 text-sm leading-relaxed mb-4">"כבר שנים שאני לקוחה קבועה. תמיד יוצאת מרוצה ועם חיוך. הכי טובים!"</p>
+          <span class="font-bold text-[#1E3A8A] text-sm">— רחל ט.</span>
+        </div>
+
+        <!-- Placeholder card 6 -->
+        <div class="bg-white shadow-lg rounded-2xl p-6 w-72 flex-shrink-0">
+          <div class="text-yellow-400 text-xl mb-3">★★★★★</div>
+          <p class="text-gray-600 text-sm leading-relaxed mb-4">"הגעתי לראשונה ומיד הרגשתי בבית. מקצוענים אמיתיים עם לב גדול. ממליץ!"</p>
+          <span class="font-bold text-[#1E3A8A] text-sm">— אמיר ש.</span>
+        </div>
+
+        <!-- Duplicate for seamless loop -->
+        <div class="bg-white shadow-lg rounded-2xl p-6 w-72 flex-shrink-0">
+          <div class="text-yellow-400 text-xl mb-3">★★★★★</div>
+          <p class="text-gray-600 text-sm leading-relaxed mb-4">"שירות מדהים! יצאתי עם תספורת שלא ציפיתי שתתאים לי כל כך. ממליצה בחום!"</p>
+          <span class="font-bold text-[#1E3A8A] text-sm">— מיכל כ.</span>
+        </div>
+        <div class="bg-white shadow-lg rounded-2xl p-6 w-72 flex-shrink-0">
+          <div class="text-yellow-400 text-xl mb-3">★★★★★</div>
+          <p class="text-gray-600 text-sm leading-relaxed mb-4">"הצוות מקצועי ונחמד, האווירה נעימה ותוצאות הצביעה פשוט מושלמות. אחזור בטח!"</p>
+          <span class="font-bold text-[#1E3A8A] text-sm">— יוסי ל.</span>
+        </div>
+        <div class="bg-white shadow-lg rounded-2xl p-6 w-72 flex-shrink-0">
+          <div class="text-yellow-400 text-xl mb-3">★★★★★</div>
+          <p class="text-gray-600 text-sm leading-relaxed mb-4">"עשיתי תסרוקת לחתונה של אחותי — כולם שאלו איפה עשיתי את השיער. ממש מרוצה!"</p>
+          <span class="font-bold text-[#1E3A8A] text-sm">— שרה מ.</span>
+        </div>
+        <div class="bg-white shadow-lg rounded-2xl p-6 w-72 flex-shrink-0">
+          <div class="text-yellow-400 text-xl mb-3">★★★★★</div>
+          <p class="text-gray-600 text-sm leading-relaxed mb-4">"מספרה מעולה! קיבלתי יחס אישי ותוצאה שהפתיעה אפילו אותי. מומלץ מאוד!"</p>
+          <span class="font-bold text-[#1E3A8A] text-sm">— דני א.</span>
+        </div>
+        <div class="bg-white shadow-lg rounded-2xl p-6 w-72 flex-shrink-0">
+          <div class="text-yellow-400 text-xl mb-3">★★★★★</div>
+          <p class="text-gray-600 text-sm leading-relaxed mb-4">"כבר שנים שאני לקוחה קבועה. תמיד יוצאת מרוצה ועם חיוך. הכי טובים!"</p>
+          <span class="font-bold text-[#1E3A8A] text-sm">— רחל ט.</span>
+        </div>
+        <div class="bg-white shadow-lg rounded-2xl p-6 w-72 flex-shrink-0">
+          <div class="text-yellow-400 text-xl mb-3">★★★★★</div>
+          <p class="text-gray-600 text-sm leading-relaxed mb-4">"הגעתי לראשונה ומיד הרגשתי בבית. מקצוענים אמיתיים עם לב גדול. ממליץ!"</p>
+          <span class="font-bold text-[#1E3A8A] text-sm">— אמיר ש.</span>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       ABOUT
+  ========================================================= -->
+  <section id="about" class="py-20 px-6 bg-white">
+    <div class="max-w-5xl mx-auto">
+      <div class="flex flex-col md:flex-row items-center gap-12">
+
+        <!-- Image placeholder -->
+        <div class="w-full md:w-1/2 flex-shrink-0">
+          <div class="relative rounded-3xl overflow-hidden shadow-2xl bg-gradient-to-br from-[#1E3A8A] to-[#3B82F6] aspect-square flex items-center justify-center">
+            <div class="text-center text-white p-10">
+              <div class="text-8xl mb-4">✂️</div>
+              <p class="text-2xl font-bold">מספרת טסט E2E</p>
+              <p class="text-blue-200 mt-2 text-sm">מקצועיות עם לב</p>
+            </div>
+            <!-- Decorative dot grid -->
+            <div class="absolute bottom-4 left-4 grid grid-cols-4 gap-1.5 opacity-20">
+              <div class="w-2 h-2 bg-white rounded-full"></div><div class="w-2 h-2 bg-white rounded-full"></div><div class="w-2 h-2 bg-white rounded-full"></div><div class="w-2 h-2 bg-white rounded-full"></div>
+              <div class="w-2 h-2 bg-white rounded-full"></div><div class="w-2 h-2 bg-white rounded-full"></div><div class="w-2 h-2 bg-white rounded-full"></div><div class="w-2 h-2 bg-white rounded-full"></div>
+              <div class="w-2 h-2 bg-white rounded-full"></div><div class="w-2 h-2 bg-white rounded-full"></div><div class="w-2 h-2 bg-white rounded-full"></div><div class="w-2 h-2 bg-white rounded-full"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Text -->
+        <div class="w-full md:w-1/2">
+          <span class="text-[#3B82F6] font-semibold text-sm uppercase tracking-widest">קצת עלינו</span>
+          <h2 class="text-3xl md:text-4xl font-black text-[#1E3A8A] mt-2 mb-6">אנחנו מספרת טסט E2E</h2>
+          <p class="text-gray-600 leading-relaxed text-lg mb-8">
+            במספרת טסט E2E אנחנו מתמחים ביצירת המראה המושלם לכל אחד ואחת. עם יחס אישי, מקצועיות בלתי מתפשרת ואווירה חמה ונעימה, אנחנו כאן כדי לתת לשיער שלכם את הטיפול הטוב ביותר.
+          </p>
+
+          <!-- Stats -->
+          <div class="grid grid-cols-3 gap-4">
+            <div class="bg-blue-50 rounded-2xl p-4 text-center">
+              <div class="text-2xl font-black text-[#1E3A8A]">100+</div>
+              <div class="text-xs text-gray-500 mt-1">לקוחות מרוצים</div>
+            </div>
+            <div class="bg-blue-50 rounded-2xl p-4 text-center">
+              <div class="text-2xl font-black text-[#1E3A8A]">5★</div>
+              <div class="text-xs text-gray-500 mt-1">דירוג ממוצע</div>
+            </div>
+            <div class="bg-blue-50 rounded-2xl p-4 text-center">
+              <div class="text-2xl font-black text-[#1E3A8A]">3+</div>
+              <div class="text-xs text-gray-500 mt-1">שירותי פרימיום</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       CONTACT
+  ========================================================= -->
+  <section id="contact" class="py-20 px-6 bg-gradient-to-br from-[#EFF6FF] to-[#DBEAFE]">
+    <div class="max-w-3xl mx-auto">
+      <div class="text-center mb-12">
+        <span class="text-[#3B82F6] font-semibold text-sm uppercase tracking-widest">בואו נדבר</span>
+        <h2 class="text-3xl md:text-4xl font-black text-[#1E3A8A] mt-2">צרו קשר</h2>
+        <p class="text-gray-500 mt-3">קבעו תור עוד היום ותנו לשיער שלכם את הטיפול שמגיע לו</p>
+      </div>
+
+      <div class="bg-white rounded-3xl shadow-xl p-8 md:p-12">
+
+        <!-- CTA buttons -->
+        <div class="flex flex-col sm:flex-row gap-4 mb-8">
+          <a href="#"
+             class="flex-1 bg-[#1E3A8A] text-white font-bold py-4 px-6 rounded-2xl text-center hover:bg-[#3B82F6] transition-colors duration-300 flex items-center justify-center gap-2">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M6.62 10.79a15.09 15.09 0 006.59 6.59l2.2-2.2a1 1 0 011.01-.24 11.47 11.47 0 003.6.57 1 1 0 011 1v3.56a1 1 0 01-1 1A17 17 0 013 5a1 1 0 011-1h3.56a1 1 0 011 1 11.47 11.47 0 00.57 3.6 1 1 0 01-.25 1.01z"/></svg>
+            קבעו תור בטלפון
+          </a>
+          <a href="#"
+             class="flex-1 bg-[#25D366] text-white font-bold py-4 px-6 rounded-2xl text-center hover:bg-green-600 transition-colors duration-300 flex items-center justify-center gap-2">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            שלחו הודעה בוואטסאפ
+          </a>
+        </div>
+
+        <!-- Contact Info -->
+        <div class="border-t border-gray-100 pt-6 space-y-4">
+          <div class="flex items-center gap-3 text-gray-600">
+            <div class="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-[#1E3A8A]">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            </div>
+            <span>ישראל</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       FOOTER
+  ========================================================= -->
+  <footer class="bg-[#0F2460] text-white py-12 px-6">
+    <div class="max-w-5xl mx-auto">
+
+      <!-- Top -->
+      <div class="text-center mb-8">
+        <h3 class="text-2xl font-black mb-2">מספרת טסט E2E</h3>
+        <p class="text-blue-300 text-sm">מומחים בכל הסגנונות עם גישה אישית וחמה
+</html>

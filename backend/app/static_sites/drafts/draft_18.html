@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>E2E Test</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    * { font-family: 'Heebo', sans-serif; }
+
+    :root {
+      --primary: #1E3A8A;
+      --secondary: #3B82F6;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    .bg-primary { background-color: #1E3A8A; }
+    .bg-secondary { background-color: #3B82F6; }
+    .text-primary { color: #1E3A8A; }
+    .text-secondary { color: #3B82F6; }
+    .border-primary { border-color: #1E3A8A; }
+
+    /* Hero gradient */
+    .hero-gradient {
+      background: linear-gradient(135deg, #1E3A8A 0%, #2d4fa3 40%, #3B82F6 100%);
+    }
+
+    /* Carousel */
+    .carousel-track {
+      display: flex;
+      gap: 1.5rem;
+      animation: scrollCarousel 28s linear infinite;
+      width: max-content;
+    }
+
+    .carousel-track:hover {
+      animation-play-state: paused;
+    }
+
+    @keyframes scrollCarousel {
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    .carousel-wrapper {
+      overflow: hidden;
+      position: relative;
+    }
+
+    .carousel-wrapper::before,
+    .carousel-wrapper::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 80px;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .carousel-wrapper::before {
+      right: 0;
+      background: linear-gradient(to left, #f8fafc, transparent);
+    }
+
+    .carousel-wrapper::after {
+      left: 0;
+      background: linear-gradient(to right, #f8fafc, transparent);
+    }
+
+    .review-card {
+      min-width: 300px;
+      max-width: 300px;
+    }
+
+    /* WhatsApp button pulse */
+    .wa-pulse {
+      animation: waPulse 2.5s infinite;
+    }
+
+    @keyframes waPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.5); }
+      50%       { box-shadow: 0 0 0 14px rgba(37, 211, 102, 0); }
+    }
+
+    /* Section fade */
+    .section-card {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .section-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 40px rgba(30,58,138,0.12);
+    }
+
+    /* Nav link underline */
+    .nav-link {
+      position: relative;
+    }
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      right: 0;
+      width: 0;
+      height: 2px;
+      background: #3B82F6;
+      transition: width 0.3s ease;
+    }
+    .nav-link:hover::after { width: 100%; }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-800 antialiased">
+
+  <!-- ══════════════════════════════════════════
+       NAVBAR
+  ══════════════════════════════════════════ -->
+  <nav class="fixed top-0 right-0 left-0 z-50 bg-white/90 backdrop-blur-md shadow-sm">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <span class="text-xl font-bold text-primary">E2E Test</span>
+      <div class="hidden md:flex gap-7 text-sm font-medium text-gray-600">
+        <a href="#services"  class="nav-link hover:text-primary transition-colors">שירותים</a>
+        <a href="#reviews"   class="nav-link hover:text-primary transition-colors">ביקורות</a>
+        <a href="#about"     class="nav-link hover:text-primary transition-colors">אודות</a>
+        <a href="#contact"   class="nav-link hover:text-primary transition-colors">צור קשר</a>
+      </div>
+      <a href="#contact"
+         class="bg-primary text-white text-sm font-semibold px-5 py-2 rounded-full hover:opacity-90 transition-opacity shadow-md">
+        צרו קשר
+      </a>
+    </div>
+  </nav>
+
+  <!-- ══════════════════════════════════════════
+       HERO
+  ══════════════════════════════════════════ -->
+  <section class="hero-gradient min-h-screen flex items-center justify-center pt-20 pb-16 px-4 relative overflow-hidden">
+    <!-- decorative circles -->
+    <div class="absolute top-[-80px] left-[-80px] w-96 h-96 rounded-full bg-white/5"></div>
+    <div class="absolute bottom-[-60px] right-[-60px] w-72 h-72 rounded-full bg-white/5"></div>
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full bg-white/3 pointer-events-none"></div>
+
+    <div class="relative z-10 text-center max-w-3xl mx-auto">
+      <div class="inline-block bg-white/20 text-white text-xs font-semibold px-4 py-1.5 rounded-full mb-6 tracking-wide uppercase">
+        General Business
+      </div>
+      <h1 class="text-4xl md:text-6xl font-black text-white leading-tight mb-6 drop-shadow-lg">
+        גלה את הסוד של שירות יוצא דופן ב-E2E Test!
+      </h1>
+      <p class="text-lg md:text-xl text-blue-100 font-light mb-10 leading-relaxed">
+        כאן בשבילך עם פתרונות מותאמים אישית לכל צורך.
+      </p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+        <a href="#contact"
+           class="bg-white text-primary font-bold text-lg px-10 py-4 rounded-full shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300">
+          צרו קשר עכשיו ←
+        </a>
+        <a href="#services"
+           class="border-2 border-white/60 text-white font-medium text-lg px-8 py-4 rounded-full hover:bg-white/10 transition-all duration-300">
+          גלו עוד
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════
+       SERVICES
+  ══════════════════════════════════════════ -->
+  <section id="services" class="py-24 px-4 bg-white">
+    <div class="max-w-6xl mx-auto">
+      <div class="text-center mb-16">
+        <span class="inline-block text-secondary font-semibold text-sm uppercase tracking-widest mb-3">מה אנחנו מציעים</span>
+        <h2 class="text-4xl font-black text-primary mb-4">השירותים שלנו</h2>
+        <div class="w-16 h-1 bg-secondary rounded-full mx-auto"></div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+
+        <!-- Service 1 -->
+        <div class="section-card bg-gradient-to-br from-blue-50 to-white rounded-3xl p-8 shadow-md border border-blue-100 text-center">
+          <div class="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-primary mb-3">שירות מותאם אישית</h3>
+          <p class="text-gray-500 leading-relaxed text-sm">
+            אנו מאמינים שכל לקוח הוא עולם ומלואו – לכן כל פתרון נבנה במיוחד עבורכם.
+          </p>
+        </div>
+
+        <!-- Service 2 -->
+        <div class="section-card bg-gradient-to-br from-indigo-50 to-white rounded-3xl p-8 shadow-md border border-indigo-100 text-center">
+          <div class="w-16 h-16 bg-secondary rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-primary mb-3">ייעוץ מקצועי</h3>
+          <p class="text-gray-500 leading-relaxed text-sm">
+            צוות המומחים שלנו כאן לייעץ, להנחות ולהוביל אתכם לתוצאות הטובות ביותר.
+          </p>
+        </div>
+
+        <!-- Service 3 -->
+        <div class="section-card bg-gradient-to-br from-sky-50 to-white rounded-3xl p-8 shadow-md border border-sky-100 text-center">
+          <div class="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg"
+               style="background: linear-gradient(135deg,#1E3A8A,#3B82F6);">
+            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-primary mb-3">פתרונות חדשניים</h3>
+          <p class="text-gray-500 leading-relaxed text-sm">
+            טכנולוגיות מתקדמות ורעיונות פורצי דרך – אנחנו תמיד צעד אחד קדימה.
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════
+       REVIEWS CAROUSEL
+  ══════════════════════════════════════════ -->
+  <section id="reviews" class="py-24 px-4 bg-slate-50">
+    <div class="max-w-6xl mx-auto">
+
+      <!-- Google Rating Badge -->
+      <div class="text-center mb-10">
+        <span class="inline-block bg-white border border-yellow-200 shadow-md rounded-full px-6 py-2 text-sm font-semibold text-gray-700">
+          ⭐ מצוין — לקוחות מרוצים
+        </span>
+      </div>
+
+      <div class="text-center mb-12">
+        <span class="inline-block text-secondary font-semibold text-sm uppercase tracking-widest mb-3">מה אומרים עלינו</span>
+        <h2 class="text-4xl font-black text-primary mb-4">ביקורות לקוחות</h2>
+        <div class="w-16 h-1 bg-secondary rounded-full mx-auto"></div>
+      </div>
+
+      <!-- Carousel -->
+      <div class="carousel-wrapper">
+        <div class="carousel-track py-4">
+          <!-- Placeholder testimonials (top_reviews is empty) -->
+
+          <!-- Card 1 -->
+          <div class="review-card bg-white shadow-lg rounded-2xl p-6 flex-shrink-0">
+            <div class="flex gap-1 mb-3 text-yellow-400 text-lg">★★★★★</div>
+            <p class="text-gray-600 text-sm leading-relaxed mb-4">
+              "שירות מדהים ומקצועי ברמה הגבוהה ביותר. ממליץ בחום לכל מי שמחפש איכות אמיתית!"
+            </p>
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-white font-bold text-sm">י</div>
+              <span class="font-semibold text-gray-800 text-sm">ישראל כהן</span>
+            </div>
+          </div>
+
+          <!-- Card 2 -->
+          <div class="review-card bg-white shadow-lg rounded-2xl p-6 flex-shrink-0">
+            <div class="flex gap-1 mb-3 text-yellow-400 text-lg">★★★★★</div>
+            <p class="text-gray-600 text-sm leading-relaxed mb-4">
+              "חוויה יוצאת דופן מהתחלה ועד הסוף. הצוות קשוב, מהיר ואמין בכל רגע."
+            </p>
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full bg-secondary flex items-center justify-center text-white font-bold text-sm">מ</div>
+              <span class="font-semibold text-gray-800 text-sm">מיכל לוי</span>
+            </div>
+          </div>
+
+          <!-- Card 3 -->
+          <div class="review-card bg-white shadow-lg rounded-2xl p-6 flex-shrink-0">
+            <div class="flex gap-1 mb-3 text-yellow-400 text-lg">★★★★★</div>
+            <p class="text-gray-600 text-sm leading-relaxed mb-4">
+              "פתרונות מקצועיים ומותאמים אישית בדיוק לצרכים שלי. תודה רבה על השירות!"
+            </p>
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold text-sm">ד</div>
+              <span class="font-semibold text-gray-800 text-sm">דוד אברהם</span>
+            </div>
+          </div>
+
+          <!-- Card 4 -->
+          <div class="review-card bg-white shadow-lg rounded-2xl p-6 flex-shrink-0">
+            <div class="flex gap-1 mb-3 text-yellow-400 text-lg">★★★★★</div>
+            <p class="text-gray-600 text-sm leading-relaxed mb-4">
+              "מקצועיות ואמינות בשילוב מושלם. לא אעבוד עם אף אחד אחר מעכשיו."
+            </p>
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full bg-blue-400 flex items-center justify-center text-white font-bold text-sm">ר</div>
+              <span class="font-semibold text-gray-800 text-sm">רחל מזרחי</span>
+            </div>
+          </div>
+
+          <!-- Card 5 -->
+          <div class="review-card bg-white shadow-lg rounded-2xl p-6 flex-shrink-0">
+            <div class="flex gap-1 mb-3 text-yellow-400 text-lg">★★★★★</div>
+            <p class="text-gray-600 text-sm leading-relaxed mb-4">
+              "חברה מצוינת עם שירות לקוחות בלתי רגיל. תמיד זמינים ותמיד עוזרים!"
+            </p>
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full bg-sky-600 flex items-center justify-center text-white font-bold text-sm">נ</div>
+              <span class="font-semibold text-gray-800 text-sm">נועה שפירא</span>
+            </div>
+          </div>
+
+          <!-- Duplicate set for seamless loop -->
+          <div class="review-card bg-white shadow-lg rounded-2xl p-6 flex-shrink-0">
+            <div class="flex gap-1 mb-3 text-yellow-400 text-lg">★★★★★</div>
+            <p class="text-gray-600 text-sm leading-relaxed mb-4">
+              "שירות מדהים ומקצועי ברמה הגבוהה ביותר. ממליץ בחום לכל מי שמחפש איכות אמיתית!"
+            </p>
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-white font-bold text-sm">י</div>
+              <span class="font-semibold text-gray-800 text-sm">ישראל כהן</span>
+            </div>
+          </div>
+
+          <div class="review-card bg-white shadow-lg rounded-2xl p-6 flex-shrink-0">
+            <div class="flex gap-1 mb-3 text-yellow-400 text-lg">★★★★★</div>
+            <p class="text-gray-600 text-sm leading-relaxed mb-4">
+              "חוויה יוצאת דופן מהתחלה ועד הסוף. הצוות קשוב, מהיר ואמין בכל רגע."
+            </p>
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full bg-secondary flex items-center justify-center text-white font-bold text-sm">מ</div>
+              <span class="font-semibold text-gray-800 text-sm">מיכל לוי</span>
+            </div>
+          </div>
+
+          <div class="review-card bg-white shadow-lg rounded-2xl p-6 flex-shrink-0">
+            <div class="flex gap-1 mb-3 text-yellow-400 text-lg">★★★★★</div>
+            <p class="text-gray-600 text-sm leading-relaxed mb-4">
+              "פתרונות מקצועיים ומותאמים אישית בדיוק לצרכים שלי. תודה רבה על השירות!"
+            </p>
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold text-sm">ד</div>
+              <span class="font-semibold text-gray-800 text-sm">דוד אברהם</span>
+            </div>
+          </div>
+
+          <div class="review-card bg-white shadow-lg rounded-2xl p-6 flex-shrink-0">
+            <div class="flex gap-1 mb-3 text-yellow-400 text-lg">★★★★★</div>
+            <p class="text-gray-600 text-sm leading-relaxed mb-4">
+              "מקצועיות ואמינות בשילוב מושלם. לא אעבוד עם אף אחד אחר מעכשיו."
+            </p>
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full bg-blue-400 flex items-center justify-center text-white font-bold text-sm">ר</div>
+              <span class="font-semibold text-gray-800 text-sm">רחל מזרחי</span>
+            </div>
+          </div>
+
+          <div class="review-card bg-white shadow-lg rounded-2xl p-6 flex-shrink-0">
+            <div class="flex gap-1 mb-3 text-yellow-400 text-lg">★★★★★</div>
+            <p class="text-gray-600 text-sm leading-relaxed mb-4">
+              "חברה מצוינת עם שירות לקוחות בלתי רגיל. תמיד זמינים ותמיד עוזרים!"
+            </p>
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full bg-sky-600 flex items-center justify-center text-white font-bold text-sm">נ</div>
+              <span class="font-semibold text-gray-800 text-sm">נועה שפירא</span>
+            </div>
+          </div>
+
+        </div><!-- /carousel-track -->
+      </div><!-- /carousel-wrapper -->
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════
+       ABOUT
+  ══════════════════════════════════════════ -->
+  <section id="about" class="py-24 px-4 bg-white">
+    <div class="max-w-5xl mx-auto">
+      <div class="flex flex-col lg:flex-row gap-14 items-center">
+
+        <!-- Visual side -->
+        <div class="lg:w-2/5 flex-shrink-0">
+          <div class="relative">
+            <div class="w-full h-80 rounded-3xl hero-gradient shadow-2xl flex items-center justify-center">
+              <div class="text-center text-white px-6">
+                <div class="text-6xl mb-4">🏆</div>
+                <div class="text-2xl font-black">E2E Test</div>
+                <div class="text-blue-200 text-sm mt-1">Excellence in Service</div>
+              </div>
+            </div>
+            <div class="absolute -bottom-4 -left-4 bg-white rounded-2xl shadow-xl p-4 flex items-center gap-3">
+              <div class="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+              </div>
+              <div>
+                <div class="text-xs text-gray-500">שירות מוכח</div>
+                <div class="text-sm font-bold text-gray-800">לקוחות מרוצים</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Text side -->
+        <div class="lg:w-3/5">
+          <span class="inline-block text-secondary font-semibold text-sm uppercase tracking-widest mb-3">הסיפור שלנו</span>
+          <h2 class="text-4xl font-black text-primary mb-6 leading-tight">אודות E2E Test</h2>
+          <p class="text-gray-600 leading-relaxed text-lg mb-8">
+            ב-E2E Test, אנו מציעים שירותים מותאמים אישית המותאמים בדיוק בשבילכם. אנו מחויבים להעניק חוויית שירות בלתי נשכחת ללקוחות שלנו.
+          </p>
+          <div class="grid grid-cols-3 gap-6">
+            <div class="text-center p-4 bg-blue-50 rounded-2xl">
+              <div class="text-3xl font-black text-primary mb-1">✓</div>
+              <div class="text-xs text-gray-600 font-medium">אמינות</div>
+            </div>
+            <div class="text-center p-4 bg-indigo-50 rounded-2xl">
+              <div class="text-3xl font-black text-secondary mb-1">★</div>
+              <div class="text-xs text-gray-600 font-medium">איכות</div>
+            </div>
+            <div class="text-center p-4 bg-sky-50 rounded-2xl">
+              <div class="text-3xl font-black text-primary mb-1">⚡</div>
+              <div class="text-xs text-gray-600 font-medium">מהירות</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════
+       CONTACT
+  ══════════════════════════════════════════ -->
+  <section id="contact" class="py-24 px-4 bg-slate-50">
+    <div class="max-w-4xl mx-auto">
+      <div class="text-center mb-14">
+        <span class="inline-block text-secondary font-semibold text-sm uppercase tracking-widest mb-3">נשמח לשמוע מכם</span>
+        <h2 class="text-4xl font-black text-primary mb-4">צרו קשר</h2>
+        <p class="text-gray-500 text-lg">צרו קשר לקבלת פרטים נוספים!</p>
+        <div class="w-16 h-1 bg-secondary rounded-full mx-auto mt-4"></div>
+      </div>
+
+      <div class="bg-white rounded-3xl shadow-xl p-8 md:p-12">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+
+          <!-- WhatsApp -->
+          <a href="#"
+             class="flex items-center gap-4 p-5 rounded-2xl bg-green-50 border border-green-100 hover:shadow-md transition-shadow group">
+            <div class="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+              <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998
+</html>

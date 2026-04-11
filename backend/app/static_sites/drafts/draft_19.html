@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>יאפא – עולם של ספרים בלב יפו</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    * { font-family: 'Heebo', sans-serif; }
+
+    /* Carousel */
+    .carousel-track {
+      display: flex;
+      gap: 1.5rem;
+      animation: scroll-rtl 30s linear infinite;
+      width: max-content;
+    }
+    .carousel-track:hover { animation-play-state: paused; }
+    @keyframes scroll-rtl {
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(50%); }
+    }
+    .carousel-wrapper {
+      overflow: hidden;
+      position: relative;
+    }
+    .carousel-wrapper::before,
+    .carousel-wrapper::after {
+      content: '';
+      position: absolute;
+      top: 0; bottom: 0;
+      width: 80px;
+      z-index: 10;
+      pointer-events: none;
+    }
+    .carousel-wrapper::before {
+      right: 0;
+      background: linear-gradient(to left, #f8fafc, transparent);
+    }
+    .carousel-wrapper::after {
+      left: 0;
+      background: linear-gradient(to right, #f8fafc, transparent);
+    }
+
+    /* Smooth scroll */
+    html { scroll-behavior: smooth; }
+
+    /* WhatsApp pulse */
+    .wa-btn { animation: pulse-wa 2.5s infinite; }
+    @keyframes pulse-wa {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(37,211,102,0.5); }
+      50%       { box-shadow: 0 0 0 12px rgba(37,211,102,0); }
+    }
+
+    /* Hero gradient */
+    .hero-bg {
+      background: linear-gradient(135deg, #1E3A8A 0%, #1e4db7 40%, #3B82F6 100%);
+    }
+
+    /* Section fade accent */
+    .accent-line {
+      display: inline-block;
+      width: 60px;
+      height: 4px;
+      border-radius: 9999px;
+      background: linear-gradient(to right, #1E3A8A, #3B82F6);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-gray-800">
+
+  <!-- ===== NAVBAR ===== -->
+  <nav class="fixed top-0 w-full z-50 bg-white/90 backdrop-blur border-b border-blue-100 shadow-sm">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <a href="#hero" class="text-2xl font-black text-[#1E3A8A] tracking-tight">יאפא</a>
+      <div class="hidden md:flex gap-6 text-sm font-medium text-gray-600">
+        <a href="#services" class="hover:text-[#1E3A8A] transition">שירותים</a>
+        <a href="#reviews"  class="hover:text-[#1E3A8A] transition">ביקורות</a>
+        <a href="#about"    class="hover:text-[#1E3A8A] transition">אודות</a>
+        <a href="#contact"  class="hover:text-[#1E3A8A] transition">צור קשר</a>
+      </div>
+      <a href="tel:036815746"
+         class="bg-[#1E3A8A] hover:bg-[#1e4db7] text-white text-sm font-semibold px-4 py-2 rounded-full shadow transition">
+        📞 התקשרו עכשיו
+      </a>
+    </div>
+  </nav>
+
+  <!-- ===== HERO ===== -->
+  <section id="hero" class="hero-bg min-h-screen flex items-center justify-center pt-20 pb-16 px-4">
+    <div class="text-center text-white max-w-3xl mx-auto">
+      <div class="inline-block bg-white/20 backdrop-blur rounded-full px-4 py-1.5 text-sm font-medium mb-6 tracking-wide">
+        📚 חנות הספרים המובילה ביפו
+      </div>
+      <h1 class="text-4xl md:text-6xl font-black leading-tight mb-6 drop-shadow-lg">
+        יאפא: עולם של ספרים<br class="hidden md:block" /> בלב יפו
+      </h1>
+      <p class="text-lg md:text-2xl font-light text-blue-100 mb-10 leading-relaxed">
+        בואו לחוות את הקסם של ספרים, קפה וחברותא במקום אחד
+      </p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+        <a href="#contact"
+           class="bg-white text-[#1E3A8A] font-bold px-8 py-4 rounded-full shadow-lg hover:shadow-xl hover:bg-blue-50 transition text-lg">
+          בואו לבקר אותנו עכשיו!
+        </a>
+        <a href="tel:036815746"
+           class="border-2 border-white text-white font-semibold px-8 py-4 rounded-full hover:bg-white hover:text-[#1E3A8A] transition text-lg">
+          📞 03-681-5746
+        </a>
+      </div>
+      <!-- Scroll indicator -->
+      <div class="mt-14 flex justify-center">
+        <div class="w-6 h-10 border-2 border-white/50 rounded-full flex justify-center pt-2">
+          <div class="w-1.5 h-3 bg-white/70 rounded-full animate-bounce"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SERVICES ===== -->
+  <section id="services" class="py-20 px-4 bg-white">
+    <div class="max-w-6xl mx-auto text-center">
+      <span class="accent-line mb-4 mx-auto block"></span>
+      <h2 class="text-3xl md:text-4xl font-black text-[#1E3A8A] mb-3">מה אנחנו מציעים</h2>
+      <p class="text-gray-500 mb-12 text-lg">חוויה ייחודית שמשלבת ספרים, קפה ותרבות</p>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+
+        <!-- Service 1 -->
+        <div class="group bg-gradient-to-br from-blue-50 to-white rounded-3xl p-8 shadow-md hover:shadow-xl border border-blue-100 transition-all duration-300 hover:-translate-y-1">
+          <div class="w-16 h-16 bg-[#1E3A8A] rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-lg group-hover:scale-110 transition">
+            <span class="text-3xl">📚</span>
+          </div>
+          <h3 class="text-xl font-bold text-[#1E3A8A] mb-3">מגוון רחב של ספרים</h3>
+          <p class="text-gray-500 leading-relaxed">ספרים לכל הגילאים והז'אנרים – ספרות, ילדים, עיון ועוד, מתחת לגג אחד.</p>
+        </div>
+
+        <!-- Service 2 -->
+        <div class="group bg-gradient-to-br from-blue-50 to-white rounded-3xl p-8 shadow-md hover:shadow-xl border border-blue-100 transition-all duration-300 hover:-translate-y-1">
+          <div class="w-16 h-16 bg-[#3B82F6] rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-lg group-hover:scale-110 transition">
+            <span class="text-3xl">☕</span>
+          </div>
+          <h3 class="text-xl font-bold text-[#1E3A8A] mb-3">קפה איכותי וטעים</h3>
+          <p class="text-gray-500 leading-relaxed">תהנו מקפה משובח בזמן שאתם גולשים בין הדפים – חוויה שלמה לחושים.</p>
+        </div>
+
+        <!-- Service 3 -->
+        <div class="group bg-gradient-to-br from-blue-50 to-white rounded-3xl p-8 shadow-md hover:shadow-xl border border-blue-100 transition-all duration-300 hover:-translate-y-1">
+          <div class="w-16 h-16 bg-[#1E3A8A] rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-lg group-hover:scale-110 transition">
+            <span class="text-3xl">🎭</span>
+          </div>
+          <h3 class="text-xl font-bold text-[#1E3A8A] mb-3">אירועי תרבות וקריאה</h3>
+          <p class="text-gray-500 leading-relaxed">ערבי שירה, מפגשי קריאה ואירועים תרבותיים מגוונים לקהילה.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== REVIEWS CAROUSEL ===== -->
+  <section id="reviews" class="py-20 px-4 bg-slate-50">
+    <div class="max-w-6xl mx-auto">
+      <div class="text-center mb-10">
+        <span class="accent-line mb-4 mx-auto block"></span>
+        <h2 class="text-3xl md:text-4xl font-black text-[#1E3A8A] mb-3">מה אומרים הלקוחות</h2>
+
+        <!-- Google Rating Badge -->
+        <div class="inline-flex items-center gap-2 bg-white rounded-full px-6 py-3 shadow-md border border-yellow-200 mt-2">
+          <span class="text-yellow-400 text-xl">⭐</span>
+          <span class="font-bold text-gray-700 text-lg">4.6 / 5</span>
+          <span class="text-gray-400">—</span>
+          <span class="text-gray-600 font-medium">499 ביקורות ב-Google</span>
+        </div>
+      </div>
+
+      <!-- Carousel -->
+      <div class="carousel-wrapper py-4">
+        <div class="carousel-track">
+
+          <!-- Review 1 (real) -->
+          <div class="bg-white rounded-2xl shadow-lg p-6 w-72 flex-shrink-0 border border-blue-50">
+            <div class="flex gap-1 mb-3">
+              <span class="text-yellow-400 text-lg">★★★★★</span>
+            </div>
+            <p class="text-gray-600 text-sm leading-relaxed mb-4">"מקום מקסים עם אווירה נהדרת וספרים נפלאים."</p>
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full bg-[#1E3A8A] text-white flex items-center justify-center font-bold text-sm">מ</div>
+              <span class="font-semibold text-gray-700">משה</span>
+            </div>
+          </div>
+
+          <!-- Placeholder 2 -->
+          <div class="bg-white rounded-2xl shadow-lg p-6 w-72 flex-shrink-0 border border-blue-50">
+            <div class="flex gap-1 mb-3">
+              <span class="text-yellow-400 text-lg">★★★★★</span>
+            </div>
+            <p class="text-gray-600 text-sm leading-relaxed mb-4">"חנות ספרים קסומה! הצוות חם ומסביר פנים, הקפה מצוין והאווירה פשוט מיוחדת."</p>
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full bg-[#3B82F6] text-white flex items-center justify-center font-bold text-sm">ר</div>
+              <span class="font-semibold text-gray-700">רחל</span>
+            </div>
+          </div>
+
+          <!-- Placeholder 3 -->
+          <div class="bg-white rounded-2xl shadow-lg p-6 w-72 flex-shrink-0 border border-blue-50">
+            <div class="flex gap-1 mb-3">
+              <span class="text-yellow-400 text-lg">★★★★★</span>
+            </div>
+            <p class="text-gray-600 text-sm leading-relaxed mb-4">"המקום הכי נעים ביפו. אני מגיע כל שבוע לקחת ספר חדש ולשתות קפה."</p>
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full bg-[#1E3A8A] text-white flex items-center justify-center font-bold text-sm">ד</div>
+              <span class="font-semibold text-gray-700">דוד</span>
+            </div>
+          </div>
+
+          <!-- Placeholder 4 -->
+          <div class="bg-white rounded-2xl shadow-lg p-6 w-72 flex-shrink-0 border border-blue-50">
+            <div class="flex gap-1 mb-3">
+              <span class="text-yellow-400 text-lg">★★★★☆</span>
+            </div>
+            <p class="text-gray-600 text-sm leading-relaxed mb-4">"מגוון ספרים עצום! מצאתי כמה ג'ם אמיתיים שלא הכרתי. ממליצה בחום."</p>
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full bg-[#3B82F6] text-white flex items-center justify-center font-bold text-sm">נ</div>
+              <span class="font-semibold text-gray-700">נועה</span>
+            </div>
+          </div>
+
+          <!-- Placeholder 5 -->
+          <div class="bg-white rounded-2xl shadow-lg p-6 w-72 flex-shrink-0 border border-blue-50">
+            <div class="flex gap-1 mb-3">
+              <span class="text-yellow-400 text-lg">★★★★★</span>
+            </div>
+            <p class="text-gray-600 text-sm leading-relaxed mb-4">"אירועי הסופרים שם פשוט מדהימים. חוויה תרבותית ברמה גבוהה."</p>
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full bg-[#1E3A8A] text-white flex items-center justify-center font-bold text-sm">א</div>
+              <span class="font-semibold text-gray-700">אמיר</span>
+            </div>
+          </div>
+
+          <!-- Duplicates for seamless loop -->
+          <div class="bg-white rounded-2xl shadow-lg p-6 w-72 flex-shrink-0 border border-blue-50">
+            <div class="flex gap-1 mb-3">
+              <span class="text-yellow-400 text-lg">★★★★★</span>
+            </div>
+            <p class="text-gray-600 text-sm leading-relaxed mb-4">"מקום מקסים עם אווירה נהדרת וספרים נפלאים."</p>
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full bg-[#1E3A8A] text-white flex items-center justify-center font-bold text-sm">מ</div>
+              <span class="font-semibold text-gray-700">משה</span>
+            </div>
+          </div>
+          <div class="bg-white rounded-2xl shadow-lg p-6 w-72 flex-shrink-0 border border-blue-50">
+            <div class="flex gap-1 mb-3">
+              <span class="text-yellow-400 text-lg">★★★★★</span>
+            </div>
+            <p class="text-gray-600 text-sm leading-relaxed mb-4">"חנות ספרים קסומה! הצוות חם ומסביר פנים, הקפה מצוין והאווירה פשוט מיוחדת."</p>
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full bg-[#3B82F6] text-white flex items-center justify-center font-bold text-sm">ר</div>
+              <span class="font-semibold text-gray-700">רחל</span>
+            </div>
+          </div>
+          <div class="bg-white rounded-2xl shadow-lg p-6 w-72 flex-shrink-0 border border-blue-50">
+            <div class="flex gap-1 mb-3">
+              <span class="text-yellow-400 text-lg">★★★★★</span>
+            </div>
+            <p class="text-gray-600 text-sm leading-relaxed mb-4">"המקום הכי נעים ביפו. אני מגיע כל שבוע לקחת ספר חדש ולשתות קפה."</p>
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full bg-[#1E3A8A] text-white flex items-center justify-center font-bold text-sm">ד</div>
+              <span class="font-semibold text-gray-700">דוד</span>
+            </div>
+          </div>
+          <div class="bg-white rounded-2xl shadow-lg p-6 w-72 flex-shrink-0 border border-blue-50">
+            <div class="flex gap-1 mb-3">
+              <span class="text-yellow-400 text-lg">★★★★☆</span>
+            </div>
+            <p class="text-gray-600 text-sm leading-relaxed mb-4">"מגוון ספרים עצום! מצאתי כמה ג'ם אמיתיים שלא הכרתי. ממליצה בחום."</p>
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full bg-[#3B82F6] text-white flex items-center justify-center font-bold text-sm">נ</div>
+              <span class="font-semibold text-gray-700">נועה</span>
+            </div>
+          </div>
+          <div class="bg-white rounded-2xl shadow-lg p-6 w-72 flex-shrink-0 border border-blue-50">
+            <div class="flex gap-1 mb-3">
+              <span class="text-yellow-400 text-lg">★★★★★</span>
+            </div>
+            <p class="text-gray-600 text-sm leading-relaxed mb-4">"אירועי הסופרים שם פשוט מדהימים. חוויה תרבותית ברמה גבוהה."</p>
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full bg-[#1E3A8A] text-white flex items-center justify-center font-bold text-sm">א</div>
+              <span class="font-semibold text-gray-700">אמיר</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== ABOUT ===== -->
+  <section id="about" class="py-20 px-4 bg-white">
+    <div class="max-w-5xl mx-auto">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+
+        <!-- Text -->
+        <div>
+          <span class="accent-line mb-4 block"></span>
+          <h2 class="text-3xl md:text-4xl font-black text-[#1E3A8A] mb-5">אודות יאפא</h2>
+          <p class="text-gray-600 leading-relaxed text-lg mb-6">
+            בחנות הספרים יאפא, אנחנו מאמינים בכוחו של הספר לחבר בין אנשים וליצור חוויות בלתי נשכחות. עם מבחר רחב של ספרים לכל טעם וגיל, לצד קפה איכותי ואווירה ביתית, אנחנו מזמינים אתכם להתרווח וליהנות מבילוי עם משמעות.
+          </p>
+          <a href="#contact"
+             class="inline-block bg-[#1E3A8A] hover:bg-[#1e4db7] text-white font-bold px-7 py-3 rounded-full shadow-lg transition">
+            בואו לבקר אותנו
+          </a>
+        </div>
+
+        <!-- Visual card -->
+        <div class="grid grid-cols-2 gap-4">
+          <div class="bg-gradient-to-br from-[#1E3A8A] to-[#3B82F6] rounded-3xl p-6 text-white text-center shadow-xl">
+            <div class="text-4xl mb-2">📚</div>
+            <div class="font-black text-3xl">∞</div>
+            <div class="text-blue-200 text-sm mt-1">ספרים לבחירה</div>
+          </div>
+          <div class="bg-white border-2 border-blue-100 rounded-3xl p-6 text-center shadow-lg mt-6">
+            <div class="text-4xl mb-2">⭐</div>
+            <div class="font-black text-3xl text-[#1E3A8A]">4.6</div>
+            <div class="text-gray-400 text-sm mt-1">דירוג Google</div>
+          </div>
+          <div class="bg-white border-2 border-blue-100 rounded-3xl p-6 text-center shadow-lg">
+            <div class="text-4xl mb-2">☕</div>
+            <div class="font-black text-3xl text-[#3B82F6]">קפה</div>
+            <div class="text-gray-400 text-sm mt-1">איכותי</div>
+          </div>
+          <div class="bg-gradient-to-br from-[#3B82F6] to-[#1E3A8A] rounded-3xl p-6 text-white text-center shadow-xl mt-6">
+            <div class="text-4xl mb-2">🎭</div>
+            <div class="font-black text-3xl">תרבות</div>
+            <div class="text-blue-200 text-sm mt-1">ואירועים</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== CONTACT ===== -->
+  <section id="contact" class="py-20 px-4 bg-gradient-to-br from-[#1E3A8A] to-[#3B82F6]">
+    <div class="max-w-4xl mx-auto text-center text-white">
+      <span class="inline-block w-14 h-1 bg-white/50 rounded-full mb-4 mx-auto"></span>
+      <h2 class="text-3xl md:text-4xl font-black mb-3">צרו קשר</h2>
+      <p class="text-blue-200 text-lg mb-12">אנחנו כאן בשבילכם – בואו לבקר!</p>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+
+        <!-- Phone / WhatsApp -->
+        <div class="bg-white/10 backdrop-blur rounded-3xl p-8 border border-white/20 text-right">
+          <h3 class="font-bold text-xl mb-5 text-center">📞 יצירת קשר</h3>
+          <div class="space-y-4">
+            <a href="tel:036815746"
+               class="flex items-center gap-3 bg-white text-[#1E3A8A] font-bold rounded-2xl px-5 py-3 hover:bg-blue-50 transition shadow">
+              <span class="text-xl">📞</span>
+              <span>03-681-5746</span>
+            </a>
+            <a href="https://wa.me/036815746" target="_blank" rel="noopener noreferrer"
+               class="flex items-center gap-3 bg-green-500 hover:bg-green-600 text-white font-bold rounded-2xl px-5 py-3 transition shadow">
+              <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+                <path d="M12 0C5.373 0 0 5.373 0 12c0 2.136.561 4.138 1.541 5.874L.057 23.882a.5.5 0 00.611.611l6.008-1.484A11.952 11.952 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.882a9.876 9.876 0 01-5.04-1.381l-.361-.214-3.737.923.938-3.629-.234-.373A9.844 9.844 0 012.118 12C2.118 6.533 6.533 2.118 12 2.118S21.882 6.533 21.882 12 17.467 21.882 12 21.882z"/>
+              </svg>
+              <span>שלחו הודעה ב-WhatsApp</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Opening Hours -->
+        <div class="bg-white/10 backdrop-blur rounded-3xl p-8 border border-white/20">
+          <h3 class="font-bold text-xl mb-5 text-center">🕐 שעות פעילות</h3>
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between border-b border-white/20 pb-2">
+              <span class="text-white font-medium">יום ראשון</span>
+              <span class="text-blue-200">9:00–23:00</span>
+            </div>
+            <div class="flex justify-between border-b border-white/20 pb-2">
+              <span class="text-white font-medium">יום שני</span>
+              <span class="text-blue-200">9:00–23:00</span>
+            </div>
+            <div class="flex justify-between border-b border-white/20 pb-2">
+              <span class="text-white font-medium">יום שלישי</span>
+              <span class="text-blue-200">9:00–23:00</span>
+            </div>
+            <div class="flex justify-between border-b border-white/20 pb-2">
+              <span class
+</html>

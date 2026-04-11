@@ -8,6 +8,7 @@ import {
     Business,
     getBusinesses,
     triggerGenerateSite,
+    triggerRegenerateWithNote,
     getTaskStatus,
     TaskStatus,
 } from '../services/queries';
@@ -38,6 +39,9 @@ export default function DraftSitesPage() {
     const [taskIds, setTaskIds] = useState<Record<number, string>>({});
     const [taskStatuses, setTaskStatuses] = useState<Record<number, TaskStatus>>({});
     const pollIntervals = useRef<Record<number, ReturnType<typeof setInterval>>>({});
+    // Per-business regeneration note (shown inline when expanding)
+    const [noteOpen, setNoteOpen] = useState<Record<number, boolean>>({});
+    const [notes, setNotes] = useState<Record<number, string>>({});;
 
     const load = useCallback(() => {
         Promise.all([getBusinesses(), getDraftSites(0, 500)]).then(([biz, dr]) => {
@@ -131,6 +135,23 @@ export default function DraftSitesPage() {
         }
     };
 
+    const handleRegenerateWithNote = async (bizId: number) => {
+        const note = (notes[bizId] || '').trim();
+        if (!note) { setMsg('❌ יש להזין הערה לפני ביצוע'); return; }
+        setLoaderFor(bizId, true);
+        setMsg('');
+        try {
+            const { task_id } = await triggerRegenerateWithNote(bizId, note);
+            startPolling(bizId, task_id);
+            // clear the note panel after launch
+            setNoteOpen(prev => ({ ...prev, [bizId]: false }));
+            setNotes(prev => ({ ...prev, [bizId]: '' }));
+        } catch (e: unknown) {
+            setLoaderFor(bizId, false);
+            setMsg(`❌ שגיאה: ${e instanceof Error ? e.message : 'unknown'}`);
+        }
+    };
+
     function stepLabel(step?: string | null): string {
         const map: Record<string, string> = {
             running_ai_pipeline: '🤖 מריץ AI…',
@@ -216,9 +237,57 @@ export default function DraftSitesPage() {
                                                 {busy && !taskId ? '⏳ מחדש…' : '🔄 צור מחדש'}
                                             </Button>
                                         </Tooltip>
+                                        <Tooltip text="ציין מה לשנות — ה-AI יבצע בדיוק את הבקשה ויבנה מחדש">
+                                            <Button
+                                                onClick={() => setNoteOpen(prev => ({ ...prev, [biz.id]: !prev[biz.id] }))}
+                                                disabled={busy}
+                                                style={{ background: noteOpen[biz.id] ? '#fef3c7' : '#f0fdf4', color: noteOpen[biz.id] ? '#92400e' : '#166534', border: `1px solid ${noteOpen[biz.id] ? '#f59e0b' : '#16a34a'}` }}
+                                            >
+                                                ✏️ שינויים
+                                            </Button>
+                                        </Tooltip>
                                     </>
                                 )}
                             </div>
+
+                            {/* ── Note expansion panel ─────────────────────── */}
+                            {draft && noteOpen[biz.id] && (
+                                <div style={{ width: '100%', marginTop: 10, padding: '14px 16px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10 }}>
+                                    <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4, color: '#92400e' }}>
+                                        ✏️ מה לשנות ב-<strong>{biz.name}</strong>?
+                                    </div>
+                                    <div style={{ fontSize: 12, color: '#a16207', marginBottom: 8, lineHeight: 1.5 }}>
+                                        פרט כל שינוי — ה-AI ישמור את כל מה שלא ציינת ויעדכן רק מה שביקשת.
+                                    </div>
+                                    <textarea
+                                        dir="rtl"
+                                        rows={4}
+                                        maxLength={2000}
+                                        disabled={busy}
+                                        value={notes[biz.id] || ''}
+                                        onChange={e => setNotes(prev => ({ ...prev, [biz.id]: e.target.value }))}
+                                        placeholder={`לדוגמה:\n• שנה את הכותרת הראשית ל"${biz.name} — המומחים שלך"\n• הוסף שירות חדש: ייעוץ ראשוני חינם\n• שנה טון לידידותי יותר`}
+                                        style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #fcd34d', fontSize: 13, fontFamily: 'inherit', resize: 'vertical', background: '#fff', outline: 'none', boxSizing: 'border-box' }}
+                                    />
+                                    <div style={{ display: 'flex', gap: 8, marginTop: 8, alignItems: 'center' }}>
+                                        <Button
+                                            onClick={() => handleRegenerateWithNote(biz.id)}
+                                            disabled={busy || !(notes[biz.id] || '').trim()}
+                                            style={{ background: '#16a34a', color: '#fff', fontWeight: 700 }}
+                                        >
+                                            {taskId ? stepLabel(taskStatus?.step) : '🔄 בצע שינויים עם AI'}
+                                        </Button>
+                                        <span style={{ fontSize: 11, color: '#a16207' }}>{(notes[biz.id] || '').length}/2000</span>
+                                        <button
+                                            onClick={() => setNoteOpen(prev => ({ ...prev, [biz.id]: false }))}
+                                            disabled={busy}
+                                            style={{ marginRight: 'auto', background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: 13, padding: '4px 8px' }}
+                                        >
+                                            ✕ ביטול
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     );
                 })}

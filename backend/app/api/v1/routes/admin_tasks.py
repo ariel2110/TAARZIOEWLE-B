@@ -29,6 +29,10 @@ class BatchGenerateRequest(BaseModel):
     business_ids: list[int]
 
 
+class RegenerateWithNoteRequest(BaseModel):
+    note: str
+
+
 class TaskTriggeredResponse(BaseModel):
     task_id: str
     message: str
@@ -84,6 +88,28 @@ def trigger_generate_site(
     return TaskTriggeredResponse(
         task_id=task.id,
         message=f'Site generation started for business {business_id}',
+    )
+
+
+@router.post('/regenerate-with-note/{business_id}', response_model=TaskTriggeredResponse)
+def trigger_regenerate_with_note(
+    business_id: int,
+    body: RegenerateWithNoteRequest,
+    _: User = Depends(get_current_admin),
+) -> TaskTriggeredResponse:
+    """Trigger async AI regeneration with specific owner change instructions."""
+    if not body.note or not body.note.strip():
+        raise HTTPException(status_code=400, detail='note must not be empty')
+    note = body.note.strip()[:2000]  # cap at 2000 chars
+    from app.tasks import regenerate_with_note_task  # late import to avoid circular dep
+    task = regenerate_with_note_task.delay(business_id, note)
+    logger.info(
+        '[admin_tasks] triggered regenerate_with_note_task id=%s for business_id=%d',
+        task.id, business_id,
+    )
+    return TaskTriggeredResponse(
+        task_id=task.id,
+        message=f'Regeneration with note started for business {business_id}',
     )
 
 

@@ -57,7 +57,7 @@ class DraftSiteService:
     def get_draft(self, db: Session, draft_id: int) -> DraftSite | None:
         return db.query(DraftSite).filter(DraftSite.id == draft_id).first()
 
-    def _generate_html(self, raw: dict) -> tuple[str, str | None]:
+    def _generate_html(self, raw: dict, regeneration_note: str | None = None) -> tuple[str, str | None]:
         """Try the AI pipeline first; fall back to the static template.
         Returns (html, outreach_message_with_placeholder).
         """
@@ -95,7 +95,7 @@ class DraftSiteService:
 
         try:
             from app.services.generator.autosite_pipeline_service import AutoSitePipelineService
-            result = AutoSitePipelineService().run(pipeline_input, enrichment=enrichment)
+            result = AutoSitePipelineService().run(pipeline_input, enrichment=enrichment, regeneration_note=regeneration_note)
             if result and result.html and len(result.html) > 500:
                 return result.html, result.outreach_message
         except Exception:
@@ -161,13 +161,13 @@ class DraftSiteService:
 
         return raw
 
-    def generate_preview(self, db: Session, draft_id: int) -> DraftSite | None:
+    def generate_preview(self, db: Session, draft_id: int, regeneration_note: str | None = None) -> DraftSite | None:
         item = self.get_draft(db, draft_id)
         if not item:
             return None
 
         raw = self._build_enriched_context(db, item)
-        html, outreach_message = self._generate_html(raw)
+        html, outreach_message = self._generate_html(raw, regeneration_note=regeneration_note)
 
         out_dir = Path(__file__).resolve().parents[2] / 'static_sites' / 'drafts'
         out_dir.mkdir(parents=True, exist_ok=True)
@@ -175,8 +175,7 @@ class DraftSiteService:
         out_file.write_text(html, encoding='utf-8')
         item.preview_url = f'/static/drafts/draft_{item.id}.html'
         item.status = 'published_preview'
-        db.add(ActivityLog(actor_type='system', entity_type='draft_site', entity_id=item.id, action_type='draft_preview_generated', summary=item.preview_url))
-
+        db.add(ActivityLog(actor_type='system', entity_type='draft_site', entity_id=item.id, action_type='draft_preview_generated', summary=(f'[note] {regeneration_note[:120]}' if regeneration_note else item.preview_url)))
         # ── Auto-create AI-generated outreach message ─────────────────────────
         if outreach_message and item.business_id:
             try:
@@ -208,11 +207,11 @@ class DraftSiteService:
         db.refresh(item)
         return item
 
-    def create_and_preview(self, db: Session, business_id: int) -> DraftSite | None:
+    def create_and_preview(self, db: Session, business_id: int, regeneration_note: str | None = None) -> DraftSite | None:
         """Create draft (or reuse existing) then immediately generate beautiful preview."""
         # Reuse existing draft if present
         existing = db.query(DraftSite).filter(DraftSite.business_id == business_id).first()
         item = existing or self.create_for_business(db, business_id)
         if not item:
             return None
-        return self.generate_preview(db, item.id)
+        return self.generate_preview(db, item.id, regeneration_note=regeneration_note)

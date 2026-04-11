@@ -175,7 +175,7 @@ class AutoSitePipelineService:
         result.content           # ContentBundle with all structured data
     """
 
-    def run(self, raw_maps_data: str, *, enrichment: dict | None = None) -> PipelineResult | None:
+    def run(self, raw_maps_data: str, *, enrichment: dict | None = None, regeneration_note: str | None = None) -> PipelineResult | None:
         logger.info("[Pipeline] Starting 3-stage AutoSite generation")
         enrichment = enrichment or {}
         try:
@@ -186,7 +186,7 @@ class AutoSitePipelineService:
             # Stage 1a: GPT-4o (primary) / Grok (auto-fallback) → content + outreach
             # Stage 1b: Gemini → design config
             with ThreadPoolExecutor(max_workers=2) as pool:
-                f_content = pool.submit(self._stage1a_content, raw_maps_data)
+                f_content = pool.submit(self._stage1a_content, raw_maps_data, regeneration_note)
                 f_design = pool.submit(self._stage1b_design, raw_maps_data)
 
                 content = f_content.result(timeout=90)
@@ -223,13 +223,23 @@ class AutoSitePipelineService:
 
     # ── Stage 1a: GPT-4o (primary) / Grok (auto-fallback via router) ─────────
 
-    def _stage1a_content(self, raw: str) -> ContentBundle | None:
+    def _stage1a_content(self, raw: str, regeneration_note: str | None = None) -> ContentBundle | None:
         try:
             from app.services.llm.router_service import LLMRouterService
             logger.info("[Stage 1a] GPT-4o Content Manager — generating copy + outreach JSON")
+            # Build user message — inject note if this is a regeneration
+            user_msg = f"Raw Google Maps Data:\n{raw}"
+            if regeneration_note and regeneration_note.strip():
+                user_msg += (
+                    f"\n\n=== REGENERATION INSTRUCTIONS FROM OWNER ===\n"
+                    f"{regeneration_note.strip()}\n"
+                    "Apply these changes to the generated website copy. "
+                    "Keep all unchanged sections; only modify what the instructions explicitly request."
+                )
+                logger.info("[Stage 1a] regeneration_note injected (%d chars)", len(regeneration_note))
             response = LLMRouterService().call(
                 "generate_site_copy",
-                f"Raw Google Maps Data:\n{raw}",
+                user_msg,
                 system=_CONTENT_AGENT_SYSTEM,
                 max_tokens=1200,
                 json_mode=True,

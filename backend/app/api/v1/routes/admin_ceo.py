@@ -23,7 +23,31 @@ def daily_digest(db: Session = Depends(get_db), _: User = Depends(get_current_ad
 
 @router.get('/health', response_model=CEOHealth)
 def health(_: User = Depends(get_current_admin), db: Session = Depends(get_db)):
-    return {'overall_status': 'פעיל', 'database_ok': True, 'drivers': ['תורים פעילים', 'אישורים מחוברים', 'מודיעין פידבק פעיל']}
+    from sqlalchemy import text
+    db_ok = False
+    try:
+        db.execute(text('SELECT 1'))
+        db_ok = True
+    except Exception:
+        db_ok = False
+
+    from app.models.outreach_message import OutreachMessage
+    from app.models.lead_record import LeadRecord
+    total_messages = db.query(OutreachMessage).count()
+    total_leads = db.query(LeadRecord).count()
+
+    drivers = [
+        f'בסיס נתונים {"מחובר" if db_ok else "לא זמין"}',
+        f'{total_leads} לידים נטענו',
+        f'{total_messages} הודעות בתור',
+        'AI Pipeline — מוכן',
+        'WhatsApp Gateway — מוגדר',
+    ]
+    return {
+        'overall_status': 'פעיל' if db_ok else 'מושבת',
+        'database_ok': db_ok,
+        'drivers': drivers,
+    }
 
 
 @router.post('/task-from-recommendation')

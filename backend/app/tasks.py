@@ -99,7 +99,82 @@ def generate_site_task(self: Task, business_id: int) -> dict:
             }
 
 
-# ── Task 2: Batch site generation for multiple businesses ────────────────────
+# ── Task 5: Regenerate draft site with owner change instructions ─────────────
+
+@celery_app.task(
+    base=_BaseTask,
+    bind=True,
+    name='app.tasks.regenerate_with_note_task',
+    max_retries=2,
+    default_retry_delay=30,
+)
+def regenerate_with_note_task(self: Task, business_id: int, regeneration_note: str) -> dict:
+    """
+    Re-run the AI pipeline for a business, injecting the owner's change note
+    into Stage 1a so GPT-4o knows exactly what to update.
+
+    Triggered from: POST /admin/tasks/regenerate-with-note/{business_id}
+    """
+    logger.info(
+        '[regenerate_with_note_task] business_id=%d note_len=%d',
+        business_id, len(regeneration_note or ''),
+    )
+    try:
+        from app.db.session import SessionLocal
+        from app.models.business import Business
+        from app.services.draft_sites.draft_site_service import DraftSiteService
+
+        db = SessionLocal()
+        try:
+            business = db.query(Business).filter(Business.id == business_id).first()
+            if not business:
+                return {
+                    'status': 'error', 'business_id': business_id,
+                    'draft_site_id': None,
+                    'message': f'Business {business_id} not found',
+                }
+
+            self.update_state(state='PROGRESS', meta={'step': 'running_ai_pipeline', 'business_id': business_id})
+            draft = DraftSiteService().create_and_preview(
+                db, business_id, regeneration_note=regeneration_note
+            )
+
+            if not draft:
+                return {
+                    'status': 'error', 'business_id': business_id,
+                    'draft_site_id': None,
+                    'message': 'Pipeline returned no result',
+                }
+
+            logger.info(
+                '[regenerate_with_note_task] done — business_id=%d draft_id=%d',
+                business_id, draft.id,
+            )
+            return {
+                'status': 'success',
+                'business_id': business_id,
+                'draft_site_id': draft.id,
+                'preview_url': draft.preview_url,
+                'message': f'Draft regenerated for {business.name} with custom note',
+            }
+        finally:
+            db.close()
+
+    except Exception as exc:
+        logger.error(
+            '[regenerate_with_note_task] exception for business_id=%d: %s',
+            business_id, exc, exc_info=True,
+        )
+        try:
+            raise self.retry(exc=exc)
+        except self.MaxRetriesExceededError:
+            return {
+                'status': 'error',
+                'business_id': business_id,
+                'draft_site_id': None,
+                'message': f'Pipeline failed after retries: {exc}',
+            }
+
 
 @celery_app.task(
     base=_BaseTask,

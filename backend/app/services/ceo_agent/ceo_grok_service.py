@@ -101,19 +101,19 @@ class CEOGrokService:
             f"Current system summary: {metrics.get('executive_summary', 'N/A')}",
         ]
 
-          # ── A/B campaign performance ──────────────────────────────────────────
-          ab_stats: list[dict] = metrics.get('ab_stats', [])
-          if ab_stats:
-              lines += [
+        # ── A/B campaign performance ──────────────────────────────────────────
+        ab_stats: list[dict] = metrics.get('ab_stats', [])
+        if ab_stats:
+            lines += [
                   "",
                   "=== A/B OUTREACH CAMPAIGN RESULTS ===",
               ]
-              for row in ab_stats:
-                  lines.append(
+            for row in ab_stats:
+                lines.append(
                       f"Campaign '{row['campaign']}' | Variant '{row['variant']}': "
                       f"{row['replied']}/{row['total']} replies ({row['reply_rate_pct']}% reply rate)"
                   )
-              lines += [
+            lines += [
                   "",
                   "=== A/B PIVOT DIRECTIVE ===",
                   "Based on the A/B data above: identify the winning variant. "
@@ -124,7 +124,6 @@ class CEOGrokService:
                   "Be specific: name the variant, the delta, and the proposed next step.",
               ]
 
-            ]
         return "\n".join(lines)
 
     # ── Grok call ─────────────────────────────────────────────────────────────

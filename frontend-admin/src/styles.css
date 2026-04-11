@@ -141,7 +141,7 @@ button {
     height: 100vh;
     overflow-y: auto;
     z-index: 300;
-    box-shadow: -4px 0 20px rgba(0,0,0,.18);
+    box-shadow: -4px 0 20px rgba(0, 0, 0, .18);
     transform: translateX(100%);
     transition: transform 0.25s ease;
     border-right: none;
@@ -173,14 +173,19 @@ button {
 .sidebar-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,.45);
+  background: rgba(0, 0, 0, .45);
   z-index: 299;
   animation: fadeIn 0.2s ease;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0 }
-  to   { opacity: 1 }
+  from {
+    opacity: 0
+  }
+
+  to {
+    opacity: 1
+  }
 }
 
 /* Mobile topbar — hidden on desktop */

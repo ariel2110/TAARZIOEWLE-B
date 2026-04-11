@@ -60,17 +60,26 @@ export type Snapshot = Record<string, number>;
 export type Digest = {
   executive_summary: string;
   recommended_actions: string[];
+  what_needed?: string[];
   approval_queue_count?: number;
   approvals_pending?: number;
   payments_pending?: number;
+  payments_confirmed?: number;
   expiring_drafts?: number;
+  total_drafts?: number;
   outreach_ready_count?: number;
   qualified_leads?: number;
+  total_leads?: number;
+  total_businesses?: number;
+  draft_created_businesses?: number;
+  total_customers?: number;
+  active_customers?: number;
   open_security_alerts?: number;
   high_security_alerts?: number;
   pressure_notes?: string[];
   ab_stats?: Array<{ variant: string; campaign: string; total: number; replied: number; reply_rate_pct: number }>;
-  recent_fixes?: Array<{ label: string; summary: string }>;
+  recent_fixes?: Array<{ label: string; summary: string; timestamp?: string }>;
+  generated_at?: string;
 };
 export type Business = { id: number; name: string; city?: string; category?: string; status: string; phone?: string | null; address?: string | null; campaign_id?: number | null; targeting_profile_id?: number | null };
 export type Lead = { id: number; imported_name: string; city?: string; category?: string; phone?: string | null; score: number; status: string; website_url?: string | null; campaign_id?: number | null; targeting_profile_id?: number | null };
@@ -170,8 +179,9 @@ export const refreshSecurityAlerts = () => apiPost('/admin/security/refresh-aler
 
 export const getCustomerPermissions = (customerId: number) => apiGet<Record<string, unknown>>(`/admin/customers/${customerId}/permissions`);
 
-export type Customer = { id: number; business_id?: number | null; phone?: string | null; email?: string | null; contact_name?: string | null; active_site_id?: number | null; draft_site_id?: number | null; must_change_password: boolean; is_active: boolean; package_name?: string | null };
+export type Customer = { id: number; business_id?: number | null; business_name?: string | null; business_city?: string | null; business_category?: string | null; phone?: string | null; email?: string | null; contact_name?: string | null; active_site_id?: number | null; draft_site_id?: number | null; draft_preview_url?: string | null; draft_status?: string | null; must_change_password: boolean; is_active: boolean; package_name?: string | null; customer_status?: string | null; created_at?: string | null };
 export const getCustomers = (skip = 0, limit = 100) => apiGet<Customer[]>(`/admin/customers?skip=${skip}&limit=${limit}`);
+export const syncCustomersFromDemos = () => apiPost<{ created: number; skipped: number; details_created: unknown[]; details_skipped: unknown[] }>('/admin/customers/sync-from-demos', {});
 
 export type DraftSite = { id: number; business_id: number; site_title: string; status: string; preview_url?: string | null; primary_color?: string | null; is_demo?: boolean; noindex?: boolean; hero_title?: string | null; about_text?: string | null };
 export const getDraftSites = (skip = 0, limit = 100) => apiGet<DraftSite[]>(`/admin/draft-sites?skip=${skip}&limit=${limit}`);
@@ -228,4 +238,5 @@ export type TaskTriggered = { task_id: string; message: string };
 export type TaskStatus = { task_id: string; state: string; step?: string | null; result?: Record<string, unknown> | null; error?: string | null };
 export const triggerGenerateSite = (businessId: number) => apiPost<TaskTriggered>(`/admin/tasks/generate-site/${businessId}`, {});
 export const triggerBatchGenerate = (businessIds: number[]) => apiPost<TaskTriggered>('/admin/tasks/batch-generate', { business_ids: businessIds });
+export const triggerRegenerateWithNote = (businessId: number, note: string) => apiPost<TaskTriggered>(`/admin/tasks/regenerate-with-note/${businessId}`, { note });
 export const getTaskStatus = (taskId: string) => apiGet<TaskStatus>(`/admin/tasks/${taskId}/status`);

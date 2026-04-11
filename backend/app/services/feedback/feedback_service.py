@@ -52,6 +52,19 @@ class FeedbackService:
             action = 'rebuild_or_major_change'
         understanding = f"Understood feedback for {item.target_type}. Classified as {category}."
         response = f"I understand this as a {category} issue. Suggested next action: {action}. Suggested scope: {scope}."
+
+        # Optional LLM enhancement for open feedback text
+        if item.open_feedback and len(item.open_feedback.strip()) > 10:
+            llm_result = self._llm_analyze_open_feedback(
+                open_feedback=item.open_feedback,
+                target_type=item.target_type,
+                quick_rating=item.quick_rating,
+                category=category,
+                scope=scope,
+                action=action,
+            )
+            if llm_result:
+                understanding, response = llm_result
         item.analysis_category = category
         item.suggested_scope = scope
         item.action_hint = action
@@ -73,3 +86,39 @@ class FeedbackService:
         db.commit()
         db.refresh(item)
         return item
+
+    # ------------------------------------------------------------------
+
+    def _llm_analyze_open_feedback(
+        self,
+        *,
+        open_feedback: str,
+        target_type: str,
+        quick_rating: str,
+        category: str,
+        scope: str,
+        action: str,
+    ) -> tuple[str, str] | None:
+        """Return (understanding, response) enriched by LLM, or None if unavailable."""
+        from app.core.config import settings
+        if not settings.openai_api_key:
+            return None
+        try:
+            from app.services.llm.router_service import LLMRouterService
+            prompt = (
+                "You are a senior product manager analyzing customer feedback for a local-business SaaS platform.\n"
+                f"Feedback type: {target_type} | Rating: {quick_rating}\n"
+                f"Rule-based analysis: category={category}, scope={scope}, action={action}\n\n"
+                f"Customer wrote (may be Hebrew or English):\n\"\"\"\n{open_feedback}\n\"\"\"\n\n"
+                "Respond with two short paragraphs separated by '|||':\n"
+                "1. A concise 'understanding' (what the customer means, 1-2 sentences)\n"
+                "2. A recommended 'response' / action-plan (1-2 sentences)\n\n"
+                "No extra text, just the two paragraphs separated by |||."
+            )
+            raw = LLMRouterService().call("review_generated_copy", prompt)
+            if not raw or "|||" not in raw:
+                return None
+            parts = raw.split("|||", 1)
+            return parts[0].strip(), parts[1].strip()
+        except Exception:
+            return None

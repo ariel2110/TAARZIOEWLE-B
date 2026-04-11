@@ -1,5 +1,5 @@
-from sqlalchemy import String, Text, Boolean, Integer
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import String, Text, Boolean, Integer, ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 from app.models.mixins import TimestampMixin
 
@@ -8,7 +8,10 @@ class DraftSite(Base, TimestampMixin):
     __tablename__ = 'draft_sites'
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    business_id: Mapped[int] = mapped_column(Integer, index=True)
+    business_id: Mapped[int] = mapped_column(ForeignKey('businesses.id', ondelete='CASCADE'), index=True)
+
+    # Relationship
+    business: Mapped['Business'] = relationship('Business', foreign_keys=[business_id], back_populates='draft_sites', lazy='select')
     site_title: Mapped[str] = mapped_column(String(255))
     status: Mapped[str] = mapped_column(String(50), default='draft', index=True)
     preview_url: Mapped[str | None] = mapped_column(String(255), nullable=True)

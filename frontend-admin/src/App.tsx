@@ -1,48 +1,69 @@
 
-import React, { useEffect, useState } from 'react';
-const API = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api/v1';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Shell } from './components/Shell';
+import OverviewPage from './pages/Overview';
+import LeadsPage from './pages/Leads';
+import BusinessesPage from './pages/Businesses';
+import QueuesPage from './pages/Queues';
+import ApprovalsPage from './pages/Approvals';
+import TargetingPage from './pages/Targeting';
+import CEOConsolePage from './pages/CEOConsole';
+import FeedbackPage from './pages/Feedback';
+import SecurityMonitoring from './pages/SecurityMonitoring';
+import CustomersPage from './pages/Customers';
+import DraftSitesPage from './pages/DraftSites';
+import PaymentsPage from './pages/Payments';
+import LoginPage from './pages/Login';
+import { useEffect, useState } from 'react';
+import { ensureDevLogin } from './services/queries';
 
-type Tab = 'overview'|'leads'|'approvals'|'targeting'|'ceo'|'customers'|'security';
+function RequireAuth({ children }: { children: React.ReactNode }) {
+  const token = localStorage.getItem('admin_access_token');
+  if (!token) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+}
 
 export default function App() {
-  const [tab, setTab] = useState<Tab>('overview');
-  const [data, setData] = useState<any>({});
-  const adminToken = localStorage.getItem('admin_token') || 'dev-admin-token';
-  const headers:any = { 'X-Admin-Token': adminToken, 'X-Admin-Email': 'ar.2110@gmail.com' };
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    Promise.all([
-      fetch(`${API}/admin/analytics/snapshot`, { headers }).then(r=>r.json()).catch(()=>({})),
-      fetch(`${API}/admin/ceo/daily-digest`, { headers }).then(r=>r.json()).catch(()=>({})),
-      fetch(`${API}/admin/leads`, { headers }).then(r=>r.json()).catch(()=>([])),
-      fetch(`${API}/admin/approvals`, { headers }).then(r=>r.json()).catch(()=>([])),
-      fetch(`${API}/admin/targeting/search`, { headers }).then(r=>r.json()).catch(()=>([])),
-      fetch(`${API}/admin/customers`, { headers }).then(r=>r.json()).catch(()=>([])),
-      fetch(`${API}/admin/security/summary`, { headers }).then(r=>r.json()).catch(()=>({})),
-      fetch(`${API}/admin/security/alerts`, { headers }).then(r=>r.json()).catch(()=>([])),
-    ]).then(([analytics, ceo, leads, approvals, targeting, customers, securitySummary, securityAlerts]) => setData({analytics, ceo, leads, approvals, targeting, customers, securitySummary, securityAlerts}));
+    // Auto dev-login if no token present (dev mode)
+    const token = localStorage.getItem('admin_access_token');
+    if (!token) {
+      ensureDevLogin().finally(() => setReady(true));
+    } else {
+      setReady(true);
+    }
   }, []);
 
-  const NavBtn = ({id,label}:{id:Tab,label:string}) => <button onClick={()=>setTab(id)} style={{marginRight:8}}>{label}</button>;
-  const customerPackages = (data.customers || []).reduce((acc:any, c:any) => { const k = c.package_name || '—'; acc[k] = (acc[k] || 0) + 1; return acc; }, {});
+  if (!ready) return <div style={{ padding: 40, fontFamily: 'Arial' }}>Loading...</div>;
 
-  return <div style={{fontFamily:'Arial', padding:20}}>
-    <h1>LocalBiz Admin — Ariel</h1>
-    <div style={{marginBottom:16}}>
-      <NavBtn id='overview' label='Overview' />
-      <NavBtn id='leads' label='Leads' />
-      <NavBtn id='approvals' label='Approvals' />
-      <NavBtn id='targeting' label='Targeting' />
-      <NavBtn id='ceo' label='CEO Console' />
-      <NavBtn id='customers' label='Customers' />
-      <NavBtn id='security' label='Security' />
-    </div>
-    {tab==='overview' && <pre>{JSON.stringify({analytics:data.analytics, customer_packages:customerPackages, security:data.securitySummary}, null, 2)}</pre>}
-    {tab==='leads' && <pre>{JSON.stringify(data.leads, null, 2)}</pre>}
-    {tab==='approvals' && <pre>{JSON.stringify(data.approvals, null, 2)}</pre>}
-    {tab==='targeting' && <pre>{JSON.stringify(data.targeting, null, 2)}</pre>}
-    {tab==='ceo' && <pre>{JSON.stringify(data.ceo, null, 2)}</pre>}
-    {tab==='customers' && <pre>{JSON.stringify(data.customers, null, 2)}</pre>}
-    {tab==='security' && <pre>{JSON.stringify({summary:data.securitySummary, alerts:data.securityAlerts}, null, 2)}</pre>}
-  </div>;
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/*" element={
+          <RequireAuth>
+            <Shell>
+              <Routes>
+                <Route index element={<OverviewPage />} />
+                <Route path="leads" element={<LeadsPage />} />
+                <Route path="businesses" element={<BusinessesPage />} />
+                <Route path="draft-sites" element={<DraftSitesPage />} />
+                <Route path="queues" element={<QueuesPage />} />
+                <Route path="approvals" element={<ApprovalsPage />} />
+                <Route path="payments" element={<PaymentsPage />} />
+                <Route path="targeting" element={<TargetingPage />} />
+                <Route path="customers" element={<CustomersPage />} />
+                <Route path="ceo" element={<CEOConsolePage />} />
+                <Route path="feedback" element={<FeedbackPage />} />
+                <Route path="security" element={<SecurityMonitoring />} />
+              </Routes>
+            </Shell>
+          </RequireAuth>
+        } />
+      </Routes>
+    </BrowserRouter>
+  );
 }
+

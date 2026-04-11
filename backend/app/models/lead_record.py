@@ -1,6 +1,6 @@
 
-from sqlalchemy import String, Integer, Text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import String, Integer, Text, ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 from app.models.mixins import TimestampMixin
 
@@ -17,6 +17,9 @@ class LeadRecord(Base, TimestampMixin):
     website_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
     score: Mapped[int] = mapped_column(Integer, default=0, index=True)
     status: Mapped[str] = mapped_column(String(50), default='imported', index=True)
-    campaign_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
-    targeting_profile_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
+    campaign_id: Mapped[int | None] = mapped_column(ForeignKey('campaigns.id', ondelete='SET NULL'), nullable=True, index=True)
+    targeting_profile_id: Mapped[int | None] = mapped_column(ForeignKey('targeting_profiles.id', ondelete='SET NULL'), nullable=True, index=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # Relationships
+    businesses: Mapped[list['Business']] = relationship('Business', foreign_keys='Business.lead_id', back_populates=None, lazy='select', viewonly=True)

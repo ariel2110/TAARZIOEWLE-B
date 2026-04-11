@@ -26,8 +26,8 @@ export async function ensureDevLogin() {
 export const getSnapshot = () => apiGet<Snapshot>('/admin/analytics/snapshot');
 export const getDigest = () => apiGet<Digest>('/admin/ceo/daily-digest');
 export const getHealth = () => apiGet<Health>('/admin/ceo/health');
-export const getBusinesses = () => apiGet<Business[]>('/admin/businesses');
-export const getLeads = () => apiGet<Lead[]>('/admin/leads');
+export const getBusinesses = (skip = 0, limit = 100) => apiGet<Business[]>(`/admin/businesses?skip=${skip}&limit=${limit}`);
+export const getLeads = (skip = 0, limit = 100) => apiGet<Lead[]>(`/admin/leads?skip=${skip}&limit=${limit}`);
 export const getApprovals = () => apiGet<Approval[]>('/admin/approvals');
 export const getApprovalDetail = (id: number) => apiGet<ApprovalDetail>(`/admin/approvals/${id}`);
 export const approve = (id: number) => apiPost(`/admin/approvals/${id}/approve`, {});
@@ -68,11 +68,22 @@ export type SecuritySummary = { login_failures: number; blocked_logins: number; 
 export type SecurityTimelineItem = { type: string; at?: string | null; phone?: string | null; label: string; detail?: string | null };
 export type SuspicionItem = { customer_phone: string; suspicion_score: number; suspicion_tier: string; login_failures: number; blocked_logins: number; rate_limit_hits: number; delivery_failures: number };
 export const getSecuritySummary = () => apiGet<SecuritySummary>('/admin/security/summary');
-export const getSecurityTimeline = (customerPhone?: string) => { const q = new URLSearchParams(); if (customerPhone) q.set('customer_phone', customerPhone); return apiGet<{items: SecurityTimelineItem[]}>(`/admin/security/timeline?${q.toString()}`); };
-export const getSuspicion = (customerPhone?: string) => { const q = new URLSearchParams(); if (customerPhone) q.set('customer_phone', customerPhone); return apiGet<{items: SuspicionItem[], total: number}>(`/admin/security/suspicion?${q.toString()}`); };
+export const getSecurityTimeline = (customerPhone?: string) => { const q = new URLSearchParams(); if (customerPhone) q.set('customer_phone', customerPhone); return apiGet<{ items: SecurityTimelineItem[] }>(`/admin/security/timeline?${q.toString()}`); };
+export const getSuspicion = (customerPhone?: string) => { const q = new URLSearchParams(); if (customerPhone) q.set('customer_phone', customerPhone); return apiGet<{ items: SuspicionItem[], total: number }>(`/admin/security/suspicion?${q.toString()}`); };
 
 export type SecurityAlert = { id: number; alert_type: string; severity: string; customer_phone?: string | null; summary: string; detail?: string | null; status: string; escalation_level: string; created_at?: string | null };
 export const getSecurityAlerts = (status?: string) => { const q = new URLSearchParams(); if (status) q.set('status', status); return apiGet<SecurityAlert[]>(`/admin/security/alerts?${q.toString()}`); };
 export const getLockoutPolicy = () => apiGet<Record<string, unknown>>('/admin/security/lockout-policy');
+export const refreshSecurityAlerts = () => apiPost('/admin/security/refresh-alerts', {});
 
 export const getCustomerPermissions = (customerId: number) => apiGet<Record<string, unknown>>(`/admin/customers/${customerId}/permissions`);
+
+export type Customer = { id: number; business_id?: number | null; phone?: string | null; email?: string | null; contact_name?: string | null; active_site_id?: number | null; draft_site_id?: number | null; must_change_password: boolean; is_active: boolean; package_name?: string | null };
+export const getCustomers = (skip = 0, limit = 100) => apiGet<Customer[]>(`/admin/customers?skip=${skip}&limit=${limit}`);
+
+export type DraftSite = { id: number; business_id: number; site_title: string; status: string; preview_url?: string | null; primary_color?: string | null; is_demo?: boolean; noindex?: boolean; hero_title?: string | null; about_text?: string | null };
+export const getDraftSites = (skip = 0, limit = 100) => apiGet<DraftSite[]>(`/admin/draft-sites?skip=${skip}&limit=${limit}`);
+export const generateDraftPreview = (draftId: number) => apiPost<DraftSite>(`/admin/draft-sites/${draftId}/generate-preview`, {});
+
+export type Payment = { id: number; business_id?: number | null; amount: number; internal_status: string };
+export const getPayments = (skip = 0, limit = 100) => apiGet<Payment[]>(`/admin/payments?skip=${skip}&limit=${limit}`);

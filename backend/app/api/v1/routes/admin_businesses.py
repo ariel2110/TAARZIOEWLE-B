@@ -1,5 +1,5 @@
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from app.api.deps import get_current_admin
 from app.db.session import get_db
@@ -16,8 +16,8 @@ draft_service = DraftSiteService()
 
 
 @router.get('', response_model=list[BusinessRead])
-def list_businesses(db: Session = Depends(get_db), _: User = Depends(get_current_admin)):
-    return service.list_businesses(db)
+def list_businesses(skip: int = Query(default=0, ge=0), limit: int = Query(default=100, ge=1, le=500), db: Session = Depends(get_db), _: User = Depends(get_current_admin)):
+    return service.list_businesses(db, skip=skip, limit=limit)
 
 
 @router.post('', response_model=BusinessRead)

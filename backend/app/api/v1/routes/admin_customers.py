@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from app.api.deps import get_current_admin
 from app.db.session import get_db
@@ -12,8 +12,8 @@ service = CustomerAuthService()
 
 
 @router.get('')
-def list_customers(db: Session = Depends(get_db), _: User = Depends(get_current_admin)):
-    rows = db.query(CustomerAccount).order_by(CustomerAccount.id.desc()).all()
+def list_customers(skip: int = Query(default=0, ge=0), limit: int = Query(default=100, ge=1, le=500), db: Session = Depends(get_db), _: User = Depends(get_current_admin)):
+    rows = db.query(CustomerAccount).order_by(CustomerAccount.id.desc()).offset(skip).limit(limit).all()
     return [
         {
             'id': r.id,

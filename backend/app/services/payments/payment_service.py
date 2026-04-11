@@ -7,8 +7,8 @@ from app.schemas.payment import PaymentCreate
 
 
 class PaymentService:
-    def list_payments(self, db: Session) -> list[PaymentRecord]:
-        return db.query(PaymentRecord).order_by(PaymentRecord.id.desc()).all()
+    def list_payments(self, db: Session, skip: int = 0, limit: int = 100) -> list[PaymentRecord]:
+        return db.query(PaymentRecord).order_by(PaymentRecord.id.desc()).offset(skip).limit(limit).all()
 
     def create_payment(self, db: Session, payload: PaymentCreate) -> PaymentRecord:
         item = PaymentRecord(**payload.model_dump())

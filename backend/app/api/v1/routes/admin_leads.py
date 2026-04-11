@@ -1,5 +1,5 @@
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
 from sqlalchemy.orm import Session
 from app.api.deps import get_current_admin
 from app.db.session import get_db
@@ -13,8 +13,8 @@ service = LeadImportService()
 
 
 @router.get('', response_model=list[LeadRead])
-def list_leads(db: Session = Depends(get_db), _: User = Depends(get_current_admin)):
-    return service.list_leads(db)
+def list_leads(skip: int = Query(default=0, ge=0), limit: int = Query(default=100, ge=1, le=500), db: Session = Depends(get_db), _: User = Depends(get_current_admin)):
+    return service.list_leads(db, skip=skip, limit=limit)
 
 
 @router.post('', response_model=LeadRead)

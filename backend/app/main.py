@@ -8,12 +8,26 @@ from app.api.v1.router import api_router
 from app.db.init_db import init_db
 
 app = FastAPI(title=settings.app_name)
+_allowed_origins = [
+    settings.frontend_admin_url,
+    settings.frontend_customer_url,
+    settings.frontend_public_url,
+]
+# In development allow localhost variants on common ports
+if settings.environment != 'production':
+    _allowed_origins += [
+        'http://localhost:3000',
+        'http://localhost:5173',
+        'http://localhost:5174',
+        'http://localhost:5175',
+    ]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.frontend_admin_url, settings.frontend_customer_url, settings.frontend_public_url, '*'],
+    allow_origins=_allowed_origins,
     allow_credentials=True,
-    allow_methods=['*'],
-    allow_headers=['*'],
+    allow_methods=['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allow_headers=['Authorization', 'Content-Type', 'X-Admin-Token', 'X-Admin-Email', 'X-Session-Key', 'X-Forwarded-For'],
 )
 app.include_router(api_router, prefix=settings.api_v1_prefix)
 

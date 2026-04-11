@@ -6,8 +6,8 @@ from app.schemas.business import BusinessCreate
 
 
 class BusinessService:
-    def list_businesses(self, db: Session) -> list[Business]:
-        return db.query(Business).order_by(Business.id.desc()).all()
+    def list_businesses(self, db: Session, skip: int = 0, limit: int = 100) -> list[Business]:
+        return db.query(Business).order_by(Business.id.desc()).offset(skip).limit(limit).all()
 
     def create_business(self, db: Session, payload: BusinessCreate) -> Business:
         item = Business(**payload.model_dump())

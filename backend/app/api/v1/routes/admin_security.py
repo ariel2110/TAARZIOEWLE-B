@@ -12,8 +12,11 @@ policy_service = LockoutPolicyService()
 
 @router.get('/summary')
 def summary(db: Session = Depends(get_db), _=Depends(require_admin)):
-    service.ensure_alerts(db)
     return service.summary(db)
+
+@router.post('/refresh-alerts')
+def refresh_alerts(db: Session = Depends(get_db), _=Depends(require_admin)):
+    return service.ensure_alerts(db)
 
 @router.get('/timeline')
 def timeline(customer_phone: str | None = Query(default=None), limit: int = Query(default=100, le=300), db: Session = Depends(get_db), _=Depends(require_admin)):
@@ -25,7 +28,6 @@ def suspicion(customer_phone: str | None = Query(default=None), db: Session = De
 
 @router.get('/alerts')
 def alerts(status: str | None = Query(default=None), db: Session = Depends(get_db), _=Depends(require_admin)):
-    service.ensure_alerts(db)
     rows = service.alerts(db, status=status)
     return [
         {

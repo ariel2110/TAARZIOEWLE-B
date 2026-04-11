@@ -10,8 +10,8 @@ from app.services.generator.template_render_service import TemplateRenderService
 
 
 class DraftSiteService:
-    def list_drafts(self, db: Session) -> list[DraftSite]:
-        return db.query(DraftSite).order_by(DraftSite.id.desc()).all()
+    def list_drafts(self, db: Session, skip: int = 0, limit: int = 100) -> list[DraftSite]:
+        return db.query(DraftSite).order_by(DraftSite.id.desc()).offset(skip).limit(limit).all()
 
     def create_draft(self, db: Session, payload: DraftSiteCreate) -> DraftSite:
         item = DraftSite(**payload.model_dump())
@@ -24,11 +24,24 @@ class DraftSiteService:
         business = db.query(Business).filter(Business.id == business_id).first()
         if not business:
             return None
+
+        # Attempt LLM-generated copy; fall back to rule-based if unavailable
+        copy = None
+        try:
+            from app.services.generator.site_copy_generator_service import SiteCopyGeneratorService
+            copy = SiteCopyGeneratorService().generate(
+                name=business.name,
+                city=business.city,
+                category=business.category,
+            )
+        except Exception:
+            pass
+
         item = DraftSite(
             business_id=business.id,
             site_title=f"{business.name} Draft Site",
-            hero_title=business.name,
-            about_text=f"Landing page draft for {business.name} in {business.city or 'Israel'}.",
+            hero_title=copy.hero_title if copy else business.name,
+            about_text=copy.about_text if copy else f"Landing page draft for {business.name} in {business.city or 'Israel'}.",
             status='draft',
             is_demo=True,
             noindex=True,

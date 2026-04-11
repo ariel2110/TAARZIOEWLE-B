@@ -9,8 +9,8 @@ from app.schemas.lead import LeadCreate
 
 
 class LeadImportService:
-    def list_leads(self, db: Session) -> list[LeadRecord]:
-        return db.query(LeadRecord).order_by(LeadRecord.score.desc(), LeadRecord.id.desc()).all()
+    def list_leads(self, db: Session, skip: int = 0, limit: int = 100) -> list[LeadRecord]:
+        return db.query(LeadRecord).order_by(LeadRecord.score.desc(), LeadRecord.id.desc()).offset(skip).limit(limit).all()
 
     def create_lead(self, db: Session, payload: LeadCreate) -> LeadRecord:
         lead = LeadRecord(**payload.model_dump())

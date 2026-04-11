@@ -1,4 +1,4 @@
-from pydantic import Field
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -39,6 +39,16 @@ class Settings(BaseSettings):
     google_client_secret: str | None = None
     google_oauth_redirect_url: str = 'http://localhost:8000/api/v1/auth/google/callback'
 
+    # LLM providers
+    openai_api_key: str | None = Field(default=None)
+    anthropic_api_key: str | None = Field(default=None)
+    gemini_api_key: str | None = Field(default=None)
+    llm_default_model: str = Field(default='gpt-4o-mini')
+
+    # OTP / delivery
+    delivery_mode: str = Field(default='console')   # 'console' | 'whatsapp' | 'sms'
+    whatsapp_api_key: str | None = Field(default=None)
+    sms_provider: str | None = Field(default=None)
 
     # Rate limiting / anti-abuse
     public_challenge_window_minutes: int = Field(default=15)
@@ -69,6 +79,21 @@ class Settings(BaseSettings):
         if self.use_postgres:
             return self.postgres_database_url
         return 'sqlite:///./localbiz.db'
+
+    @model_validator(mode='after')
+    def _validate_production_secrets(self) -> 'Settings':
+        if self.environment == 'production':
+            if self.jwt_secret_key == 'change-me-in-production':
+                raise ValueError(
+                    'JWT_SECRET_KEY must be set to a strong random value in production. '
+                    'Set the JWT_SECRET_KEY environment variable.'
+                )
+            if self.admin_dev_token == 'dev-admin-token':
+                raise ValueError(
+                    'ADMIN_DEV_TOKEN must be changed in production. '
+                    'Disable or rotate it via the ADMIN_DEV_TOKEN environment variable.'
+                )
+        return self
 
 
 settings = Settings()

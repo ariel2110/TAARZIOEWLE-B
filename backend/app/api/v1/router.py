@@ -20,6 +20,9 @@ from app.api.v1.routes.admin_public_flow import router as admin_public_flow_rout
 from app.api.v1.routes.customer_portal import router as customer_portal_router
 from app.api.v1.routes.admin_security import router as admin_security_router
 from app.api.v1.routes.admin_workflows import router as admin_workflows_router
+from app.api.v1.routes.admin_enrich import router as admin_enrich_router
+from app.api.v1.routes.admin_demos import router as admin_demos_router
+from app.api.v1.routes.public_demos import router as public_demos_router
 
 api_router = APIRouter()
 api_router.include_router(health_router)
@@ -43,6 +46,9 @@ api_router.include_router(admin_customer_ops_router)
 api_router.include_router(admin_public_flow_router)
 api_router.include_router(admin_security_router)
 api_router.include_router(admin_workflows_router)
+api_router.include_router(admin_enrich_router)
+api_router.include_router(admin_demos_router)
+api_router.include_router(public_demos_router)
 api_router.include_router(customer_portal_router)
 
 api_router.include_router(public_portal.router)

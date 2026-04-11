@@ -29,6 +29,24 @@ export async function apiPost<T>(path: string, payload: unknown): Promise<T> {
   return res.json();
 }
 
+export async function apiDelete<T>(path: string): Promise<T> {
+  const res = await fetch(`${BASE_URL}${path}`, { method: 'DELETE', headers: headers() });
+  if (!res.ok) throw new Error(`DELETE ${path} failed`);
+  return res.json();
+}
+
+export async function googleLogin(idToken: string) {
+  const res = await fetch(`${BASE_URL}/auth/google/verify`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id_token: idToken }),
+  });
+  if (!res.ok) throw new Error('Google login failed');
+  const data = await res.json();
+  setAccessToken(data.access_token);
+  return data;
+}
+
 export async function devLogin(email: string, fullName: string, adminToken: string) {
   const res = await fetch(`${BASE_URL}/auth/dev-login`, {
     method: 'POST',

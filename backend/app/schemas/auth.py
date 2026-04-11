@@ -13,6 +13,18 @@ class GoogleAuthStartResponse(BaseModel):
     enabled: bool
 
 
+class GoogleVerifyRequest(BaseModel):
+    id_token: str
+
+
+class GoogleVerifyResponse(BaseModel):
+    access_token: str
+    token_type: str = 'bearer'
+    email: EmailStr
+    full_name: str
+    role: str
+
+
 class DevLoginRequest(BaseModel):
     email: EmailStr
     full_name: str | None = 'Admin User'

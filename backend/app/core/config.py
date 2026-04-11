@@ -38,6 +38,11 @@ class Settings(BaseSettings):
     google_client_id: str | None = None
     google_client_secret: str | None = None
     google_oauth_redirect_url: str = 'http://localhost:8000/api/v1/auth/google/callback'
+    # Comma-separated list of emails allowed to log in as admin. Empty = anyone with Google account.
+    allowed_admin_emails: str = Field(default='ar.2110@gmail.com')
+
+    # Google Places API for business enrichment
+    google_places_api_key: str | None = Field(default=None)
 
     # LLM providers
     openai_api_key: str | None = Field(default=None)

@@ -1,10 +1,65 @@
 
-import { apiGet, apiPost, devLogin } from './api';
+import { apiGet, apiPost, apiDelete, devLogin, googleLogin } from './api';
+export { googleLogin };
+
+// ---- Enrichment ----
+export type EnrichedBusiness = {
+  name: string; address: string; phone: string; website: string;
+  rating?: number; reviews_count?: number; google_maps_url: string;
+  status: string; types: string[]; top_review: string; opening_hours: string[];
+  place_id: string; facebook_url: string; instagram_url: string;
+  social_confidence: string; completeness_score: number;
+  lead_opportunity_score: number;
+  cache_status?: 'new' | 'known' | 'imported';
+};
+export type EnrichSearchResult = {
+  city: string; category: string; total: number; has_real_api: boolean;
+  new_this_search: number; already_known: number;
+  filters: { no_website_only: boolean; min_reviews: number; min_rating: number };
+  results: EnrichedBusiness[];
+};
+export type EnrichStatus = { google_places: boolean; facebook_graph: boolean; openai_llm: boolean; mode: string; cache_total: number; cache_imported: number };
+export type EnrichCategory = { label: string; queries: string[] };
+
+export const getEnrichStatus = () => apiGet<EnrichStatus>('/admin/enrich/status');
+export const getEnrichCategories = () => apiGet<EnrichCategory[]>('/admin/enrich/categories');
+export const searchEnrich = (
+  city: string, category: string, limit: number, social: boolean,
+  no_website_only: boolean, min_reviews: number, min_rating: number,
+) =>
+  apiGet<EnrichSearchResult>(
+    `/admin/enrich/search?city=${encodeURIComponent(city)}&category=${encodeURIComponent(category)}&limit=${limit}&social=${social}&no_website_only=${no_website_only}&min_reviews=${min_reviews}&min_rating=${min_rating}`
+  );
+export const importEnrichedToLeads = (businesses: EnrichedBusiness[], city: string) =>
+  apiPost<{ imported: number; skipped: number; errors: string[] }>('/admin/enrich/import-to-leads', { businesses, city });
+
+export async function createBusiness(payload: Record<string, unknown>) {
+  return apiPost<Business>('/admin/businesses', payload);
+}
+
+export async function createLead(payload: Record<string, unknown>) {
+  return apiPost<Lead>('/admin/leads', payload);
+}
+
+export async function importLeadsCSV(csvText: string): Promise<{ imported: number; errors: string[] }> {
+  const BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1') as string;
+  const token = localStorage.getItem('admin_access_token') ?? '';
+  const blob = new Blob([csvText], { type: 'text/csv' });
+  const form = new FormData();
+  form.append('file', blob, 'leads.csv');
+  const res = await fetch(`${BASE_URL}/admin/leads/import-csv`, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: form,
+  });
+  if (!res.ok) throw new Error('Import failed');
+  return res.json();
+}
 
 export type Snapshot = Record<string, number>;
 export type Digest = { executive_summary: string; recommended_actions: string[]; approval_queue_count?: number; approvals_pending?: number; payments_pending?: number; expiring_drafts?: number; outreach_ready_count?: number; qualified_leads?: number; pressure_notes?: string[] };
-export type Business = { id: number; name: string; city?: string; category?: string; status: string; campaign_id?: number | null; targeting_profile_id?: number | null };
-export type Lead = { id: number; imported_name: string; city?: string; category?: string; score: number; status: string; website_url?: string | null; campaign_id?: number | null; targeting_profile_id?: number | null };
+export type Business = { id: number; name: string; city?: string; category?: string; status: string; phone?: string | null; address?: string | null; campaign_id?: number | null; targeting_profile_id?: number | null };
+export type Lead = { id: number; imported_name: string; city?: string; category?: string; phone?: string | null; score: number; status: string; website_url?: string | null; campaign_id?: number | null; targeting_profile_id?: number | null };
 export type Approval = { id: number; title: string; status: string; approval_type: string; summary?: string | null };
 export type ApprovalDetail = Approval & { rationale?: string | null; evidence_json?: Record<string, unknown> | null; before_json?: Record<string, unknown> | null; after_json?: Record<string, unknown> | null; confidence_score?: number | null; payload_json?: Record<string, unknown> | null };
 export type Profile = { id: number; name: string; city?: string; radius_km?: number };
@@ -87,3 +142,34 @@ export const generateDraftPreview = (draftId: number) => apiPost<DraftSite>(`/ad
 
 export type Payment = { id: number; business_id?: number | null; amount: number; internal_status: string };
 export const getPayments = (skip = 0, limit = 100) => apiGet<Payment[]>(`/admin/payments?skip=${skip}&limit=${limit}`);
+
+// ---- Demo Sites ----
+export type DemoRecord = {
+  id: number; slug: string; place_id?: string | null;
+  business_name: string; tagline?: string | null;
+  phone?: string | null; address?: string | null; city?: string | null;
+  rating?: number | null; reviews_count?: number | null;
+  google_maps_url?: string | null; top_review?: string | null;
+  business_types?: string | null; category?: string | null;
+  status: string; view_count: number;
+  first_viewed_at?: string | null; whatsapp_sent_at?: string | null;
+  created_at?: string | null;
+};
+export type PublicDemoData = Omit<DemoRecord, 'id' | 'status' | 'view_count' | 'first_viewed_at' | 'whatsapp_sent_at' | 'created_at'>;
+
+export const getDemos = () => apiGet<DemoRecord[]>('/admin/demos');
+export const createDemosFromEnriched = (businesses: EnrichedBusiness[]) =>
+  apiPost<{ created: number; demos: DemoRecord[] }>('/admin/demos/create-from-enriched', { businesses });
+export const markDemoSent = (id: number) => apiPost<DemoRecord>(`/admin/demos/${id}/mark-sent`, {});
+export const markDemoConverted = (id: number) => apiPost<DemoRecord>(`/admin/demos/${id}/mark-converted`, {});
+export const deleteDemo = (id: number) => apiDelete<{ ok: boolean }>(`/admin/demos/${id}`);
+
+const PUBLIC_BASE = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1') as string;
+export async function getPublicDemo(slug: string): Promise<PublicDemoData> {
+  const res = await fetch(`${PUBLIC_BASE}/public/demo/${slug}`);
+  if (!res.ok) throw new Error('Demo not found');
+  return res.json();
+}
+export async function trackDemoView(slug: string): Promise<void> {
+  await fetch(`${PUBLIC_BASE}/public/demo/${slug}/view`, { method: 'POST' });
+}

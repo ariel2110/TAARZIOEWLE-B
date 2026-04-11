@@ -1,37 +1,41 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, Card, SectionTitle } from '../components/ui';
-import { ensureDevLogin } from '../services/queries';
+import { GoogleLogin } from '@react-oauth/google';
+import { Card, SectionTitle } from '../components/ui';
+import { googleLogin } from '../services/queries';
 
 export default function LoginPage() {
     const navigate = useNavigate();
     const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
 
-    const handleDevLogin = async () => {
-        setLoading(true);
-        setError('');
+    const handleSuccess = async (credentialResponse: { credential?: string }) => {
+        if (!credentialResponse.credential) { setError('לא התקבל טוקן מGoogle'); return; }
         try {
-            await ensureDevLogin();
+            await googleLogin(credentialResponse.credential);
             navigate('/', { replace: true });
         } catch {
-            setError('Login failed. Check that the backend is running.');
-        } finally {
-            setLoading(false);
+            setError('הכניסה נכשלה. ודא שהמייל שלך מורשה.');
         }
     };
 
     return (
-        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f5f5' }}>
-            <div style={{ minWidth: 320 }}>
-            <Card>
-                <SectionTitle>LocalBiz Admin v27</SectionTitle>
-                <p className="muted" style={{ marginBottom: 24 }}>Sign in to access the admin control room.</p>
-                {error && <p style={{ color: '#c00', marginBottom: 12 }}>{error}</p>}
-                <Button onClick={handleDevLogin} disabled={loading}>
-                    {loading ? 'Signing in…' : 'Dev Login'}
-                </Button>
-            </Card>
+        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f0f4f8' }}>
+            <div style={{ minWidth: 340 }}>
+                <Card>
+                    <div style={{ textAlign: 'center', marginBottom: 24 }}>
+                        <div style={{ fontSize: 40 }}>🏢</div>
+                        <SectionTitle>LocalBiz Admin v27</SectionTitle>
+                        <p style={{ color: '#666', marginTop: 4 }}>כניסה לממשק ניהול</p>
+                    </div>
+                    {error && <p style={{ color: '#c00', marginBottom: 16, textAlign: 'center' }}>{error}</p>}
+                    <div style={{ display: 'flex', justifyContent: 'center' }}>
+                        <GoogleLogin
+                            onSuccess={handleSuccess}
+                            onError={() => setError('Google login נכשל. נסה שוב.')}
+                            useOneTap
+                        />
+                    </div>
+                </Card>
             </div>
         </div>
     );

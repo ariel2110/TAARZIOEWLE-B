@@ -44,6 +44,9 @@ def get_current_admin(
 from app.models.customer_account import CustomerAccount
 from app.services.auth.customer_auth_service import CustomerAuthService
 
+# Alias for routes that use require_admin instead of get_current_admin
+require_admin = get_current_admin
+
 
 def get_current_customer(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme),

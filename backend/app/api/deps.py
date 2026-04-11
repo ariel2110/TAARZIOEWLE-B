@@ -43,6 +43,9 @@ def get_current_admin(
         except JWTError as exc:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid bearer token') from exc
 
+    if settings.environment.lower() == 'production':
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Missing bearer token')
+
     # Legacy dev-header fallback
     if x_admin_token != settings.admin_dev_token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Missing or invalid admin token')

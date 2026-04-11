@@ -15,36 +15,14 @@ function headers(extra?: Record<string, string>) {
   const base: Record<string, string> = { 'Content-Type': 'application/json', ...(extra || {}) };
   if (accessToken) {
     base['Authorization'] = `Bearer ${accessToken}`;
-  } else {
-    base['X-Admin-Token'] = import.meta.env.VITE_ADMIN_DEV_TOKEN || 'dev-admin-token';
-    base['X-Admin-Email'] = import.meta.env.VITE_ADMIN_EMAIL || 'admin@example.com';
   }
   return base;
 }
 
 async function handleResponse<T>(res: Response, path: string): Promise<T> {
   if (res.status === 401) {
-    // Token expired — clear it and try to re-login with dev token
+    // Token expired — clear it and force login page.
     clearAccessToken();
-    const devToken = import.meta.env.VITE_ADMIN_DEV_TOKEN;
-    const email = import.meta.env.VITE_ADMIN_EMAIL || 'admin@example.com';
-    if (devToken) {
-      try {
-        const loginRes = await fetch(`${BASE_URL}/auth/dev-login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, full_name: 'Admin', admin_token: devToken }),
-        });
-        if (loginRes.ok) {
-          const data = await loginRes.json();
-          setAccessToken(data.access_token);
-          return undefined as unknown as T; // caller should retry
-        }
-      } catch {
-        // fall through
-      }
-    }
-    // Could not re-login — reload to show login page
     window.location.reload();
     throw new Error('Session expired');
   }

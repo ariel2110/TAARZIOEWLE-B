@@ -1,27 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { GoogleLogin } from '@react-oauth/google';
 import { Card, SectionTitle } from '../components/ui';
-import { googleLogin, ensureDevLogin } from '../services/queries';
+import { googleLogin } from '../services/queries';
 
 export default function LoginPage() {
     const [error, setError] = useState('');
-    const [autoLogging, setAutoLogging] = useState(false);
-
-    // Auto-login with dev token if configured (admin-only deployment)
-    useEffect(() => {
-        const devToken = import.meta.env.VITE_ADMIN_DEV_TOKEN;
-        if (!devToken) return;
-        setAutoLogging(true);
-        ensureDevLogin()
-            .then(() => {
-                if (localStorage.getItem('admin_access_token')) {
-                    window.location.replace('/');
-                } else {
-                    setAutoLogging(false);
-                }
-            })
-            .catch(() => setAutoLogging(false));
-    }, []);
 
     const handleSuccess = async (credentialResponse: { credential?: string }) => {
         if (!credentialResponse.credential) { setError('לא התקבל טוקן מGoogle'); return; }
@@ -32,36 +15,6 @@ export default function LoginPage() {
             setError('הכניסה נכשלה. ודא שהמייל שלך מורשה.');
         }
     };
-
-    const handleDevLogin = async () => {
-        setAutoLogging(true);
-        setError('');
-        try {
-            await ensureDevLogin();
-            if (localStorage.getItem('admin_access_token')) {
-                window.location.replace('/');
-            } else {
-                setError('כניסה נכשלה — בדוק את ה-token ב-.env');
-            }
-        } catch {
-            setError('כניסה ישירה נכשלה.');
-        } finally {
-            setAutoLogging(false);
-        }
-    };
-
-    if (autoLogging) {
-        return (
-            <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f0f4f8' }}>
-                <Card>
-                    <div style={{ textAlign: 'center', padding: 32 }}>
-                        <div style={{ fontSize: 32, marginBottom: 12 }}>⏳</div>
-                        <p style={{ color: '#6366f1', fontWeight: 600 }}>מתחבר…</p>
-                    </div>
-                </Card>
-            </div>
-        );
-    }
 
     return (
         <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f0f4f8' }}>
@@ -79,17 +32,6 @@ export default function LoginPage() {
                             onError={() => setError('Google login נכשל. נסה שוב.')}
                             useOneTap
                         />
-                        {import.meta.env.VITE_ADMIN_DEV_TOKEN && (
-                            <button
-                                onClick={handleDevLogin}
-                                style={{
-                                    background: '#6366f1', color: '#fff', border: 'none', borderRadius: 8,
-                                    padding: '10px 24px', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%',
-                                }}
-                            >
-                                ⚡ כניסה ישירה (Ariel)
-                            </button>
-                        )}
                     </div>
                 </Card>
             </div>

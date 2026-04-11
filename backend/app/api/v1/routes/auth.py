@@ -18,12 +18,14 @@ def me(current_admin: User = Depends(get_current_admin)) -> CurrentAdminResponse
         email=current_admin.email,
         full_name=current_admin.full_name,
         role=current_admin.role,
-        auth_mode='bearer-or-dev-header-skeleton',
+        auth_mode='bearer-jwt',
     )
 
 
 @router.post('/dev-login', response_model=DevLoginResponse)
 def dev_login(payload: DevLoginRequest, db: Session = Depends(get_db)) -> DevLoginResponse:
+    if settings.environment.lower() == 'production':
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Not found')
     if payload.admin_token != settings.admin_dev_token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid admin token')
     user = auth_service.get_or_create_admin(db=db, email=payload.email, full_name=payload.full_name or 'Admin User')

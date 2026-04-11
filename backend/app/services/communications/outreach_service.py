@@ -1,4 +1,5 @@
 
+import hashlib
 import random
 
 from sqlalchemy.orm import Session
@@ -17,11 +18,18 @@ class OutreachService:
         *,
         campaign_id: str | None = None,
         split_pct: int = 20,
+        lead_id: int | None = None,
     ) -> tuple[str, str, str]:
         """
         Traffic-split helper.  Returns (variant_name, message_to_send, campaign_id).
 
-        split_pct % of calls receive the test variant ('variant_b');
+        Uses lead_id as a DETERMINISTIC seed when provided, so the same lead
+        always receives the same A/B variant — preventing contradictory messages
+        if the same lead is contacted more than once in the same campaign.
+
+        Without lead_id the split falls back to random.randint (non-deterministic).
+
+        split_pct % of leads receive the test variant ('variant_b');
         the rest receive the control variant ('control').
 
         Example:
@@ -30,10 +38,20 @@ class OutreachService:
                 test_message='רגע, תראה מה הכנו לך!...',
                 campaign_id='apr_2026_aggressive',
                 split_pct=20,
+                lead_id=lead.id,
             )
         """
         campaign_id = campaign_id or 'default'
-        if random.randint(1, 100) <= split_pct:
+
+        if lead_id is not None:
+            # Deterministic: hash(lead_id + campaign_id) → consistent bucket 1–100
+            seed_str = f'{lead_id}:{campaign_id}'
+            digest = hashlib.sha256(seed_str.encode()).digest()
+            bucket = (int.from_bytes(digest[:4], 'big') % 100) + 1   # 1–100
+        else:
+            bucket = random.randint(1, 100)
+
+        if bucket <= split_pct:
             return 'variant_b', test_message, campaign_id
         return 'control', control_message, campaign_id
 

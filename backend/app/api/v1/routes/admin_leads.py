@@ -9,12 +9,13 @@ from app.services.leads.lead_import_service import LeadImportService
 from app.models.user import User
 from app.models.lead_record import LeadRecord
 from app.models.activity_log import ActivityLog
+import math
 
 router = APIRouter(prefix='/admin/leads', tags=['admin-leads'])
 service = LeadImportService()
 
 # ── Hot-lead scoring ──────────────────────────────────────────────────────────
-# Categories that historically convert well for website outreach (higher weight)
+# Categories historically best for website conversion (category bonus)
 _PRIORITY_CATEGORIES = {
     'beauty', 'hair', 'salon', 'spa', 'nails', 'barber',
     'restaurant', 'cafe', 'bakery',
@@ -25,11 +26,11 @@ _PRIORITY_CATEGORIES = {
     'plumber', 'electrician', 'contractor',
 }
 
-# Thresholds that define a "hot" lead — a business that DESERVES a website
-# but doesn't have one (or has a broken one).
-_HOT_REVIEWS_MIN = 20      # Proven track record
-_HOT_RATING_MIN = 4.3      # Customers love them
-_WARM_REVIEWS_MIN = 10     # Decent presence but not yet hot
+# Tier thresholds — a "hot" lead has proven demand (reviews) + quality (rating)
+# but NO website to handle that demand.
+_HOT_REVIEWS_MIN = 20
+_HOT_RATING_MIN = 4.3
+_WARM_REVIEWS_MIN = 10
 _WARM_RATING_MIN = 4.0
 
 
@@ -42,13 +43,18 @@ def classify_lead_hotness(lead: LeadRecord) -> tuple[str, int]:
     """
     Return (tier, computed_score) for a lead.
 
-    Tiers:
-      'hot'   — >20 reviews, rating ≥4.3, no working website  → score 90+
-      'warm'  — ≥10 reviews, rating ≥4.0, no working website  → score 70-89
-      'cold'  — everything else                                → score <70
+    Score uses a WEIGHTED RATIO formula so that volume × quality compounds:
+      base_signal = reviews * log2(reviews + 1) * rating_multiplier
+    This ensures 200 reviews @ 4.8 >> 5 reviews @ 5.0, which is the correct
+    business reality — proven social proof beats a perfect-but-sparse record.
 
-    The returned score replaces the generic import score so the leads page
-    shows meaningful priority ordering.
+    Tiers (qualification gates — all three conditions must pass):
+      'hot'   — reviews > 20,  rating ≥ 4.3, no website
+      'warm'  — reviews ≥ 10,  rating ≥ 4.0, no website
+      'cold'  — everything else
+
+    Score is capped at 99 for cold/warm, reserved 100 for 'boiling_hot'
+    (set by webhook when the business owner actively replies).
     """
     reviews = lead.reviews_count or 0
     rating = lead.rating or 0.0
@@ -56,37 +62,41 @@ def classify_lead_hotness(lead: LeadRecord) -> tuple[str, int]:
     category_lower = (lead.category or '').lower()
     is_priority_category = any(kw in category_lower for kw in _PRIORITY_CATEGORIES)
 
-    score = 0
-
-    # ── Review volume signal (0-30 pts) ──────────────────────
-    if reviews >= 50:
-        score += 30
-    elif reviews >= 20:
-        score += 20
-    elif reviews >= 10:
-        score += 10
-    elif reviews >= 5:
-        score += 5
-
-    # ── Rating signal (0-30 pts) ──────────────────────────────
+    # ── Weighted ratio: volume × log(volume) × quality multiplier ────────────
+    # rating_multiplier: maps 0–5 → 0–2.0, super-linear above 4.3
     if rating >= 4.7:
-        score += 30
+        rating_mult = 2.0
     elif rating >= 4.3:
-        score += 20
+        rating_mult = 1.6
     elif rating >= 4.0:
-        score += 10
+        rating_mult = 1.2
     elif rating >= 3.5:
-        score += 5
+        rating_mult = 0.8
+    elif rating > 0:
+        rating_mult = 0.4
+    else:
+        rating_mult = 0.5   # unknown rating — neutral
 
-    # ── Missing website — core opportunity signal (0-30 pts) ──
+    # log2 compress review volume so 200 reviews isn't 40× better than 5
+    log_volume = math.log2(reviews + 1)          # reviews=0→0, 10→3.46, 50→5.67, 200→7.65
+
+    # raw_signal = volume × quality, max ≈ 200*7.65*2.0 = 3060
+    raw_signal = reviews * log_volume * rating_mult
+
+    # Normalize to 0–79 (raw_signal / 3100 * 79), floor at 0
+    base_score = min(int(raw_signal / 3100 * 79), 79)
+
+    # ── Opportunity bonus: no website = opportunity exists (+15 pts) ──────────
     if no_site:
-        score += 30
+        base_score += 15
 
-    # ── Category bonus (0-10 pts) ─────────────────────────────
+    # ── Category bonus (+5 pts) ───────────────────────────────────────────────
     if is_priority_category:
-        score += 10
+        base_score += 5
 
-    # Determine tier
+    score = min(base_score, 99)   # cap at 99; 100 is reserved for boiling_hot
+
+    # Tier gates
     is_hot = (reviews >= _HOT_REVIEWS_MIN and rating >= _HOT_RATING_MIN and no_site)
     is_warm = (reviews >= _WARM_REVIEWS_MIN and rating >= _WARM_RATING_MIN and no_site)
 
@@ -97,7 +107,7 @@ def classify_lead_hotness(lead: LeadRecord) -> tuple[str, int]:
     else:
         tier = 'cold'
 
-    return tier, min(score, 100)
+    return tier, score
 
 
 @router.get('', response_model=list[LeadRead])

@@ -100,18 +100,30 @@ class CEOGrokService:
             f"High/critical security alerts: {metrics.get('high_security_alerts', 0)}",
             f"Current system summary: {metrics.get('executive_summary', 'N/A')}",
         ]
-        if ariel_message and ariel_message.strip():
-            lines += [
-                "",
-                "=== MESSAGE FROM ARIEL (CHAIRMAN) ===",
-                ariel_message.strip(),
-            ]
-        else:
-            lines += [
-                "",
-                "=== YOUR TASK ===",
-                "Analyze the current system state above. Identify the single highest-value action "
-                "we should take right now to grow revenue or fix a bottleneck. Be specific and bold.",
+
+          # ── A/B campaign performance ──────────────────────────────────────────
+          ab_stats: list[dict] = metrics.get('ab_stats', [])
+          if ab_stats:
+              lines += [
+                  "",
+                  "=== A/B OUTREACH CAMPAIGN RESULTS ===",
+              ]
+              for row in ab_stats:
+                  lines.append(
+                      f"Campaign '{row['campaign']}' | Variant '{row['variant']}': "
+                      f"{row['replied']}/{row['total']} replies ({row['reply_rate_pct']}% reply rate)"
+                  )
+              lines += [
+                  "",
+                  "=== A/B PIVOT DIRECTIVE ===",
+                  "Based on the A/B data above: identify the winning variant. "
+                  "If one variant leads by more than 5 percentage points in reply rate AND has at "
+                  "least 20 total sends, recommend a PIVOT — propose switching the full campaign "
+                  "to the winning variant with a concrete action plan. If data is insufficient, "
+                  "recommend continuing the test and specify what volume threshold to wait for. "
+                  "Be specific: name the variant, the delta, and the proposed next step.",
+              ]
+
             ]
         return "\n".join(lines)
 

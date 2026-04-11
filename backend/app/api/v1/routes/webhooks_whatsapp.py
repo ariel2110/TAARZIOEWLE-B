@@ -171,6 +171,34 @@ def _handle_inbound(db: Session, msg: dict, metadata: dict) -> None:
                 action_type='whatsapp_replied',
                 summary=f'Inbound reply from {from_phone}: {text[:120]}',
             ))
+
+            # ── 🔥 Boiling Hot: bump the lead's score to 100 ─────────────────
+            # A live reply is the strongest possible buying signal — the business
+            # owner is interested. Score 100 is reserved exclusively for this event
+            # so Grok / auto-qualify always surfaces them first.
+            if outreach.business_id:
+                try:
+                    from app.models.business import Business
+                    from app.models.lead_record import LeadRecord
+                    business = db.query(Business).filter(Business.id == outreach.business_id).first()
+                    if business and business.lead_id:
+                        lead = db.query(LeadRecord).filter(LeadRecord.id == business.lead_id).first()
+                        if lead:
+                            lead.score = 100
+                            lead.status = 'boiling_hot'
+                            db.add(ActivityLog(
+                                actor_type='webhook',
+                                entity_type='lead_record',
+                                entity_id=lead.id,
+                                action_type='lead_boiling_hot',
+                                summary=(
+                                    f'🔥 Boiling Hot! Reply received from {from_phone}. '
+                                    f'Lead {lead.imported_name} elevated to score=100.'
+                                ),
+                            ))
+                except Exception:
+                    logger.exception('_handle_inbound: failed to elevate lead to boiling_hot')
+
             db.commit()
 
         # Also fire admin notification

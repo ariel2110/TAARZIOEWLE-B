@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Button, Card, SectionTitle, Input, Select } from '../components/ui';
+import { Button, Card, SectionTitle, Input, Select, Tooltip } from '../components/ui';
 import { Lead, getLeads, createLead, qualifyLead, convertLeadToBusiness, importLeadsCSV } from '../services/queries';
 
 const STATUSES = ['imported', 'qualified', 'converted', 'rejected'];
@@ -117,8 +117,12 @@ export default function LeadsPage() {
               <div style={{ fontSize: 12, color: '#9ca3af' }}>#{l.id}</div>
             </div>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
-              <Button onClick={() => action(() => qualifyLead(l.id), 'ליד עבר כשירות ✓')}>✅ כשר</Button>
-              <Button onClick={() => action(() => convertLeadToBusiness(l.id), 'הומר לעסק!')} style={{ background: '#111827', color: '#fff' }}>🏢 המר לעסק</Button>
+              <Tooltip text="סמן ליד כשיר — מעביר אותו לשלב הבא בצינור">
+                <Button onClick={() => action(() => qualifyLead(l.id), 'ליד עבר כשירות ✓')}>✅ כשר</Button>
+              </Tooltip>
+              <Tooltip text="המר ליד לעסק פעיל במערכת">
+                <Button onClick={() => action(() => convertLeadToBusiness(l.id), 'הומר לעסק!')} style={{ background: '#111827', color: '#fff' }}>🏢 המר לעסק</Button>
+              </Tooltip>
             </div>
           </div>
         ))}

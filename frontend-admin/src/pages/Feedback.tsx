@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Button, Card, Input, Select } from '../components/ui';
+import { Button, Card, Input, Select, InfoTip } from '../components/ui';
 import { useLang } from '../i18n';
 import { analyzeFeedback, createFeedback, getFeedback, type Feedback } from '../services/queries';
 
@@ -26,7 +26,7 @@ export default function FeedbackPage() {
 
   return (
     <div>
-      <h2>{t('feedback_intelligence')}</h2>
+      <h2>{t('feedback_intelligence')} <InfoTip text="רשום פידבק על דראפטים, הודעות, דוחות — AI מנתח ומציע פעולות שיפור" /></h2>
       <p className="muted">{t('feedback_subtitle')}</p>
       <Card>
         <div className="grid-two">

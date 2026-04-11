@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Card, SectionTitle } from '../components/ui';
+import { Card, SectionTitle, InfoTip } from '../components/ui';
 import { useLang } from '../i18n';
 import { getSecuritySummary, getSecurityTimeline, getSuspicion, SecuritySummary, SecurityTimelineItem, SuspicionItem } from '../services/queries';
 
@@ -14,7 +14,7 @@ export default function SecurityMonitoring(){
     }).catch(console.error);
   }, []);
   return <div className="grid">
-    <SectionTitle>{t('security_monitoring')}</SectionTitle>
+    <SectionTitle>{t('security_monitoring')} <InfoTip text="יומן פעילות, כשלות כניסה, חסימות IP ורשימת חשד לפי סיכון" /></SectionTitle>
     <div className="cards">
       <Card><div className="muted">{t('overall')}</div><div style={{fontSize:24,fontWeight:700}}>{summary?.overall_status || t('unknown_status')}</div></Card>
       <Card><div className="muted">{t('login_failures')}</div><div style={{fontSize:24,fontWeight:700}}>{summary?.login_failures || 0}</div></Card>

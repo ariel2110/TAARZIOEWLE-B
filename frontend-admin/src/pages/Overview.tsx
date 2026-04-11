@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Card, SectionTitle } from '../components/ui';
+import { Card, SectionTitle, InfoTip } from '../components/ui';
 import { useLang } from '../i18n';
 import { Digest, Health, Snapshot, Business, Approval, getSnapshot, getDigest, getHealth, getBusinesses, getApprovals } from '../services/queries';
 
@@ -29,12 +29,12 @@ export default function OverviewPage() {
       </div>
       <div className="two-col">
         <Card dark>
-          <SectionTitle>{t('ceo_digest')}</SectionTitle>
+          <SectionTitle>{t('ceo_digest')} <InfoTip text="תקציר יומי אוטומטי — מנהל AI מסכם את מצב המערכת ומציע פעולות עדיפות" /></SectionTitle>
           <p>{digest?.executive_summary}</p>
           <ul>{digest?.recommended_actions?.map(x => <li key={x}>{x}</li>)}</ul>
         </Card>
         <Card>
-          <SectionTitle>{t('system_health')}</SectionTitle>
+          <SectionTitle>{t('system_health')} <InfoTip text="בדיקת תקינות — חיבור לבסיס נתונים, מצב שירותים פנימיים" /></SectionTitle>
           <p><strong>{t('status')}:</strong> {health?.overall_status || health?.status}</p>
           <p><strong>{t('database')}:</strong> {health?.database_ok ? t('db_connected') : t('db_unknown')}</p>
           <ul>{health?.drivers?.map(x => <li key={x}>{x}</li>)}</ul>

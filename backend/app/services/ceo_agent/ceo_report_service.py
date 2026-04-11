@@ -48,10 +48,10 @@ class CEOReportService:
             'open_security_alerts': open_security_alerts,
             'high_security_alerts': high_security_alerts,
             'pressure_notes': [
-                f'{approvals_pending} approvals pending',
-                f'{payments_pending} payments pending',
-                f'{outreach_ready} businesses ready for outreach',
-                f'{open_security_alerts} open security alerts',
+                f'{approvals_pending} אישורים ממתינים',
+                f'{payments_pending} תשלומים ממתינים',
+                f'{outreach_ready} עסקים מוכנים לפנייה',
+                f'{open_security_alerts} התראות אבטחה פתוחות',
             ],
         }
 

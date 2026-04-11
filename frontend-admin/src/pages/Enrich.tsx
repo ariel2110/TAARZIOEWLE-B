@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Card, SectionTitle } from '../components/ui';
+import { Card, SectionTitle, Tooltip, InfoTip } from '../components/ui';
 import {
   EnrichedBusiness, EnrichStatus, EnrichCategory,
   getEnrichStatus, getEnrichCategories, searchEnrich, importEnrichedToLeads, createDemosFromEnriched,
@@ -121,7 +121,7 @@ export default function EnrichPage() {
 
   return (
     <div dir="rtl" style={{ maxWidth: 1100, margin: '0 auto' }}>
-      <SectionTitle>🔍 איסוף לידים — עסקים ללא אתר</SectionTitle>
+      <SectionTitle>🔍 איסוף לידים — עסקים ללא אתר <InfoTip text="חיפוש בגוגל Maps לעסקים ללא אתר — בחר ויבא כלידים או צור אתרי דמו" /></SectionTitle>
 
       {/* Value proposition banner */}
       <div style={{ background: 'linear-gradient(135deg, #fef3c7 0%, #fce7f3 100%)', border: '1.5px solid #f59e0b', borderRadius: 12, padding: '14px 18px', marginBottom: 18 }}>
@@ -258,11 +258,13 @@ export default function EnrichPage() {
             {selected.size > 0 && (
               <>
                 <button onClick={handleImport} disabled={importing}
-                  style={{ background: importing ? '#9ca3af' : '#10b981', color: 'white', border: 'none', borderRadius: 8, padding: '7px 18px', fontSize: 14, fontWeight: 700, cursor: importing ? 'not-allowed' : 'pointer' }}>
+                  style={{ background: importing ? '#9ca3af' : '#10b981', color: 'white', border: 'none', borderRadius: 8, padding: '7px 18px', fontSize: 14, fontWeight: 700, cursor: importing ? 'not-allowed' : 'pointer' }}
+                  title="ייבא את העסקים הנבחרים לרשימת הלידים">
                   {importing ? '⏳ מייבא...' : `📥 ייבא ${selected.size} לידים`}
                 </button>
                 <button onClick={handleCreateDemos} disabled={creatingDemos}
-                  style={{ background: creatingDemos ? '#9ca3af' : '#7c3aed', color: 'white', border: 'none', borderRadius: 8, padding: '7px 18px', fontSize: 14, fontWeight: 700, cursor: creatingDemos ? 'not-allowed' : 'pointer', boxShadow: '0 4px 12px rgba(124,58,237,0.35)' }}>
+                  style={{ background: creatingDemos ? '#9ca3af' : '#7c3aed', color: 'white', border: 'none', borderRadius: 8, padding: '7px 18px', fontSize: 14, fontWeight: 700, cursor: creatingDemos ? 'not-allowed' : 'pointer', boxShadow: '0 4px 12px rgba(124,58,237,0.35)' }}
+                  title="צור אתר דמו מוכן לשליחה בוואטסאפ עבור כל עסק שנבחר">
                   {creatingDemos ? '⏳ יוצר...' : `🎬 צור ${selected.size} אתרי דמו`}
                 </button>
               </>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Button, Card, SectionTitle, Input, Select } from '../components/ui';
+import { Button, Card, SectionTitle, Input, Select, Tooltip } from '../components/ui';
 import {
   Business, getBusinesses, createBusiness,
   moveBusinessToDraft, markBusinessOutreachReady, buildBusinessWhatsApp,
@@ -111,17 +111,23 @@ export default function BusinessesPage() {
               <div style={{ fontSize: 12, color: '#9ca3af' }}>#{b.id}</div>
             </div>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
-              <Button onClick={() => action(() => moveBusinessToDraft(b.id), 'דראפט נוצר!')}>
-                📝 צור דראפט
-              </Button>
-              <Button onClick={() => action(() => markBusinessOutreachReady(b.id), 'סומן כמוכן לפנייה')}>
-                ✅ מוכן לפנייה
-              </Button>
-              <Button onClick={() => action(() => buildBusinessWhatsApp(b.id).then((x: any) => {
-                setMsg(`WhatsApp מוכן: ${x.whatsapp_url || 'outreach #' + x.outreach_id}`);
-              }))}>
-                💬 בנה WhatsApp
-              </Button>
+              <Tooltip text="צור אתר טיוטה לעסק זה — מוכן לתצוגה מקדימה">
+                <Button onClick={() => action(() => moveBusinessToDraft(b.id), 'דראפט נוצר!')}>
+                  📝 צור דראפט
+                </Button>
+              </Tooltip>
+              <Tooltip text="סמן עסק זה כמוכן לפנייה — יעבור לתור הפנייה">
+                <Button onClick={() => action(() => markBusinessOutreachReady(b.id), 'סומן כמוכן לפנייה')}>
+                  ✅ מוכן לפנייה
+                </Button>
+              </Tooltip>
+              <Tooltip text="בנה הודעת WhatsApp מותאמת אישית לעסק זה">
+                <Button onClick={() => action(() => buildBusinessWhatsApp(b.id).then((x: any) => {
+                  setMsg(`WhatsApp מוכן: ${x.whatsapp_url || 'outreach #' + x.outreach_id}`);
+                }))}>
+                  💬 בנה WhatsApp
+                </Button>
+              </Tooltip>
             </div>
           </div>
         ))}

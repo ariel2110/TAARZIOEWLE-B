@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from 'react';
-import { Button, Card, SectionTitle } from '../components/ui';
+import { Button, Card, SectionTitle, InfoTip } from '../components/ui';
 import { useLang } from '../i18n';
 import { Approval, ApprovalDetail, getApprovals, getApprovalDetail, approve, reject, createCeoTask } from '../services/queries';
 
@@ -14,7 +14,7 @@ export default function ApprovalsPage() {
   return (
     <div className="two-col">
       <Card>
-        <SectionTitle>{t('approval_queue')}</SectionTitle>
+        <SectionTitle>{t('approval_queue')} <InfoTip text="שינויים המחכים לאישור אריאל לפני ביצוע — כולל שינויי תבניות, קמפיינים והפעלות AI" /></SectionTitle>
         <div className="table-list">
           {items.map(a => (
             <div key={a.id}>

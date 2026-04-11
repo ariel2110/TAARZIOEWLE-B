@@ -23,7 +23,7 @@ def daily_digest(db: Session = Depends(get_db), _: User = Depends(get_current_ad
 
 @router.get('/health', response_model=CEOHealth)
 def health(_: User = Depends(get_current_admin), db: Session = Depends(get_db)):
-    return {'overall_status': 'healthy', 'database_ok': True, 'drivers': ['Queues visible', 'Approvals connected', 'Feedback intelligence active']}
+    return {'overall_status': 'פעיל', 'database_ok': True, 'drivers': ['תורים פעילים', 'אישורים מחוברים', 'מודיעין פידבק פעיל']}
 
 
 @router.post('/task-from-recommendation')

@@ -2,12 +2,12 @@ class CEOBrainService:
     def build_summary(self, metrics: dict) -> dict:
         health = "healthy" if metrics.get("payments_pending", 0) < 5 else "warning"
         return {
-            "executive_summary": "The platform is in operational starter mode. Keep lead flow moving, generate strong draft previews, and clear payment blockers quickly.",
+            "executive_summary": "הפלטפורמה במצב הפעלה תפעולי. שמור על זרימת לידים, צור תצוגות מקדימות חזקות לדראפטים ופנה תקיעות תשלום במהירות.",
             "health": health,
             "recommended_actions": [
-                "Review high-score leads first",
-                "Generate missing draft previews for outreach-ready businesses",
-                "Clear pending payment confirmations",
+                "סקור לידים בעלי ציון גבוה ראשון",
+                "צור תצוגות מקדימות חסרות לדראפטים עבור עסקים מוכנים לפנייה",
+                "פנה אישורי תשלום ממתינים",
             ],
             "metrics": metrics,
         }

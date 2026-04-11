@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Button, Card, SectionTitle } from '../components/ui';
+import { Button, Card, SectionTitle, Tooltip } from '../components/ui';
 import {
     DraftSite,
     getDraftSites,
@@ -112,19 +112,25 @@ export default function DraftSitesPage() {
                             {/* Actions */}
                             <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
                                 {!draft ? (
-                                    <Button onClick={() => handleCreate(biz.id)} disabled={busy}>
-                                        {busy ? '⏳ יוצר…' : '✨ צור אתר'}
-                                    </Button>
+                                    <Tooltip text="בנה אתר טיוטה בעזרת AI לעסק זה">
+                                      <Button onClick={() => handleCreate(biz.id)} disabled={busy}>
+                                          {busy ? '⏳ יוצר…' : '✨ צור אתר'}
+                                      </Button>
+                                    </Tooltip>
                                 ) : (
                                     <>
                                         {previewUrl(draft) && (
-                                            <a href={previewUrl(draft)} target="_blank" rel="noopener noreferrer">
-                                                <Button>👁️ צפה באתר</Button>
-                                            </a>
+                                            <Tooltip text="פתח תצוגה מקדימה של האתר">
+                                              <a href={previewUrl(draft)} target="_blank" rel="noopener noreferrer">
+                                                  <Button>👁️ צפה באתר</Button>
+                                              </a>
+                                            </Tooltip>
                                         )}
-                                        <Button onClick={() => handleRegenerate(draft)} disabled={busy}>
-                                            {busy ? '⏳ מחדש…' : '🔄 צור מחדש'}
-                                        </Button>
+                                        <Tooltip text="בנה מחדש את האתר — שלב AI נוסף יחדש את התוכן">
+                                          <Button onClick={() => handleRegenerate(draft)} disabled={busy}>
+                                              {busy ? '⏳ מחדש…' : '🔄 צור מחדש'}
+                                          </Button>
+                                        </Tooltip>
                                     </>
                                 )}
                             </div>

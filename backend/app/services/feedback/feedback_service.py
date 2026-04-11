@@ -50,8 +50,8 @@ class FeedbackService:
             scope = 'campaign_level'
         if item.quick_rating == 'not_a_fit' and scope == 'item_only':
             action = 'rebuild_or_major_change'
-        understanding = f"Understood feedback for {item.target_type}. Classified as {category}."
-        response = f"I understand this as a {category} issue. Suggested next action: {action}. Suggested scope: {scope}."
+        understanding = f"הובן פידבק עבור {item.target_type}. סווג כ״{category}."
+        response = f"פעולה מומלצת: {action}. היקף: {scope}."
 
         # Optional LLM enhancement for open feedback text
         if item.open_feedback and len(item.open_feedback.strip()) > 10:
@@ -76,7 +76,7 @@ class FeedbackService:
         if item.quick_rating in ('needs_improvement', 'not_a_fit'):
             approval = ApprovalItem(
                 approval_type='feedback_followup',
-                title=f'Feedback follow-up for {item.target_type} #{item.target_id or item.id}',
+                title=f'מעקב פידבק עבור {item.target_type} #{item.target_id or item.id}',
                 summary=response,
                 status='proposed',
                 approval_required=True,
@@ -106,14 +106,14 @@ class FeedbackService:
         try:
             from app.services.llm.router_service import LLMRouterService
             prompt = (
-                "You are a senior product manager analyzing customer feedback for a local-business SaaS platform.\n"
-                f"Feedback type: {target_type} | Rating: {quick_rating}\n"
-                f"Rule-based analysis: category={category}, scope={scope}, action={action}\n\n"
-                f"Customer wrote (may be Hebrew or English):\n\"\"\"\n{open_feedback}\n\"\"\"\n\n"
-                "Respond with two short paragraphs separated by '|||':\n"
-                "1. A concise 'understanding' (what the customer means, 1-2 sentences)\n"
-                "2. A recommended 'response' / action-plan (1-2 sentences)\n\n"
-                "No extra text, just the two paragraphs separated by |||."
+                "אתה מנהל מוצר בכיר המנתח פידבק עבור פלטפורמת SaaS לעסקים מקומיים.\n"
+                f"סוג פידבק: {target_type} | דירוג: {quick_rating}\n"
+                f"ניתוח באזיסת כללים: קטגוריה={category}, היקף={scope}, פעולה={action}\n\n"
+                f"הקונה כתב:\n\"\"\"\n{open_feedback}\n\"\"\"\n\n"
+                "ענה בשני פסקאות קצרות מופרדות ב-|||:\n"
+                "1. הבנה תמציתית — מה הקונה מתכוון (1-2 משפטים בעברית)\n"
+                "2. תגובה מומלצת / תכנית פעולה (1-2 משפטים בעברית)\n\n"
+                "ללא טקסט נוסף, רק שני הפסקאות מופרדות ב-|||."
             )
             raw = LLMRouterService().call("review_generated_copy", prompt)
             if not raw or "|||" not in raw:

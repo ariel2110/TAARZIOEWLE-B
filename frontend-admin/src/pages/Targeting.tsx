@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from 'react';
-import { Button, Card, Input, SectionTitle } from '../components/ui';
+import { Button, Card, Input, SectionTitle, InfoTip } from '../components/ui';
 import { useLang } from '../i18n';
 import { Profile, Campaign, Lead, CampaignResults, getProfiles, getCampaigns, searchLeads, assignLeadToCampaign, getCampaignResults } from '../services/queries';
 
@@ -26,7 +26,7 @@ export default function TargetingPage() {
   return (
     <div className="two-col">
       <Card>
-        <SectionTitle>{t('targeting_console')}</SectionTitle>
+        <SectionTitle>{t('targeting_console')} <InfoTip text="חיפוש לידים לפי עיר/קטגוריה ושיוך לקמפיין פנייה" /></SectionTitle>
         <div className="grid-two">
           <div><label>{t('city')}</label><Input value={city} onChange={(e) => setCity(e.target.value)} placeholder={t('city_placeholder')} /></div>
           <div><label>{t('category')}</label><Input value={category} onChange={(e) => setCategory(e.target.value)} placeholder={t('category_placeholder')} /></div>
@@ -51,7 +51,7 @@ export default function TargetingPage() {
         {campaignResults ? <div className="card subtle"><strong>{t('campaign_results')}:</strong><p>{t('leads_label')}: {campaignResults.lead_count} · {t('businesses')}: {campaignResults.business_count}</p></div> : null}
       </Card>
       <Card>
-        <SectionTitle>{t('segment_preview')}</SectionTitle>
+        <SectionTitle>{t('segment_preview')} <InfoTip text="לידים שמתאימים לסגמנט הנוכחי — שייך לקמפיין בלחיצה" /></SectionTitle>
         <div className="table-list">
           {results.map(l => <div key={l.id}><strong>{l.imported_name}</strong><div className="muted">{l.city || '—'} · {l.category || '—'} · {t('score_label')} {l.score} · {l.website_url ? t('has_website') : t('no_website')} · {t('campaign_label')} {l.campaign_id || '—'}</div><Button onClick={() => assign(l.id)}>{t('assign_campaign')}</Button></div>)}
         </div>

@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from 'react';
-import { Button, Card, SectionTitle } from '../components/ui';
+import { Button, Card, SectionTitle, InfoTip } from '../components/ui';
 import { useLang } from '../i18n';
 import { QueueSummary, QueueItem, getQueueSummary, getQueueItems, runQueueAction } from '../services/queries';
 
@@ -22,7 +22,7 @@ export default function QueuesPage() {
   return (
     <div className="two-col">
       <Card>
-        <SectionTitle>{t('queue_summary')}</SectionTitle>
+        <SectionTitle>{t('queue_summary')} <InfoTip text="ריכוז כל הפריטים הממתינים לפעולה — לחץ 'פתח' כדי לראות ולפעול" /></SectionTitle>
         <div className="table-list">
           {summary.map(q => (
             <div key={q.queue_type} style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>

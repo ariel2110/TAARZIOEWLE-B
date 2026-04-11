@@ -163,6 +163,7 @@ def _handle_inbound(db: Session, msg: dict, metadata: dict) -> None:
         )
         if outreach:
             outreach.status = 'replied'
+            outreach.has_replied = True
             db.add(ActivityLog(
                 actor_type='webhook',
                 entity_type='outreach_message',

@@ -201,8 +201,8 @@ export type Notification = { id: number; event: string; entity_type: string; ent
 export const getNotifications = (limit = 30) => apiGet<Notification[]>(`/admin/notifications?limit=${limit}`);
 
 // ---- A/B Test Results ----
-export type AbVariantResult = { variant: string; total: number; sent: number; delivered: number; read: number; replied: number; reply_rate: number; read_rate: number };
-export const getAbResults = () => apiGet<AbVariantResult[]>('/admin/analytics/ab-results');
+export type AbVariantResult = { variant: string; campaign_id: string; total: number; sent: number; delivered: number; read: number; replied: number; reply_rate: number; read_rate: number };
+export const getAbResults = (campaignId?: string) => apiGet<AbVariantResult[]>(`/admin/analytics/ab-results${campaignId ? `?campaign_id=${encodeURIComponent(campaignId)}` : ''}`);
 
 // ---- Auto-qualify ----
 export const autoQualifyLeads = () => apiPost<{ qualified: number; leads: { id: number; name: string }[] }>('/admin/leads/auto-qualify', {});

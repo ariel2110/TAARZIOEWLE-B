@@ -11,6 +11,8 @@ class WhatsAppBusinessLaunchRequest(BaseModel):
     business_id: int
     draft_site_id: int | None = None
     message_template_key: str = 'initial_outreach_v1'
+    ab_campaign_id: str | None = None
+    ab_variant: str | None = None
 
 
 class MarkOutreachSentRequest(BaseModel):

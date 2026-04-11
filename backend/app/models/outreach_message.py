@@ -1,5 +1,5 @@
 
-from sqlalchemy import ForeignKey, String, Text
+from sqlalchemy import Boolean, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base
 from app.models.mixins import TimestampMixin
@@ -20,3 +20,5 @@ class OutreachMessage(TimestampMixin, Base):
     category_context: Mapped[str | None] = mapped_column(String(120), default=None)
     # A/B testing support
     ab_variant: Mapped[str | None] = mapped_column(String(50), default=None, index=True)
+    ab_campaign_id: Mapped[str | None] = mapped_column(String(100), default=None, index=True)
+    has_replied: Mapped[bool] = mapped_column(Boolean, default=False, index=True)

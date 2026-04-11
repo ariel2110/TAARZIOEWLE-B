@@ -20,7 +20,10 @@ def whatsapp_launch(payload: WhatsAppLaunchRequest, db: Session = Depends(get_db
 
 @router.post('/whatsapp-for-business', response_model=WhatsAppLaunchResponse)
 def whatsapp_for_business(payload: WhatsAppBusinessLaunchRequest, db: Session = Depends(get_db), _: User = Depends(get_current_admin)):
-    message = outreach_service.build_business_message(db, payload.business_id, payload.draft_site_id, payload.message_template_key)
+    message = outreach_service.build_business_message(
+        db, payload.business_id, payload.draft_site_id, payload.message_template_key,
+        ab_variant=payload.ab_variant, ab_campaign_id=payload.ab_campaign_id,
+    )
     if not message:
         raise HTTPException(status_code=404, detail='Business not found')
     if not message.outbound_target:

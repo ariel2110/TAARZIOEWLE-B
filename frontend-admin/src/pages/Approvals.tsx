@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { Button, Card, SectionTitle, InfoTip } from '../components/ui';
 import { useLang } from '../i18n';
-import { Approval, ApprovalDetail, getApprovals, getApprovalDetail, approve, reject, applyApproval, createCeoTask } from '../services/queries';
+import { Approval, ApprovalDetail, getApprovals, getApprovalDetail, approve, reject, deleteApproval, applyApproval, createCeoTask } from '../services/queries';
 
 export default function ApprovalsPage() {
   const [items, setItems] = useState<Approval[]>([]);
@@ -41,6 +41,10 @@ export default function ApprovalsPage() {
               {a.summary && <div style={{ margin: '6px 0' }}>{a.summary}</div>}
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <Button onClick={() => openDetail(a.id)}>{t('open_detail')}</Button>
+                <Button
+                  style={{ background: '#c0392b', color: '#fff' }}
+                  onClick={() => window.confirm('למחוק פריט זה לצמיתות?') && deleteApproval(a.id).then(load)}
+                >🗑 מחק</Button>
                 {a.status !== 'applied' && a.status !== 'rejected' && (
                   <Button onClick={() => approve(a.id).then(load)}>{t('approve')}</Button>
                 )}

@@ -108,8 +108,9 @@ export const getBusinesses = (skip = 0, limit = 100) => apiGet<Business[]>(`/adm
 export const getLeads = (skip = 0, limit = 100) => apiGet<Lead[]>(`/admin/leads?skip=${skip}&limit=${limit}`);
 export const getApprovals = () => apiGet<Approval[]>('/admin/approvals');
 export const getApprovalDetail = (id: number) => apiGet<ApprovalDetail>(`/admin/approvals/${id}`);
-export const approve = (id: number) => apiPost(`/admin/approvals/${id}/approve`, {});
-export const reject = (id: number) => apiPost(`/admin/approvals/${id}/reject`, {});
+export const approve        = (id: number) => apiPost(`/admin/approvals/${id}/approve`, {});
+export const reject         = (id: number) => apiPost(`/admin/approvals/${id}/reject`, {});
+export const deleteApproval = (id: number) => apiDelete(`/admin/approvals/${id}`);
 export type ApplyResult = { id: number; status: string; applied: boolean; execution?: { status: string; message: string } };
 export const applyApproval = (id: number) => apiPost<ApplyResult>(`/admin/approvals/${id}/apply`, {});
 export const getProfiles = () => apiGet<Profile[]>('/admin/targeting/profiles');

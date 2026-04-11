@@ -50,3 +50,13 @@ def apply_item(item_id: int, db: Session = Depends(get_db), _: User = Depends(ge
         return ApprovalApplyService().apply(db, item)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.delete('/{item_id}')
+def delete_approval(item_id: int, db: Session = Depends(get_db), _: User = Depends(get_current_admin)):
+    item = service.get_item(db, item_id)
+    if not item:
+        raise HTTPException(status_code=404, detail='Approval item not found')
+    db.delete(item)
+    db.commit()
+    return {'status': 'deleted', 'id': item_id}

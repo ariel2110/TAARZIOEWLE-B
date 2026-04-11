@@ -16,9 +16,9 @@ class LLMRouterService:
 
     TASK_PROVIDER_MAP: dict[str, str] = {
         # Pipeline stages
-        "analyze_business_data":  "gemini",    # Stage 1 — Intelligence Analyst
-        "generate_site_copy":     "openai",    # Stage 2 — Brand Strategist & Copywriter
-        "build_site_html":        "anthropic", # Stage 3 — Senior Frontend Developer
+        "analyze_business_data":  "gemini",    # Stage 1b — Style & Design Director
+        "generate_site_copy":     "xai",       # Stage 1a — Content Manager (Grok)
+        "build_site_html":        "anthropic", # Stage 2  — Master Builder (Claude)
         # Legacy / standalone tasks
         "review_generated_copy":  "anthropic",
         "enrich_business_data":   "gemini",
@@ -46,9 +46,10 @@ class LLMRouterService:
 
         # Build candidate list: preferred provider first, then fallbacks
         all_providers = [
-            ("gemini",    getattr(settings, "gemini_api_key", None)),
-            ("openai",    getattr(settings, "openai_api_key", None)),
-            ("anthropic", getattr(settings, "anthropic_api_key", None)),
+            ("xai",      getattr(settings, "xai_api_key", None)),
+            ("gemini",   getattr(settings, "gemini_api_key", None)),
+            ("openai",   getattr(settings, "openai_api_key", None)),
+            ("anthropic",getattr(settings, "anthropic_api_key", None)),
         ]
         ordered = [(p, k) for p, k in all_providers if p == primary] + \
                   [(p, k) for p, k in all_providers if p != primary]
@@ -59,7 +60,14 @@ class LLMRouterService:
             # Use caller's model hint only for the primary provider; fallbacks use their own defaults
             effective_model = model if provider == primary else None
             result: str | None = None
-            if provider == "gemini":
+            if provider == "xai":
+                result = self._call_xai(
+                    prompt, key,
+                    model=effective_model or "grok-3-mini",
+                    system=system, max_tokens=max_tokens,
+                    json_mode=json_mode,
+                )
+            elif provider == "gemini":
                 result = self._call_gemini(
                     prompt, key,
                     model=effective_model or "gemini-2.5-flash",
@@ -89,6 +97,29 @@ class LLMRouterService:
     # ──────────────────────────────────────────────────────────────────────────
     # Provider implementations
     # ──────────────────────────────────────────────────────────────────────────
+
+    def _call_xai(
+        self, prompt: str, api_key: str, *,
+        model: str = "grok-3-mini",
+        system: str | None = None,
+        max_tokens: int = 1200,
+        json_mode: bool = False,
+    ) -> str | None:
+        try:
+            from openai import OpenAI
+            client = OpenAI(api_key=api_key, base_url="https://api.x.ai/v1")
+            messages: list[dict] = []
+            if system:
+                messages.append({"role": "system", "content": system})
+            messages.append({"role": "user", "content": prompt})
+            kwargs: dict[str, Any] = dict(model=model, messages=messages, max_tokens=max_tokens, temperature=0.7)
+            if json_mode:
+                kwargs["response_format"] = {"type": "json_object"}
+            resp = client.chat.completions.create(**kwargs)
+            return resp.choices[0].message.content
+        except Exception:
+            logger.exception("LLMRouterService._call_xai failed")
+            return None
 
     def _call_openai(
         self, prompt: str, api_key: str, *,

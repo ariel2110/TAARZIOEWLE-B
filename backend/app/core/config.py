@@ -48,6 +48,7 @@ class Settings(BaseSettings):
     openai_api_key: str | None = Field(default=None)
     anthropic_api_key: str | None = Field(default=None)
     gemini_api_key: str | None = Field(default=None)
+    xai_api_key: str | None = Field(default=None)
     llm_default_model: str = Field(default='gpt-4o')
 
     # OTP / delivery

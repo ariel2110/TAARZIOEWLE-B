@@ -188,7 +188,7 @@ class AutoSitePipelineService:
                 "generate_site_copy",
                 f"Raw Google Maps Data:\n{raw}",
                 system=_GPT4O_CONTENT_SYSTEM,
-                model="gpt-4o",
+                model="grok-3-mini",
                 max_tokens=900,
                 json_mode=True,
             )

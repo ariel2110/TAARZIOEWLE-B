@@ -220,7 +220,7 @@ class AutoSitePipelineService:
                 "analyze_business_data",
                 f"Business description for design analysis:\n{raw}",
                 system=_GEMINI_DESIGN_SYSTEM,
-                model="gemini-2.0-flash",
+                model="gemini-2.5-flash",
                 max_tokens=400,
                 json_mode=True,
             )

@@ -62,7 +62,7 @@ class LLMRouterService:
             if provider == "gemini":
                 result = self._call_gemini(
                     prompt, key,
-                    model=effective_model or "gemini-2.0-flash",
+                    model=effective_model or "gemini-2.5-flash",
                     system=system, max_tokens=max_tokens,
                 )
             elif provider == "anthropic":
@@ -137,7 +137,7 @@ class LLMRouterService:
 
     def _call_gemini(
         self, prompt: str, api_key: str, *,
-        model: str = "gemini-2.0-flash",
+        model: str = "gemini-2.5-flash",
         system: str | None = None,
         max_tokens: int = 1200,
     ) -> str | None:

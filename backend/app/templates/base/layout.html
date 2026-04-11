@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ page_title }}</title>
+    {% if noindex %}<meta name="robots" content="noindex,nofollow" />{% endif %}
+    <style>
+      body{font-family:Arial,sans-serif;margin:0;background:#f7f9fc;color:#111827}
+      .banner{background:#111827;color:white;padding:12px 16px;font-size:14px}
+      .wrap{max-width:980px;margin:0 auto;padding:24px}
+      .hero{background:white;border-radius:16px;padding:36px;margin-top:20px;box-shadow:0 10px 30px rgba(0,0,0,.06)}
+      .cta{display:inline-block;background:#2563eb;color:white;padding:12px 16px;border-radius:12px;text-decoration:none;margin-top:16px}
+      .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:24px}
+      .card{background:white;border-radius:16px;padding:20px;box-shadow:0 8px 24px rgba(0,0,0,.05)}
+      @media(max-width:700px){.grid{grid-template-columns:1fr}}
+    </style>
+  </head>
+  <body>
+    {% if is_demo %}
+    <div class="banner">זהו עמוד הדגמה זמני לעסק. ניתן לבקש מחיקה או הפעלה מלאה.</div>
+    {% endif %}
+    <div class="wrap">
+      <section class="hero">
+        <h1>{{ hero_title }}</h1>
+        <p>{{ hero_subtitle }}</p>
+        {% if phone %}<a class="cta" href="https://wa.me/{{ phone|replace('+','') }}">דברו איתנו בוואטסאפ</a>{% endif %}
+      </section>
+      <section class="grid">
+        <div class="card">
+          <h3>תחום</h3>
+          <p>{{ category }}</p>
+        </div>
+        <div class="card">
+          <h3>אזור פעילות</h3>
+          <p>{{ city }} {{ address }}</p>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

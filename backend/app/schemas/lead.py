@@ -1,0 +1,27 @@
+
+from pydantic import BaseModel
+
+
+class LeadCreate(BaseModel):
+    imported_name: str
+    city: str | None = None
+    category: str | None = None
+    phone: str | None = None
+    address: str | None = None
+    website_url: str | None = None
+    score: int = 0
+    status: str = 'imported'
+    campaign_id: int | None = None
+    targeting_profile_id: int | None = None
+
+
+class LeadRead(LeadCreate):
+    id: int
+
+    class Config:
+        from_attributes = True
+
+
+class LeadAssignCampaign(BaseModel):
+    campaign_id: int | None = None
+    targeting_profile_id: int | None = None

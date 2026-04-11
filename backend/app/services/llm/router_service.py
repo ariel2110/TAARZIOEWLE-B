@@ -68,7 +68,7 @@ class LLMRouterService:
             elif provider == "anthropic":
                 result = self._call_anthropic(
                     prompt, key,
-                    model=effective_model or "claude-3-5-sonnet-20241022",
+                    model=effective_model or "claude-sonnet-4-6",
                     system=system, max_tokens=max_tokens,
                 )
             elif provider == "openai":
@@ -115,7 +115,7 @@ class LLMRouterService:
 
     def _call_anthropic(
         self, prompt: str, api_key: str, *,
-        model: str = "claude-3-5-sonnet-20241022",
+        model: str = "claude-sonnet-4-6",
         system: str | None = None,
         max_tokens: int = 4096,
     ) -> str | None:

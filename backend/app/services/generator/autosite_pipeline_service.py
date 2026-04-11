@@ -307,7 +307,7 @@ class AutoSitePipelineService:
                 "build_site_html",
                 prompt,
                 system=_CLAUDE_BUILDER_SYSTEM,
-                model="claude-3-5-sonnet-20241022",
+                model="claude-sonnet-4-6",
                 max_tokens=8000,
             )
             if not response:

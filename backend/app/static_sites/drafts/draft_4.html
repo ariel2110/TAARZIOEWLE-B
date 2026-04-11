@@ -1,119 +1,323 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>אור וזיו שירותי חשמל</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Heebo', sans-serif;
-            direction: rtl;
-            background-color: #f8f8f8;
-        }
-        .carousel {
-            display: flex;
-            overflow-x: auto;
-            scroll-behavior: smooth;
-        }
-        .carousel::-webkit-scrollbar {
-            display: none;
-        }
-        .carousel-item {
-            flex: none;
-            width: 100%;
-            max-width: 300px;
-            margin: 0 10px;
-            background: white;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            border-radius: 1rem;
-            padding: 20px;
-        }
-        .star-rating {
-            color: #FFCC00;
-        }
-        .sticky-whatsapp {
-            position: fixed;
-            bottom: 1rem;
-            left: 1rem;
-            background-color: #25D366;
-            color: white;
-            border-radius: 50%;
-            padding: 0.5rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>אור וזיו שירותי חשמל</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    * { font-family: 'Heebo', sans-serif; }
+
+    :root {
+      --primary: #F4A261;
+      --secondary: #264653;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    /* Hero gradient */
+    .hero-bg {
+      background: linear-gradient(135deg, #264653 0%, #1a3340 50%, #0f2028 100%);
+    }
+
+    /* Primary button */
+    .btn-primary {
+      background: linear-gradient(135deg, #F4A261, #e8894a);
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 20px rgba(244,162,97,0.4);
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(244,162,97,0.55);
+    }
+
+    /* Service card hover */
+    .service-card {
+      transition: all 0.3s ease;
+    }
+    .service-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 20px 40px rgba(38,70,83,0.15);
+    }
+
+    /* Marquee / Carousel */
+    .marquee-wrapper {
+      overflow: hidden;
+      width: 100%;
+    }
+    .marquee-track {
+      display: flex;
+      gap: 1.5rem;
+      animation: marquee 30s linear infinite;
+      width: max-content;
+    }
+    .marquee-track:hover {
+      animation-play-state: paused;
+    }
+    @keyframes marquee {
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    .review-card {
+      min-width: 340px;
+      max-width: 340px;
+    }
+
+    /* WhatsApp pulse */
+    .whatsapp-btn {
+      animation: pulse-wa 2.5s infinite;
+    }
+    @keyframes pulse-wa {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(37,211,102,0.6); }
+      50%       { box-shadow: 0 0 0 14px rgba(37,211,102,0); }
+    }
+
+    /* Sticky nav */
+    .sticky-nav {
+      backdrop-filter: blur(12px);
+      background: rgba(38,70,83,0.92);
+    }
+
+    /* Section headings underline */
+    .section-title::after {
+      content: '';
+      display: block;
+      width: 60px;
+      height: 4px;
+      background: linear-gradient(90deg, #F4A261, #e8894a);
+      border-radius: 2px;
+      margin: 12px auto 0;
+    }
+
+    /* About section diagonal */
+    .about-bg {
+      background: linear-gradient(160deg, #f8f9fa 60%, #eef2f5 100%);
+    }
+
+    /* Hours grid */
+    .hour-row:nth-child(even) {
+      background: rgba(244,162,97,0.07);
+    }
+
+    /* Rating badge glow */
+    .rating-badge {
+      box-shadow: 0 4px 20px rgba(244,162,97,0.25);
+    }
+  </style>
 </head>
-<body>
+<body class="bg-white text-gray-800 overflow-x-hidden">
 
-    <!-- Hero Section -->
-    <section class="text-center py-10 bg-gradient-to-r from-yellow-200 via-yellow-300 to-yellow-400">
-        <h1 class="text-4xl font-bold text-gray-800 mb-4">חשמל ללא דאגות עם אור וזיו!</h1>
-        <p class="text-xl text-gray-700">החשמלאי המקצועי והאמין שתמיד שם בשבילך.</p>
-        <a href="tel:972523013000" class="mt-6 inline-block bg-yellow-500 text-white text-lg py-2 px-6 rounded-full shadow">התקשרו עכשיו לחשמלאי המוביל!</a>
-    </section>
-
-    <!-- Services Section -->
-    <section class="py-10 bg-white">
-        <div class="max-w-screen-lg mx-auto px-4">
-            <h2 class="text-3xl font-semibold mb-6 text-gray-800">השירותים שלנו</h2>
-            <ul class="space-y-4 text-lg text-gray-700">
-                <li>שירותי תיקון חשמל</li>
-                <li>התקנת מערכות חשמל חדשות</li>
-                <li>תחזוקת מערכות חשמל</li>
-            </ul>
+  <!-- ===== STICKY NAV ===== -->
+  <nav class="sticky top-0 z-50 sticky-nav shadow-lg">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-full flex items-center justify-center" style="background:linear-gradient(135deg,#F4A261,#e8894a);">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+          </svg>
         </div>
-    </section>
+        <span class="text-white font-bold text-lg leading-tight">אור וזיו<br/><span class="text-xs font-light opacity-80">שירותי חשמל</span></span>
+      </div>
+      <div class="hidden md:flex items-center gap-6 text-sm text-white/80">
+        <a href="#services" class="hover:text-[#F4A261] transition-colors">שירותים</a>
+        <a href="#reviews" class="hover:text-[#F4A261] transition-colors">ביקורות</a>
+        <a href="#about" class="hover:text-[#F4A261] transition-colors">אודות</a>
+        <a href="#contact" class="hover:text-[#F4A261] transition-colors">צור קשר</a>
+        <a href="tel:972523013000" class="btn-primary text-white font-semibold px-4 py-2 rounded-full text-sm">
+          📞 052-301-3000
+        </a>
+      </div>
+      <a href="tel:972523013000" class="md:hidden btn-primary text-white font-bold px-4 py-2 rounded-full text-sm">
+        📞 התקשרו
+      </a>
+    </div>
+  </nav>
 
-    <!-- Reviews Carousel Section -->
-    <section class="py-10 bg-gray-100">
-        <div class="max-w-screen-lg mx-auto px-4">
-            <h2 class="text-3xl font-semibold mb-6 text-gray-800">המלצות</h2>
-            <div class="carousel">
-                <div class="carousel-item">
-                    <div class="star-rating mb-2">★★★★★</div>
-                    <p class="text-gray-700 mb-4">רוצה להמליץ מכל הלב על יוסי החשמלאי – אדם נדיר, מקצוען אמיתי ובן אדם עם נשמה ענקית. מרגע השיחה הראשונה, הרגשתי שאני בידיים טובות...</p>
-                    <div class="text-right text-sm text-gray-500">4.7 / 5 — 45 ביקורות</div>
-                </div>
+  <!-- ===== HERO ===== -->
+  <section class="hero-bg relative overflow-hidden min-h-screen flex items-center">
+    <!-- Decorative circles -->
+    <div class="absolute top-[-80px] left-[-80px] w-96 h-96 rounded-full opacity-10" style="background:radial-gradient(circle,#F4A261,transparent)"></div>
+    <div class="absolute bottom-[-120px] right-[-60px] w-80 h-80 rounded-full opacity-10" style="background:radial-gradient(circle,#F4A261,transparent)"></div>
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full opacity-5" style="background:radial-gradient(circle,#F4A261,transparent)"></div>
+
+    <div class="relative max-w-5xl mx-auto px-6 py-24 text-center">
+      <!-- Badge -->
+      <div class="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-5 py-2 text-white/90 text-sm font-medium mb-8">
+        <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+        זמין 24/7 · תל אביב-יפו
+      </div>
+
+      <h1 class="text-4xl md:text-6xl lg:text-7xl font-black text-white leading-tight mb-6">
+        חשמלאי מקצועי<br/>
+        <span style="background:linear-gradient(135deg,#F4A261,#ffd4a3); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">בתל אביב-יפו</span>
+      </h1>
+
+      <p class="text-lg md:text-2xl text-white/75 font-light mb-10 max-w-2xl mx-auto leading-relaxed">
+        פתרונות חשמל מהירים, מדויקים ואמינים - 24/7
+      </p>
+
+      <!-- CTA Buttons -->
+      <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+        <a href="tel:972523013000" class="btn-primary text-white font-bold text-lg px-10 py-4 rounded-2xl inline-flex items-center gap-3 w-full sm:w-auto justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/>
+          </svg>
+          התקשרו עכשיו
+        </a>
+        <a href="https://wa.me/972523013000" target="_blank" class="inline-flex items-center gap-3 bg-green-500 hover:bg-green-600 text-white font-bold text-lg px-10 py-4 rounded-2xl transition-all w-full sm:w-auto justify-center" style="box-shadow:0 4px 20px rgba(34,197,94,0.4)">
+          <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+          </svg>
+          שלחו הודעת WhatsApp
+        </a>
+      </div>
+
+      <!-- Stats row -->
+      <div class="mt-16 grid grid-cols-3 gap-6 max-w-2xl mx-auto">
+        <div class="text-center">
+          <div class="text-3xl md:text-4xl font-black text-[#F4A261]">24/7</div>
+          <div class="text-white/60 text-sm mt-1">זמינות מלאה</div>
+        </div>
+        <div class="text-center border-r border-l border-white/10">
+          <div class="text-3xl md:text-4xl font-black text-[#F4A261]">4.7★</div>
+          <div class="text-white/60 text-sm mt-1">דירוג גוגל</div>
+        </div>
+        <div class="text-center">
+          <div class="text-3xl md:text-4xl font-black text-[#F4A261]">45+</div>
+          <div class="text-white/60 text-sm mt-1">ביקורות מרוצות</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SERVICES ===== -->
+  <section id="services" class="py-24 bg-white">
+    <div class="max-w-5xl mx-auto px-6">
+      <div class="text-center mb-16">
+        <span class="inline-block bg-[#F4A261]/10 text-[#F4A261] font-semibold text-sm px-4 py-1.5 rounded-full mb-4">השירותים שלנו</span>
+        <h2 class="text-3xl md:text-5xl font-black text-gray-900 section-title">מה אנחנו מציעים?</h2>
+        <p class="text-gray-500 mt-6 text-lg max-w-xl mx-auto">שירות מקצועי, מהיר ואמין בכל תחומי החשמל</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+
+        <!-- Service 1 -->
+        <div class="service-card bg-white rounded-3xl p-8 shadow-lg border border-gray-100 text-center group cursor-default">
+          <div class="w-20 h-20 rounded-2xl mx-auto mb-6 flex items-center justify-center" style="background:linear-gradient(135deg,#F4A261,#e8894a);">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-gray-900 mb-3">תיקון תקלות חשמל</h3>
+          <p class="text-gray-500 leading-relaxed">אבחון מהיר ומדויק של תקלות חשמל עם פתרון יסודי בזמן קצר, בכל שעה ביום ובלילה.</p>
+          <div class="mt-6 w-12 h-1 rounded-full mx-auto" style="background:linear-gradient(90deg,#F4A261,#e8894a)"></div>
+        </div>
+
+        <!-- Service 2 -->
+        <div class="service-card bg-white rounded-3xl p-8 shadow-lg border border-gray-100 text-center group cursor-default" style="border-top:4px solid #F4A261;">
+          <div class="w-20 h-20 rounded-2xl mx-auto mb-6 flex items-center justify-center" style="background:linear-gradient(135deg,#264653,#1a3340);">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-gray-900 mb-3">התקנות חשמל</h3>
+          <p class="text-gray-500 leading-relaxed">התקנה מקצועית של לוחות חשמל, שקעים, מפסקים, גופי תאורה ועוד — לפי תקן ישראלי.</p>
+          <div class="mt-6 w-12 h-1 rounded-full mx-auto" style="background:linear-gradient(90deg,#264653,#1a3340)"></div>
+        </div>
+
+        <!-- Service 3 -->
+        <div class="service-card bg-white rounded-3xl p-8 shadow-lg border border-gray-100 text-center group cursor-default">
+          <div class="w-20 h-20 rounded-2xl mx-auto mb-6 flex items-center justify-center" style="background:linear-gradient(135deg,#F4A261,#e8894a);">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-gray-900 mb-3">בדיקות בטיחות</h3>
+          <p class="text-gray-500 leading-relaxed">בדיקות בטיחות מקיפות לוודא שהמערכת החשמלית שלכם תקינה, בטוחה ועומדת בכל התקנות.</p>
+          <div class="mt-6 w-12 h-1 rounded-full mx-auto" style="background:linear-gradient(90deg,#F4A261,#e8894a)"></div>
+        </div>
+      </div>
+
+      <!-- CTA under services -->
+      <div class="text-center mt-14">
+        <a href="tel:972523013000" class="btn-primary text-white font-bold text-lg px-12 py-4 rounded-2xl inline-flex items-center gap-3">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/>
+          </svg>
+          התקשרו עכשיו להזמנת שירות!
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== REVIEWS CAROUSEL ===== -->
+  <section id="reviews" class="py-24" style="background:linear-gradient(180deg,#f0f4f7 0%,#e8eef3 100%);">
+    <div class="max-w-5xl mx-auto px-6">
+      <div class="text-center mb-12">
+        <span class="inline-block bg-[#F4A261]/15 text-[#e8894a] font-semibold text-sm px-4 py-1.5 rounded-full mb-4">מה הלקוחות אומרים</span>
+        <h2 class="text-3xl md:text-5xl font-black text-gray-900 section-title">ביקורות לקוחות</h2>
+
+        <!-- Google Rating Badge -->
+        <div class="inline-flex items-center gap-4 mt-8 bg-white rounded-2xl px-6 py-4 rating-badge">
+          <svg class="w-8 h-8" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+          </svg>
+          <div class="text-right">
+            <div class="flex items-center gap-1">
+              <span class="text-2xl font-black text-gray-900">4.7</span>
+              <span class="text-gray-400 text-sm font-medium">/ 5</span>
+              <div class="flex mr-1">
+                <span class="text-[#F4A261] text-lg">★★★★</span><span class="text-[#F4A261] text-lg">★</span>
+              </div>
             </div>
+            <div class="text-gray-500 text-sm">45 ביקורות ב-Google</div>
+          </div>
         </div>
-    </section>
+      </div>
 
-    <!-- About Us Section -->
-    <section class="py-10 bg-white">
-        <div class="max-w-screen-lg mx-auto px-4">
-            <h2 class="text-3xl font-semibold mb-6 text-gray-800">אודותינו</h2>
-            <p class="text-lg text-gray-700">ברוכים הבאים לאור וזיו שירותי חשמל - המקום שבו מקצועיות, אמינות ושירות אישי נפגשים. עם ניסיון עשיר ודגש על שירות לקוחות מצוין...</p>
-        </div>
-    </section>
+      <!-- Single Featured Testimonial (since only 1 review) -->
+      <div class="max-w-3xl mx-auto">
+        <div class="bg-white rounded-3xl p-8 md:p-10 shadow-xl border border-gray-100 relative">
+          <!-- Quote icon -->
+          <div class="absolute top-6 left-8 opacity-10">
+            <svg class="w-16 h-16" style="color:#F4A261; fill:currentColor;" viewBox="0 0 24 24">
+              <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/>
+            </svg>
+          </div>
 
-    <!-- Contact Section -->
-    <section class="py-10 bg-gray-100">
-        <div class="max-w-screen-lg mx-auto px-4">
-            <h2 class="text-3xl font-semibold mb-6 text-gray-800">צרו קשר</h2>
-            <p class="text-lg text-gray-700 mb-4">טלפון: <a href="tel:972523013000" class="text-yellow-500">052-301-3000</a></p>
-            <ul class="text-lg text-gray-700">
-                <li>יום ראשון: פתוח 24 שעות</li>
-                <li>יום שני: פתוח 24 שעות</li>
-                <li>יום שלישי: פתוח 24 שעות</li>
-                <li>יום רביעי: פתוח 24 שעות</li>
-                <li>יום חמישי: פתוח 24 שעות</li>
-                <li>יום שישי: פתוח 24 שעות</li>
-                <li>יום שבת: פתוח 24 שעות</li>
-            </ul>
-        </div>
-    </section>
+          <!-- Stars -->
+          <div class="flex gap-1 mb-6 justify-center">
+            <span class="text-3xl text-[#F4A261]">★★★★★</span>
+          </div>
 
-    <!-- Footer Section -->
-    <footer class="py-6 bg-yellow-500 text-white text-center">
-        <p>© 2023 אור וזיו שירותי חשמל. כל הזכויות שמורות.</p>
-    </footer>
+          <!-- Review text -->
+          <blockquote class="text-gray-700 text-base md:text-lg leading-relaxed text-center whitespace-pre-line font-medium">
+            "רוצה להמליץ מכל הלב על יוסי החשמלאי – אדם נדיר, מקצוען אמיתי ובן אדם עם נשמה ענקית.
+מרגע השיחה הראשונה, הרגשתי שאני בידיים טובות – יוסי הגיע במהירות, הסביר בסבלנות כל שלב, ופתר את התקלה במהירות וביסודיות.
+הוא עבד באכפתיות, עם דיוק ועם חיוך, והשאיר אחריו מקום נקי ומסודר כאילו לא היה שם בכלל.
 
-    <!-- WhatsApp Button -->
-    <a href="https://wa.me/972523013000" class="sticky-whatsapp">
-        <img src="https://img.icons8.com/color/48/000000/whatsapp.png" alt="WhatsApp">
-    </a>
+מעבר למקצועיות – הוא פשוט בן אדם מדהים: אדיב, נעים, הוגן במחיר, ורואים שהוא עושה את העבודה שלו מאהבה.
+בזכותו נפתרה בעיה שהטרידה אותי ימים שלמים, וכל זה תוך פחות משעה!
 
-</body>
+ממליץ עליו בעיניים עצומות – אם אתם מחפשים חשמלאי שאתם יכולים לסמוך עליו באמת, יוסי הוא הבחירה הכי טובה שתעשו.
+תודה יוסי"
+          </blockquote>
+
+          <!-- Avatar -->
+          <div class="flex items-center justify-center gap-4 mt-8">
+            <div class="w-14 h-14 rounded-full flex items-center justify-center text-white text-xl font-bold shadow-lg" style="background:linear-gradient(135deg,#F4A261,#264653);">
+              ל
+            </div>
+            <div class="text-right">
+              <div class="font-bold text-gray-900">לקוח מרוצה</div>
+              <div class="text-sm text-gray-500 flex items-center gap-1">
+                <svg class="w-4 h-4" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93
 </html>

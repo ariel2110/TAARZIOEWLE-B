@@ -1,5 +1,6 @@
 
 from pydantic import BaseModel
+from typing import Any
 
 
 class CEOReport(BaseModel):
@@ -13,6 +14,8 @@ class CEOReport(BaseModel):
     open_security_alerts: int = 0
     high_security_alerts: int = 0
     pressure_notes: list[str] = []
+    ab_stats: list[dict[str, Any]] = []
+    recent_fixes: list[dict[str, str]] = []
 
 
 class CEOHealth(BaseModel):

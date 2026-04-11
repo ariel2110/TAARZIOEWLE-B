@@ -55,6 +55,35 @@ class CEOReportService:
             'עיין ברשימת החשד ובהתראות הפתוחות לפני הרחבת נפח הכניסה הציבורית.',
         ]
 
+        # ── Recent resolved actions (what was fixed recently) ─────────────────
+        recent_activity = (
+            db.query(ActivityLog)
+            .filter(ActivityLog.action_type.in_([
+                'approval_applied', 'pipeline_config_applied', 'ab_test_launched',
+                'lead_boiling_hot', 'payment_confirmed', 'ceo_task_created',
+                'approval_approved',
+            ]))
+            .order_by(ActivityLog.id.desc())
+            .limit(4)
+            .all()
+        )
+        _action_labels = {
+            'approval_applied': 'אושר ובוצע',
+            'pipeline_config_applied': 'הגדרה הופעלה',
+            'ab_test_launched': 'A/B הושק',
+            'lead_boiling_hot': 'ליד חם זוהה',
+            'payment_confirmed': 'תשלום אושר',
+            'ceo_task_created': 'משימה נוצרה',
+            'approval_approved': 'אושר',
+        }
+        recent_fixes = [
+            {
+                'label': _action_labels.get(a.action_type, a.action_type),
+                'summary': (a.summary or '')[:70],
+            }
+            for a in recent_activity
+        ]
+
         summary = self._llm_executive_summary(
             approvals_pending=approvals_pending,
             payments_pending=payments_pending,
@@ -77,6 +106,7 @@ class CEOReportService:
             'open_security_alerts': open_security_alerts,
             'high_security_alerts': high_security_alerts,
             'ab_stats': ab_stats,
+            'recent_fixes': recent_fixes,
             'pressure_notes': [
                 f'{approvals_pending} אישורים ממתינים',
                 f'{payments_pending} תשלומים ממתינים',

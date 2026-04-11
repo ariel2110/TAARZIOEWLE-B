@@ -53,9 +53,49 @@ export default function OverviewPage() {
 
       <div className="two-col">
         <Card dark>
-          <SectionTitle>{t('ceo_digest')} <InfoTip text="תקציר יומי אוטומטי — מנהל AI מסכם את מצב המערכת ומציע פעולות עדיפות" /></SectionTitle>
-          <p>{digest?.executive_summary}</p>
-          <ul>{digest?.recommended_actions?.map(x => <li key={x}>{x}</li>)}</ul>
+            <SectionTitle>🧠 {t('ceo_digest')} <InfoTip text="תקציר יומי אוטומטי — מנהל AI מסכם את מצב המערכת ומציע פעולות עדיפות" /></SectionTitle>
+
+            {/* Executive summary */}
+            {digest?.executive_summary && (
+              <p style={{ fontSize: 14, lineHeight: 1.6, marginBottom: 14 }}>{digest.executive_summary}</p>
+            )}
+
+            {/* 🔴 מה לתקן עכשיו */}
+            {digest?.pressure_notes && digest.pressure_notes.some(n => !n.startsWith('0 ')) && (
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#ef4444', marginBottom: 6, letterSpacing: 0.3 }}>🔴 לתיקון עכשיו</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {digest.pressure_notes.filter(n => !n.startsWith('0 ')).map(n => (
+                    <span key={n} style={{ background: '#fee2e2', color: '#991b1b', borderRadius: 20, padding: '3px 10px', fontSize: 12, fontWeight: 600 }}>{n}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ✅ מה תוקן לאחרונה */}
+            {digest?.recent_fixes && digest.recent_fixes.length > 0 && (
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#16a34a', marginBottom: 6, letterSpacing: 0.3 }}>✅ תוקן לאחרונה</div>
+                <div style={{ display: 'grid', gap: 4 }}>
+                  {digest.recent_fixes.map((f, i) => (
+                    <div key={i} style={{ display: 'flex', gap: 6, alignItems: 'baseline', fontSize: 13 }}>
+                      <span style={{ background: '#dcfce7', color: '#166534', borderRadius: 4, padding: '1px 6px', fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap' }}>{f.label}</span>
+                      <span className="muted" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>{f.summary}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 📋 פעולות מומלצות */}
+            {digest?.recommended_actions && digest.recommended_actions.length > 0 && (
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#6366f1', marginBottom: 6, letterSpacing: 0.3 }}>📋 פעולות מומלצות</div>
+                <ul style={{ margin: 0, paddingRight: 18, display: 'grid', gap: 4 }}>
+                  {digest.recommended_actions.map(x => <li key={x} style={{ fontSize: 13, lineHeight: 1.5 }}>{x}</li>)}
+                </ul>
+              </div>
+            )}
         </Card>
         <Card>
           <SectionTitle>{t('system_health')} <InfoTip text="בדיקת תקינות — חיבור לבסיס נתונים, מצב שירותים פנימיים" /></SectionTitle>

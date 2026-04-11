@@ -57,7 +57,21 @@ export async function importLeadsCSV(csvText: string): Promise<{ imported: numbe
 }
 
 export type Snapshot = Record<string, number>;
-export type Digest = { executive_summary: string; recommended_actions: string[]; approval_queue_count?: number; approvals_pending?: number; payments_pending?: number; expiring_drafts?: number; outreach_ready_count?: number; qualified_leads?: number; pressure_notes?: string[] };
+export type Digest = {
+  executive_summary: string;
+  recommended_actions: string[];
+  approval_queue_count?: number;
+  approvals_pending?: number;
+  payments_pending?: number;
+  expiring_drafts?: number;
+  outreach_ready_count?: number;
+  qualified_leads?: number;
+  open_security_alerts?: number;
+  high_security_alerts?: number;
+  pressure_notes?: string[];
+  ab_stats?: Array<{ variant: string; campaign: string; total: number; replied: number; reply_rate_pct: number }>;
+  recent_fixes?: Array<{ label: string; summary: string }>;
+};
 export type Business = { id: number; name: string; city?: string; category?: string; status: string; phone?: string | null; address?: string | null; campaign_id?: number | null; targeting_profile_id?: number | null };
 export type Lead = { id: number; imported_name: string; city?: string; category?: string; phone?: string | null; score: number; status: string; website_url?: string | null; campaign_id?: number | null; targeting_profile_id?: number | null };
 export type Approval = { id: number; title: string; status: string; approval_type: string; summary?: string | null };

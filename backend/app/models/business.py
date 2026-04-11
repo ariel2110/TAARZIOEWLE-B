@@ -20,6 +20,16 @@ class Business(Base, TimestampMixin):
     targeting_profile_id: Mapped[int | None] = mapped_column(ForeignKey('targeting_profiles.id', ondelete='SET NULL'), nullable=True, index=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    # ── Social & Digital Asset Discovery ───────────────────────────────────
+    facebook_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    instagram_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    tiktok_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    easy_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    legacy_site_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    social_verified: Mapped[bool] = mapped_column(default=False)
+    social_confidence: Mapped[int] = mapped_column(Integer, default=0)
+    digital_gap_label: Mapped[str | None] = mapped_column(String(50), nullable=True)
+
     # Relationships (lazy loaded — use explicitly when needed)
     draft_sites: Mapped[list['DraftSite']] = relationship('DraftSite', foreign_keys='DraftSite.business_id', back_populates='business', lazy='select')
     customer_accounts: Mapped[list['CustomerAccount']] = relationship('CustomerAccount', foreign_keys='CustomerAccount.business_id', back_populates='business', lazy='select')

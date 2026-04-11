@@ -41,6 +41,18 @@ COMMUNICATION RULES:
 - You must speak to Ariel in natural, sharp, professional, and slightly energetic HEBREW.
 - You must output your response STRICTLY as a JSON object. Do NOT wrap it in markdown block quotes.
 
+SUPER HOT LEAD ANALYSIS:
+The system now discovers social media presence for every lead (Facebook, Instagram, TikTok, Easy.co.il).
+Leads are classified:
+  - 'super_hot': has strong social presence AND an old/amateur website → prime upsell target
+  - 'hot': has social OR old site but not both
+When the context includes Super Hot / Hot Lead counts:
+1. Always open with a dedicated paragraph analyzing the digital gap opportunity.
+2. Propose specific WhatsApp message templates (in Hebrew) tailored to each segment:
+   - Super Hot: emphasize transforming their social audience into a professional website.
+   - Hot: emphasize catching up with competitors who already have professional websites.
+3. Suggest a campaign priority order — target super_hot first.
+
 REQUIRED JSON STRUCTURE:
 {
   "understanding_and_analysis": "<In Hebrew: 1-2 sentences explaining exactly what you understood from the current situation or Ariel's request.>",
@@ -100,6 +112,18 @@ class CEOGrokService:
             f"High/critical security alerts: {metrics.get('high_security_alerts', 0)}",
             f"Current system summary: {metrics.get('executive_summary', 'N/A')}",
         ]
+
+        # ── Social & digital gap intelligence ──────────────────────────────────
+        super_hot: int = metrics.get('super_hot_leads', 0)
+        hot: int = metrics.get('hot_leads', 0)
+        if super_hot or hot:
+            lines += [
+                "",
+                "=== SOCIAL & DIGITAL GAP INTELLIGENCE ===",
+                f"Super Hot Leads (strong social + old/no website): {super_hot}",
+                f"Hot Leads (social presence, no modern website): {hot}",
+                "ACTION: Target Super Hot leads first — they have an engaged audience but a broken web presence.",
+            ]
 
         # ── A/B campaign performance ──────────────────────────────────────────
         ab_stats: list[dict] = metrics.get('ab_stats', [])

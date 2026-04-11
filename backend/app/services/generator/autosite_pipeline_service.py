@@ -1,9 +1,13 @@
 """AutoSite Multi-Agent Generation Pipeline
 ==========================================
-Four specialized AI agents work together to produce a ready-to-send
+Five specialized AI agents work together to produce a ready-to-send
 Hebrew landing page + personalized WhatsApp outreach message.
 
-  Stage 1a │ GPT-4o (primary) / Grok (fallback)  │ Content Manager
+  Stage 0  │ SocialDiscoveryService                │ Web Intelligence
+           │ Discover & validate social/digital     │
+           │ assets: FB, IG, TikTok, Easy, legacy  │
+
+  Stage 1a │ GPT-4o (primary) / Grok (fallback)   │ Content Manager
            │ Raw Maps text → content.json           │ (parallel)
            │ + personalized WhatsApp outreach msg   │
 
@@ -11,7 +15,8 @@ Hebrew landing page + personalized WhatsApp outreach message.
            │ Business profile → design.json         │ (parallel)
 
   Stage 2  │ Claude Sonnet 4-6                      │ Master Builder
-           │ content.json + design.json → HTML      │
+           │ content.json + design.json + social   │
+           │ → HTML with SocialBar + TikTok embed  │
 
   Stage 4  │ Python Backend (DraftSiteService)      │ Operations Manager
            │ Save HTML, assign URL, store outreach  │
@@ -135,7 +140,27 @@ DESIGN & ARCHITECTURE RULES:
 7. UI Elements: soft gradients, subtle shadows, rounded corners, mobile-first responsive.
 8. Floating sticky WhatsApp button at bottom-left corner (green circle, WA icon).
 9. Apply design.json colors precisely — primary_color_hex as the dominant brand color.
-10. Hero section: large gradient background, prominent headline, CTA button."""
+10. Hero section: large gradient background, prominent headline, CTA button.
+
+SOCIAL ASSETS (render ONLY when the URLs are non-empty strings):
+11. SOCIAL BAR in Footer: if any of facebook_url / instagram_url / tiktok_url is present,
+    add a "עקבו אחרינו" row with icon-links. Use SVG inline icons (Facebook blue, Instagram
+    gradient, TikTok black). All links MUST have target="_blank" rel="noopener noreferrer".
+    Example structure:
+      <div class="flex gap-4 justify-center mt-4">
+        <!-- Only include each icon if the URL is non-empty -->
+        <a href="{facebook_url}" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><!-- fb svg --></a>
+        <a href="{instagram_url}" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><!-- ig svg --></a>
+        <a href="{tiktok_url}" target="_blank" rel="noopener noreferrer" aria-label="TikTok"><!-- tiktok svg --></a>
+      </div>
+12. TIKTOK EMBED: if tiktok_url is present, add a "הסרטונים שלנו" section BEFORE the footer
+    with a centered TikTok profile link button (styled pill button linking to tiktok_url).
+    Do NOT use <blockquote> embed — just a stylish CTA button to the TikTok page.
+13. OPENING HOURS: if easy_hours array is non-empty, render a שעות פעילות table inside the
+    Contact section listing each entry on its own row.
+14. TRANSFORMATION LINE: always add the following tagline above the footer copyright line:
+    "לקחנו את הידע המקצועי שלכם והפכנו אותו לחוויה מודרנית ומהירה ✨"
+    Style it small, muted text."""
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -176,17 +201,22 @@ class AutoSitePipelineService:
     """
 
     def run(self, raw_maps_data: str, *, enrichment: dict | None = None, regeneration_note: str | None = None) -> PipelineResult | None:
-        logger.info("[Pipeline] Starting 3-stage AutoSite generation")
+        logger.info("[Pipeline] Starting 5-stage AutoSite generation")
         enrichment = enrichment or {}
         try:
             design: DesignConfig = DesignConfig()
             content: ContentBundle | None = None
 
+            # ── Stage 0: Social & Web Intelligence Discovery ──────────────────
+            social = self._stage0_social_discovery(enrichment)
+            # Merge social profile into enrichment so Stage 2 (Claude) can use it
+            enrichment = {**enrichment, "_social": social}
+
             # ── Stage 1: Parallel ─────────────────────────────────────────────
             # Stage 1a: GPT-4o (primary) / Grok (auto-fallback) → content + outreach
             # Stage 1b: Gemini → design config
             with ThreadPoolExecutor(max_workers=2) as pool:
-                f_content = pool.submit(self._stage1a_content, raw_maps_data, regeneration_note)
+                f_content = pool.submit(self._stage1a_content, raw_maps_data, regeneration_note, social)
                 f_design = pool.submit(self._stage1b_design, raw_maps_data)
 
                 content = f_content.result(timeout=90)
@@ -221,9 +251,44 @@ class AutoSitePipelineService:
             logger.exception("[Pipeline] Unhandled top-level error")
             return None
 
+    # ── Stage 0: Social & Web Intelligence ───────────────────────────────────
+
+    def _stage0_social_discovery(self, enrichment: dict) -> dict:
+        """Run social/web discovery. Returns a plain dict for safe serialisation."""
+        try:
+            from app.services.enrichment.social_discovery_service import SocialDiscoveryService
+            profile = SocialDiscoveryService().discover(
+                business_name=enrichment.get("name", ""),
+                city=enrichment.get("city", ""),
+                phone=enrichment.get("phone", ""),
+                website=enrichment.get("website_url", ""),
+                category=enrichment.get("category", ""),
+            )
+            result = {
+                "facebook_url": profile.facebook_url,
+                "instagram_url": profile.instagram_url,
+                "tiktok_url": profile.tiktok_url,
+                "easy_url": profile.easy_url,
+                "b144_url": profile.b144_url,
+                "legacy_site_url": profile.legacy_site_url,
+                "social_verified": profile.social_verified,
+                "social_confidence": profile.social_confidence,
+                "digital_gap_label": profile.digital_gap_label,
+                "easy_hours": profile.easy_hours,
+                "easy_services": profile.easy_services,
+                "legacy_text_snippets": profile.legacy_text_snippets,
+                "tone_hint": profile.tone_hint,
+            }
+            logger.info("[Stage 0] Social discovery complete — gap=%r confidence=%d",
+                        profile.digital_gap_label, profile.social_confidence)
+            return result
+        except Exception:
+            logger.exception("[Stage 0] Social discovery failed — proceeding without social data")
+            return {}
+
     # ── Stage 1a: GPT-4o (primary) / Grok (auto-fallback via router) ─────────
 
-    def _stage1a_content(self, raw: str, regeneration_note: str | None = None) -> ContentBundle | None:
+    def _stage1a_content(self, raw: str, regeneration_note: str | None = None, social: dict | None = None) -> ContentBundle | None:
         try:
             from app.services.llm.router_service import LLMRouterService
             logger.info("[Stage 1a] GPT-4o Content Manager — generating copy + outreach JSON")
@@ -237,6 +302,27 @@ class AutoSitePipelineService:
                     "Keep all unchanged sections; only modify what the instructions explicitly request."
                 )
                 logger.info("[Stage 1a] regeneration_note injected (%d chars)", len(regeneration_note))
+
+            # Inject social tone & legacy text hints
+            if social:
+                tone = social.get("tone_hint", "")
+                legacy_snippets = social.get("legacy_text_snippets", [])
+                easy_services = social.get("easy_services", [])
+                tone_map = {
+                    "young_creative": "צעיר, יצירתי ודינמי — העסק פעיל בטיקטוק",
+                    "visual_casual": "ויזואלי וקליל — בעל נוכחות חזקה באינסטגרם",
+                    "formal_local": "מקצועי ומקומי — ממוקד דירוג גוגל ורישום ב-Easy",
+                    "casual": "ידידותי וקרוב — עסק שמח בפייסבוק",
+                }
+                if tone and tone in tone_map:
+                    user_msg += f"\n\n=== TONE OF VOICE ===\n{tone_map[tone]}\nהתאם את הכתיבה לסגנון זה."
+                if legacy_snippets:
+                    user_msg += f"\n\n=== PROFESSIONAL CONTENT FROM LEGACY SITE ===\n"
+                    user_msg += "השתמש בקטעי הטקסט הבאים (מהאתר הישן של העסק) כמקור לתוכן מקצועי, שנות ניסיון, הסמכות וכו':\n"
+                    user_msg += "\n".join(f'- {s}' for s in legacy_snippets)
+                if easy_services:
+                    user_msg += f"\n\n=== SERVICES FROM EASY DIRECTORY ===\nשירותים מאומתים מ-Easy:\n"
+                    user_msg += "\n".join(f'- {s}' for s in easy_services)
             response = LLMRouterService().call(
                 "generate_site_copy",
                 user_msg,
@@ -335,6 +421,7 @@ class AutoSitePipelineService:
             opening_hours: list[str] = enrichment.get("opening_hours") or []
             if isinstance(opening_hours, str):
                 opening_hours = [opening_hours]
+            social: dict = enrichment.get("_social") or {}
 
             content_json = json.dumps({
                 "business_name": content.business_name,
@@ -351,6 +438,17 @@ class AutoSitePipelineService:
                 "rating": rating,
                 "reviews_count": reviews_count,
                 "opening_hours": opening_hours[:7],
+                # ── Social & digital assets (from Stage 0) ──────────────────
+                "social": {
+                    "facebook_url": social.get("facebook_url", ""),
+                    "instagram_url": social.get("instagram_url", ""),
+                    "tiktok_url": social.get("tiktok_url", ""),
+                    "easy_url": social.get("easy_url", ""),
+                    "legacy_site_url": social.get("legacy_site_url", ""),
+                    "social_verified": social.get("social_verified", False),
+                    "easy_hours": social.get("easy_hours", []),
+                    "digital_gap_label": social.get("digital_gap_label", ""),
+                } if social else {},
             }, ensure_ascii=False, indent=2)
 
             design_json = json.dumps({

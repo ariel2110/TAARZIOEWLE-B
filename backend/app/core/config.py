@@ -44,6 +44,10 @@ class Settings(BaseSettings):
     # Google Places API for business enrichment
     google_places_api_key: str | None = Field(default=None)
 
+    # Social & Web Discovery
+    serper_api_key: str | None = Field(default=None)           # https://serper.dev — 2,500 free queries/mo
+    facebook_access_token: str | None = Field(default=None)    # Facebook Graph API token (optional)
+
     # LLM providers
     openai_api_key: str | None = Field(default=None)
     anthropic_api_key: str | None = Field(default=None)

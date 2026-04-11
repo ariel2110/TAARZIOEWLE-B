@@ -28,6 +28,8 @@ class CEOReportService:
         total_leads = db.query(LeadRecord).count()
         total_businesses = db.query(Business).count()
         draft_created = db.query(Business).filter(Business.status == 'draft_created').count()
+        super_hot_leads = db.query(LeadRecord).filter(LeadRecord.digital_gap_label == 'super_hot').count()
+        hot_leads = db.query(LeadRecord).filter(LeadRecord.digital_gap_label == 'hot').count()
         open_security_alerts = db.query(SecurityAlert).filter(SecurityAlert.status == 'open').count()
         high_security_alerts = db.query(SecurityAlert).filter(SecurityAlert.status == 'open', SecurityAlert.severity.in_(['high','critical'])).count()
         total_customers = db.query(CustomerAccount).count()
@@ -156,6 +158,8 @@ class CEOReportService:
             'active_customers': active_customers,
             'open_security_alerts': open_security_alerts,
             'high_security_alerts': high_security_alerts,
+            'super_hot_leads': super_hot_leads,
+            'hot_leads': hot_leads,
             'ab_stats': ab_stats,
             'recent_fixes': recent_fixes,
             'generated_at': now_he,

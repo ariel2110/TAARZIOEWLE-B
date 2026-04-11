@@ -195,3 +195,14 @@ export async function getPublicDemo(slug: string): Promise<PublicDemoData> {
 export async function trackDemoView(slug: string): Promise<void> {
   await fetch(`${PUBLIC_BASE}/public/demo/${slug}/view`, { method: 'POST' });
 }
+
+// ---- Notifications ----
+export type Notification = { id: number; event: string; entity_type: string; entity_id?: number | null; summary: string; created_at?: string | null };
+export const getNotifications = (limit = 30) => apiGet<Notification[]>(`/admin/notifications?limit=${limit}`);
+
+// ---- A/B Test Results ----
+export type AbVariantResult = { variant: string; total: number; sent: number; delivered: number; read: number; replied: number; reply_rate: number; read_rate: number };
+export const getAbResults = () => apiGet<AbVariantResult[]>('/admin/analytics/ab-results');
+
+// ---- Auto-qualify ----
+export const autoQualifyLeads = () => apiPost<{ qualified: number; leads: { id: number; name: string }[] }>('/admin/leads/auto-qualify', {});

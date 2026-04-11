@@ -28,4 +28,20 @@ class PaymentService:
                 business.status = 'paid'
         db.add(ActivityLog(actor_type='admin', entity_type='payment_record', entity_id=item.id, action_type='payment_confirmed', summary=f'business_id={item.business_id}'))
         db.commit(); db.refresh(item)
+
+        # Admin notification
+        try:
+            from app.services.common.notification_service import NotificationService
+            biz_name = business.name if item.business_id and (business := db.query(Business).filter(Business.id == item.business_id).first()) else 'unknown'
+            NotificationService().notify(
+                db,
+                event='payment_confirmed',
+                entity_type='payment_record',
+                entity_id=item.id,
+                summary=f'Payment confirmed for business_id={item.business_id} ({biz_name}), amount={item.amount}',
+                extra={'business_id': str(item.business_id), 'amount': str(item.amount or '')},
+            )
+        except Exception:  # noqa: BLE001
+            pass
+
         return item

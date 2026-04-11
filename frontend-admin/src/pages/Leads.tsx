@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button, Card, SectionTitle, Input, Select, Tooltip } from '../components/ui';
-import { Lead, getLeads, createLead, qualifyLead, convertLeadToBusiness, importLeadsCSV } from '../services/queries';
+import { Lead, getLeads, createLead, qualifyLead, convertLeadToBusiness, importLeadsCSV, autoQualifyLeads } from '../services/queries';
 
 const STATUSES = ['imported', 'qualified', 'converted', 'rejected'];
 const emptyForm = { imported_name: '', city: '', category: '', phone: '', website_url: '', score: '0', status: 'imported' };

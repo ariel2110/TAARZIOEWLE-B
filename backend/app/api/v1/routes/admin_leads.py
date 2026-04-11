@@ -7,6 +7,8 @@ from app.schemas.lead import LeadCreate, LeadRead, LeadAssignCampaign
 from app.schemas.business import BusinessRead
 from app.services.leads.lead_import_service import LeadImportService
 from app.models.user import User
+from app.models.lead_record import LeadRecord
+from app.models.activity_log import ActivityLog
 
 router = APIRouter(prefix='/admin/leads', tags=['admin-leads'])
 service = LeadImportService()
@@ -26,6 +28,49 @@ def create_lead(payload: LeadCreate, db: Session = Depends(get_db), _: User = De
 def import_csv(file: UploadFile = File(...), db: Session = Depends(get_db), _: User = Depends(get_current_admin)):
     content = file.file.read().decode('utf-8')
     return service.import_csv_text(db, content)
+
+
+@router.post('/auto-qualify')
+def auto_qualify_leads(db: Session = Depends(get_db), _: User = Depends(get_current_admin)):
+    """
+    Auto-qualify leads with score >= 70 that have no website.
+    Returns a list of newly qualified leads.
+    """
+    candidates = (
+        db.query(LeadRecord)
+        .filter(LeadRecord.status == 'imported')
+        .filter(LeadRecord.score >= 70)
+        .filter((LeadRecord.website_url == None) | (LeadRecord.website_url == ''))  # noqa: E711
+        .all()
+    )
+    qualified = []
+    for lead in candidates:
+        lead.status = 'qualified'
+        db.add(ActivityLog(
+            actor_type='system',
+            entity_type='lead_record',
+            entity_id=lead.id,
+            action_type='lead_auto_qualified',
+            summary=f'Auto-qualified: {lead.imported_name} (score={lead.score}, no website)',
+        ))
+        qualified.append({'id': lead.id, 'name': lead.imported_name, 'score': lead.score})
+
+    if qualified:
+        db.commit()
+        # Fire admin notification
+        try:
+            from app.services.common.notification_service import NotificationService
+            NotificationService().notify(
+                db,
+                event='lead_auto_qualified',
+                entity_type='lead_record',
+                summary=f'Auto-qualified {len(qualified)} leads with score ≥70 and no website',
+                extra={'count': str(len(qualified))},
+            )
+        except Exception:  # noqa: BLE001
+            pass
+
+    return {'qualified': len(qualified), 'leads': qualified}
 
 
 @router.post('/{lead_id}/qualify', response_model=LeadRead)

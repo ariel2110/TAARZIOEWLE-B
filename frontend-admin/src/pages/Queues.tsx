@@ -25,12 +25,12 @@ export default function QueuesPage() {
         <SectionTitle>{t('queue_summary')} <InfoTip text="ריכוז כל הפריטים הממתינים לפעולה — לחץ 'פתח' כדי לראות ולפעול" /></SectionTitle>
         <div className="table-list">
           {summary.map(q => (
-            <div key={q.queue_type} style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+            <div key={q.queue_type} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <strong>{q.label}</strong>
                 <div className="muted">{q.queue_type}</div>
               </div>
-              <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                 <strong>{q.count}</strong>
                 <Button onClick={() => setSelected(q.queue_type)}>{t('open')}</Button>
               </div>
@@ -46,7 +46,7 @@ export default function QueuesPage() {
             <div key={i.id}>
               <strong>{i.title}</strong>
               <div className="muted">{i.subtitle || '—'} · {t('priority_label')} {i.priority}</div>
-              <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 {(i.available_actions || []).map(action => (
                   <Button key={action} onClick={() => doAction(i, action)}>{action}</Button>
                 ))}

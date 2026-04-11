@@ -10,15 +10,15 @@ export function Tooltip({ text, children, position = 'top' }: {
   const [visible, setVisible] = useState(false);
   const posStyle: React.CSSProperties =
     position === 'top' ? { bottom: 'calc(100% + 8px)', left: '50%', transform: 'translateX(-50%)' } :
-    position === 'bottom' ? { top: 'calc(100% + 8px)', left: '50%', transform: 'translateX(-50%)' } :
-    position === 'right' ? { top: '50%', left: 'calc(100% + 8px)', transform: 'translateY(-50%)' } :
-    { top: '50%', right: 'calc(100% + 8px)', transform: 'translateY(-50%)' };
+      position === 'bottom' ? { top: 'calc(100% + 8px)', left: '50%', transform: 'translateX(-50%)' } :
+        position === 'right' ? { top: '50%', left: 'calc(100% + 8px)', transform: 'translateY(-50%)' } :
+          { top: '50%', right: 'calc(100% + 8px)', transform: 'translateY(-50%)' };
 
   const arrowStyle: React.CSSProperties =
     position === 'top' ? { top: '100%', left: '50%', transform: 'translateX(-50%)', borderTop: '6px solid #1f2937', borderLeft: '5px solid transparent', borderRight: '5px solid transparent' } :
-    position === 'bottom' ? { bottom: '100%', left: '50%', transform: 'translateX(-50%)', borderBottom: '6px solid #1f2937', borderLeft: '5px solid transparent', borderRight: '5px solid transparent' } :
-    position === 'right' ? { top: '50%', right: '100%', transform: 'translateY(-50%)', borderRight: '6px solid #1f2937', borderTop: '5px solid transparent', borderBottom: '5px solid transparent' } :
-    { top: '50%', left: '100%', transform: 'translateY(-50%)', borderLeft: '6px solid #1f2937', borderTop: '5px solid transparent', borderBottom: '5px solid transparent' };
+      position === 'bottom' ? { bottom: '100%', left: '50%', transform: 'translateX(-50%)', borderBottom: '6px solid #1f2937', borderLeft: '5px solid transparent', borderRight: '5px solid transparent' } :
+        position === 'right' ? { top: '50%', right: '100%', transform: 'translateY(-50%)', borderRight: '6px solid #1f2937', borderTop: '5px solid transparent', borderBottom: '5px solid transparent' } :
+          { top: '50%', left: '100%', transform: 'translateY(-50%)', borderLeft: '6px solid #1f2937', borderTop: '5px solid transparent', borderBottom: '5px solid transparent' };
 
   return (
     <span

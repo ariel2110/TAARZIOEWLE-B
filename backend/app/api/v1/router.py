@@ -23,6 +23,9 @@ from app.api.v1.routes.admin_workflows import router as admin_workflows_router
 from app.api.v1.routes.admin_enrich import router as admin_enrich_router
 from app.api.v1.routes.admin_demos import router as admin_demos_router
 from app.api.v1.routes.public_demos import router as public_demos_router
+from app.api.v1.routes.admin_notifications import router as admin_notifications_router
+from app.api.v1.routes.webhooks_whatsapp import router as webhooks_whatsapp_router
+from app.api.v1.routes.admin_users import router as admin_users_router
 
 api_router = APIRouter()
 api_router.include_router(health_router)
@@ -50,5 +53,8 @@ api_router.include_router(admin_enrich_router)
 api_router.include_router(admin_demos_router)
 api_router.include_router(public_demos_router)
 api_router.include_router(customer_portal_router)
+api_router.include_router(admin_notifications_router)
+api_router.include_router(webhooks_whatsapp_router)
+api_router.include_router(admin_users_router)
 
 api_router.include_router(public_portal.router)

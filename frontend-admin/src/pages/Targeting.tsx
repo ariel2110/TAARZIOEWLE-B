@@ -31,7 +31,7 @@ export default function TargetingPage() {
           <div><label>{t('city')}</label><Input value={city} onChange={(e) => setCity(e.target.value)} placeholder={t('city_placeholder')} /></div>
           <div><label>{t('category')}</label><Input value={category} onChange={(e) => setCategory(e.target.value)} placeholder={t('category_placeholder')} /></div>
         </div>
-        <div style={{ display:'flex', gap:8, marginTop:12 }}>
+        <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
           <Button onClick={runSearch}>{t('run_search')}</Button>
           <Button onClick={() => { setCity('רמת גן'); setCategory('beauty'); }}>{t('beauty_rg')}</Button>
           <Button onClick={() => { setCity('פתח תקווה'); setCategory('garages'); }}>{t('garages_pt')}</Button>

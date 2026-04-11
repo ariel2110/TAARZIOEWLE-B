@@ -59,4 +59,20 @@ def track_view(slug: str, db: Session = Depends(get_db)):
         demo.status = 'viewed'
 
     db.commit()
+
+    # Admin notification on first view
+    if demo.view_count == 1:
+        try:
+            from app.services.common.notification_service import NotificationService
+            NotificationService().notify(
+                db,
+                event='demo_viewed',
+                entity_type='demo_site',
+                entity_id=demo.id,
+                summary=f'Demo first viewed: {demo.business_name} (slug={slug})',
+                extra={'business_name': demo.business_name, 'city': demo.city or ''},
+            )
+        except Exception:  # noqa: BLE001
+            pass
+
     return {'ok': True, 'view_count': demo.view_count}

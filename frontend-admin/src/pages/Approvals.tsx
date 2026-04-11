@@ -20,8 +20,8 @@ export default function ApprovalsPage() {
             <div key={a.id}>
               <strong>{a.title}</strong>
               <div className="muted">{a.approval_type} · {a.status}</div>
-              {a.summary && <div style={{ margin:'6px 0' }}>{a.summary}</div>}
-              <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+              {a.summary && <div style={{ margin: '6px 0' }}>{a.summary}</div>}
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <Button onClick={() => openDetail(a.id)}>{t('open_detail')}</Button>
                 <Button onClick={() => approve(a.id).then(load)}>{t('approve')}</Button>
                 <Button onClick={() => reject(a.id).then(load)}>{t('reject')}</Button>
@@ -41,7 +41,7 @@ export default function ApprovalsPage() {
               <div><strong>{t('before')}</strong><pre>{JSON.stringify(selected.before_json || {}, null, 2)}</pre></div>
               <div><strong>{t('after')}</strong><pre>{JSON.stringify(selected.after_json || {}, null, 2)}</pre></div>
             </div>
-            <div style={{ display:'flex', gap:8 }}>
+            <div style={{ display: 'flex', gap: 8 }}>
               <Button onClick={() => approve(selected.id).then(load)}>{t('approve')}</Button>
               <Button onClick={() => reject(selected.id).then(load)}>{t('reject')}</Button>
               <Button onClick={() => createCeoTask('approval_detail', `Review rollout for ${selected.title}`, 'Approval detail created a CEO follow-up task')}>{t('create_ceo_task')}</Button>

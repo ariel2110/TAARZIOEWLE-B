@@ -1,4 +1,4 @@
-.PHONY: up down logs backend admin customer migrate seed
+.PHONY: up down logs backend admin customer migrate seed deploy workers
 
 up:
 	docker compose up --build -d
@@ -23,3 +23,9 @@ migrate:
 
 seed:
 	cd backend && python -m app.db.seed_cli
+
+deploy:
+	bash scripts/deploy.sh
+
+workers:
+	bash scripts/run_workers.sh

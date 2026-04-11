@@ -18,3 +18,5 @@ class OutreachMessage(TimestampMixin, Base):
     outbound_target: Mapped[str | None] = mapped_column(String(50), default=None)
     city_context: Mapped[str | None] = mapped_column(String(120), default=None)
     category_context: Mapped[str | None] = mapped_column(String(120), default=None)
+    # A/B testing support
+    ab_variant: Mapped[str | None] = mapped_column(String(50), default=None, index=True)

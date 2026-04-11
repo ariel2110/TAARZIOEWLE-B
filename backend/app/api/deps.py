@@ -11,6 +11,14 @@ from app.services.auth.auth_service import AuthService
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
+# Role hierarchy: higher index = more permissions
+_ROLE_RANK: dict[str, int] = {
+    'viewer': 0,
+    'analyst': 1,
+    'admin': 2,
+    'superadmin': 3,
+}
+
 
 def get_current_admin(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme),
@@ -24,9 +32,14 @@ def get_current_admin(
             payload = decode_access_token(credentials.credentials)
             email = str(payload.get('sub', '')).strip()
             role = str(payload.get('role', '')).strip()
-            if not email or role != 'admin':
+            if not email or role not in _ROLE_RANK:
                 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid bearer token')
-            return AuthService().get_or_create_admin(db=db, email=email, full_name='Admin User')
+            user = AuthService().get_or_create_admin(db=db, email=email, full_name='Admin User')
+            # Sync role from token
+            if user.role != role:
+                user.role = role
+                db.commit()
+            return user
         except JWTError as exc:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid bearer token') from exc
 
@@ -39,6 +52,22 @@ def get_current_admin(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Admin email domain not allowed')
 
     return AuthService().get_or_create_admin(db=db, email=email, full_name=settings.admin_seed_name)
+
+
+def require_role(min_role: str):
+    """Dependency factory: ensures the current admin has at least `min_role`."""
+    min_rank = _ROLE_RANK.get(min_role, 0)
+
+    def _dep(user: User = Depends(get_current_admin)) -> User:
+        user_rank = _ROLE_RANK.get(user.role, 0)
+        if user_rank < min_rank:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f'Requires role: {min_role}',
+            )
+        return user
+
+    return _dep
 
 
 from app.models.customer_account import CustomerAccount

@@ -5,6 +5,8 @@ cd backend
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-python -m app.db.init_db
-python -m app.db.seed
+echo "[setup] Running Alembic migrations..."
+alembic upgrade head
+echo "[setup] Seeding demo data..."
+python -m app.db.seed 2>/dev/null || true
 echo "[done] Backend starter ready"

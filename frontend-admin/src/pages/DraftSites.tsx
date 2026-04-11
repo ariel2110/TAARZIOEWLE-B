@@ -113,23 +113,23 @@ export default function DraftSitesPage() {
                             <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
                                 {!draft ? (
                                     <Tooltip text="בנה אתר טיוטה בעזרת AI לעסק זה">
-                                      <Button onClick={() => handleCreate(biz.id)} disabled={busy}>
-                                          {busy ? '⏳ יוצר…' : '✨ צור אתר'}
-                                      </Button>
+                                        <Button onClick={() => handleCreate(biz.id)} disabled={busy}>
+                                            {busy ? '⏳ יוצר…' : '✨ צור אתר'}
+                                        </Button>
                                     </Tooltip>
                                 ) : (
                                     <>
                                         {previewUrl(draft) && (
                                             <Tooltip text="פתח תצוגה מקדימה של האתר">
-                                              <a href={previewUrl(draft)} target="_blank" rel="noopener noreferrer">
-                                                  <Button>👁️ צפה באתר</Button>
-                                              </a>
+                                                <a href={previewUrl(draft)} target="_blank" rel="noopener noreferrer">
+                                                    <Button>👁️ צפה באתר</Button>
+                                                </a>
                                             </Tooltip>
                                         )}
                                         <Tooltip text="בנה מחדש את האתר — שלב AI נוסף יחדש את התוכן">
-                                          <Button onClick={() => handleRegenerate(draft)} disabled={busy}>
-                                              {busy ? '⏳ מחדש…' : '🔄 צור מחדש'}
-                                          </Button>
+                                            <Button onClick={() => handleRegenerate(draft)} disabled={busy}>
+                                                {busy ? '⏳ מחדש…' : '🔄 צור מחדש'}
+                                            </Button>
                                         </Tooltip>
                                     </>
                                 )}

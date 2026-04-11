@@ -55,6 +55,9 @@ class Settings(BaseSettings):
     # OTP / delivery
     delivery_mode: str = Field(default='console')   # 'console' | 'whatsapp' | 'sms'
     whatsapp_api_key: str | None = Field(default=None)
+    whatsapp_webhook_secret: str | None = Field(default=None)
+    whatsapp_verify_token: str = Field(default='sitenest-verify')
+    notification_email: str | None = Field(default=None)
     sms_provider: str | None = Field(default=None)
 
     # Rate limiting / anti-abuse

@@ -27,3 +27,11 @@ def generate_preview(draft_id: int, db: Session = Depends(get_db), _: User = Dep
     if not item:
         raise HTTPException(status_code=404, detail='Draft not found')
     return item
+
+
+@router.post('/create-and-preview/{business_id}', response_model=DraftSiteRead)
+def create_and_preview(business_id: int, db: Session = Depends(get_db), _: User = Depends(get_current_admin)):
+    item = service.create_and_preview(db, business_id)
+    if not item:
+        raise HTTPException(status_code=404, detail='Business not found')
+    return item

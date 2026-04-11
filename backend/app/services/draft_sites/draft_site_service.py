@@ -57,11 +57,67 @@ class DraftSiteService:
     def get_draft(self, db: Session, draft_id: int) -> DraftSite | None:
         return db.query(DraftSite).filter(DraftSite.id == draft_id).first()
 
+    def _build_enriched_context(self, db: Session, item: DraftSite) -> dict:
+        """Merge draft fields, business data, and enrichment cache into one context dict."""
+        import json as _json
+        import os
+
+        raw: dict = {
+            'site_title': item.site_title,
+            'hero_title': item.hero_title,
+            'about_text': item.about_text,
+            'is_demo': item.is_demo,
+            'wa_admin_phone': os.getenv('WA_ADMIN_PHONE', '972546363350'),
+        }
+
+        # Fetch Business row
+        business = db.query(Business).filter(Business.id == item.business_id).first()
+        if business:
+            raw['name'] = business.name
+            raw['site_title'] = raw['site_title'] or f"{business.name}"
+            raw['hero_title'] = raw['hero_title'] or business.name
+            raw['phone'] = business.phone or ''
+            raw['city'] = business.city or ''
+            raw['category'] = business.category or ''
+
+        # Fetch EnrichedBizCache
+        try:
+            from app.models.enriched_biz_cache import EnrichedBizCache
+            enrich_row = None
+            if business:
+                enrich_row = (
+                    db.query(EnrichedBizCache)
+                    .filter(EnrichedBizCache.name == business.name)
+                    .first()
+                )
+            if enrich_row:
+                raw['phone'] = raw.get('phone') or enrich_row.phone or ''
+                raw['address'] = enrich_row.address or business.city if business else ''
+                raw['rating'] = enrich_row.rating
+                raw['reviews_count'] = enrich_row.reviews_count or 0
+                raw['website'] = enrich_row.website or ''
+                raw['business_types'] = enrich_row.business_types or ''
+                # parse raw_json
+                rj = {}
+                if enrich_row.raw_json:
+                    try:
+                        rj = _json.loads(enrich_row.raw_json) if isinstance(enrich_row.raw_json, str) else enrich_row.raw_json
+                    except Exception:
+                        rj = {}
+                raw['maps_url'] = rj.get('google_maps_url') or ''
+                raw['top_review'] = rj.get('top_review') or ''
+                raw['opening_hours'] = rj.get('opening_hours') or []
+        except Exception:
+            pass
+
+        return raw
+
     def generate_preview(self, db: Session, draft_id: int) -> DraftSite | None:
         item = self.get_draft(db, draft_id)
         if not item:
             return None
-        context = ContextBuilder().build({'site_title': item.site_title, 'hero_title': item.hero_title, 'about_text': item.about_text, 'is_demo': item.is_demo})
+        raw = self._build_enriched_context(db, item)
+        context = ContextBuilder().build(raw)
         html = TemplateRenderService().render(context)
         out_dir = Path(__file__).resolve().parents[2] / 'static_sites' / 'drafts'
         out_dir.mkdir(parents=True, exist_ok=True)
@@ -73,3 +129,12 @@ class DraftSiteService:
         db.commit()
         db.refresh(item)
         return item
+
+    def create_and_preview(self, db: Session, business_id: int) -> DraftSite | None:
+        """Create draft (or reuse existing) then immediately generate beautiful preview."""
+        # Reuse existing draft if present
+        existing = db.query(DraftSite).filter(DraftSite.business_id == business_id).first()
+        item = existing or self.create_for_business(db, business_id)
+        if not item:
+            return None
+        return self.generate_preview(db, item.id)

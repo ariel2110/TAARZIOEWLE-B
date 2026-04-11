@@ -139,6 +139,7 @@ export const getCustomers = (skip = 0, limit = 100) => apiGet<Customer[]>(`/admi
 export type DraftSite = { id: number; business_id: number; site_title: string; status: string; preview_url?: string | null; primary_color?: string | null; is_demo?: boolean; noindex?: boolean; hero_title?: string | null; about_text?: string | null };
 export const getDraftSites = (skip = 0, limit = 100) => apiGet<DraftSite[]>(`/admin/draft-sites?skip=${skip}&limit=${limit}`);
 export const generateDraftPreview = (draftId: number) => apiPost<DraftSite>(`/admin/draft-sites/${draftId}/generate-preview`, {});
+export const createAndPreview = (businessId: number) => apiPost<DraftSite>(`/admin/draft-sites/create-and-preview/${businessId}`, {});
 
 export type Payment = { id: number; business_id?: number | null; amount: number; internal_status: string };
 export const getPayments = (skip = 0, limit = 100) => apiGet<Payment[]>(`/admin/payments?skip=${skip}&limit=${limit}`);

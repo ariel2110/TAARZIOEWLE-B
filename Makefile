@@ -1,4 +1,4 @@
-.PHONY: up down logs backend admin customer migrate seed deploy workers
+.PHONY: up down logs backend admin customer migrate seed deploy workers celery
 
 up:
 	docker compose up --build -d
@@ -29,3 +29,6 @@ deploy:
 
 workers:
 	bash scripts/run_workers.sh
+
+celery:
+	cd backend && celery -A app.core.celery_app worker --loglevel=info --concurrency=2 -Q sitenest

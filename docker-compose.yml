@@ -11,10 +11,23 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U localbiz -d localbiz']
+      test: [ 'CMD-SHELL', 'pg_isready -U localbiz -d localbiz' ]
       interval: 5s
       timeout: 5s
       retries: 20
+
+  redis:
+    image: redis:alpine
+    container_name: localbiz-redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: [ 'CMD', 'redis-cli', 'ping' ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
   backend:
     build:
@@ -32,12 +45,40 @@ services:
       POSTGRES_PASSWORD: localbiz
       AUTO_CREATE_TABLES: 'false'
       AUTO_SEED_DEMO_DATA: 'false'
+      CELERY_BROKER_URL: 'redis://redis:6379/0'
+      CELERY_RESULT_BACKEND: 'redis://redis:6379/0'
     ports:
       - '8000:8000'
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     command: bash -lc "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+
+  celery_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: localbiz-celery
+    env_file:
+      - ./backend/.env.example
+    environment:
+      USE_POSTGRES: 'true'
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: localbiz
+      POSTGRES_USER: localbiz
+      POSTGRES_PASSWORD: localbiz
+      CELERY_BROKER_URL: 'redis://redis:6379/0'
+      CELERY_RESULT_BACKEND: 'redis://redis:6379/0'
+    command: celery -A app.core.celery_app worker --loglevel=info --concurrency=2 -Q sitenest
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
 volumes:
   postgres_data:
+  redis_data:

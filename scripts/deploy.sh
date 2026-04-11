@@ -45,4 +45,7 @@ fi
 echo "[deploy] Restarting backend service..."
 sudo systemctl restart localbiz-backend 2>/dev/null || echo "[warn] systemctl not available — restart manually"
 
+echo "[deploy] Restarting Celery worker..."
+sudo systemctl restart sitenest-celery 2>/dev/null || echo "[warn] sitenest-celery service not configured — start manually: make celery"
+
 echo "[deploy] Done! — $(date)"

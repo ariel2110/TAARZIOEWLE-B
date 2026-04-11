@@ -206,3 +206,10 @@ export const getAbResults = () => apiGet<AbVariantResult[]>('/admin/analytics/ab
 
 // ---- Auto-qualify ----
 export const autoQualifyLeads = () => apiPost<{ qualified: number; leads: { id: number; name: string }[] }>('/admin/leads/auto-qualify', {});
+
+// ---- Celery background tasks ----
+export type TaskTriggered = { task_id: string; message: string };
+export type TaskStatus = { task_id: string; state: string; step?: string | null; result?: Record<string, unknown> | null; error?: string | null };
+export const triggerGenerateSite = (businessId: number) => apiPost<TaskTriggered>(`/admin/tasks/generate-site/${businessId}`, {});
+export const triggerBatchGenerate = (businessIds: number[]) => apiPost<TaskTriggered>('/admin/tasks/batch-generate', { business_ids: businessIds });
+export const getTaskStatus = (taskId: string) => apiGet<TaskStatus>(`/admin/tasks/${taskId}/status`);

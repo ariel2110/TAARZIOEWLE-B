@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { Button, Card, SectionTitle, Tooltip } from '../components/ui';
 import {
     DraftSite,
@@ -7,6 +7,9 @@ import {
     createAndPreview,
     Business,
     getBusinesses,
+    triggerGenerateSite,
+    getTaskStatus,
+    TaskStatus,
 } from '../services/queries';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://api.sitenest.site';
@@ -31,6 +34,10 @@ export default function DraftSitesPage() {
     const [drafts, setDrafts] = useState<DraftSite[]>([]);
     const [loading, setLoading] = useState<Record<number, boolean>>({});
     const [msg, setMsg] = useState('');
+    // task_id per business while an async Celery task is running
+    const [taskIds, setTaskIds] = useState<Record<number, string>>({});
+    const [taskStatuses, setTaskStatuses] = useState<Record<number, TaskStatus>>({});
+    const pollIntervals = useRef<Record<number, ReturnType<typeof setInterval>>>({});
 
     const load = useCallback(() => {
         Promise.all([getBusinesses(), getDraftSites(0, 500)]).then(([biz, dr]) => {
@@ -41,10 +48,60 @@ export default function DraftSitesPage() {
 
     useEffect(() => { load(); }, [load]);
 
+    // Clean up intervals on unmount
+    useEffect(() => {
+        const intervals = pollIntervals.current;
+        return () => { Object.values(intervals).forEach(clearInterval); };
+    }, []);
+
     const draftByBiz = (bizId: number) => drafts.find(d => d.business_id === bizId);
 
     const setLoaderFor = (bizId: number, val: boolean) =>
         setLoading(prev => ({ ...prev, [bizId]: val }));
+
+    const stopPolling = (bizId: number) => {
+        if (pollIntervals.current[bizId]) {
+            clearInterval(pollIntervals.current[bizId]);
+            delete pollIntervals.current[bizId];
+        }
+    };
+
+    const startPolling = (bizId: number, taskId: string) => {
+        stopPolling(bizId);
+        setTaskIds(prev => ({ ...prev, [bizId]: taskId }));
+        pollIntervals.current[bizId] = setInterval(async () => {
+            try {
+                const status = await getTaskStatus(taskId);
+                setTaskStatuses(prev => ({ ...prev, [bizId]: status }));
+                if (status.state === 'SUCCESS') {
+                    stopPolling(bizId);
+                    setLoaderFor(bizId, false);
+                    setTaskIds(prev => { const n = { ...prev }; delete n[bizId]; return n; });
+                    setMsg(`✅ האתר נוצר בהצלחה! (עסק #${bizId})`);
+                    load();
+                } else if (status.state === 'FAILURE') {
+                    stopPolling(bizId);
+                    setLoaderFor(bizId, false);
+                    setTaskIds(prev => { const n = { ...prev }; delete n[bizId]; return n; });
+                    setMsg(`❌ שגיאה ביצירה: ${status.error || 'שגיאה לא ידועה'}`);
+                }
+            } catch {
+                // ignore transient poll errors
+            }
+        }, 5000);
+    };
+
+    const handleAsyncGenerate = async (bizId: number) => {
+        setLoaderFor(bizId, true);
+        setMsg('');
+        try {
+            const { task_id } = await triggerGenerateSite(bizId);
+            startPolling(bizId, task_id);
+        } catch (e: unknown) {
+            setLoaderFor(bizId, false);
+            setMsg(`❌ שגיאה: ${e instanceof Error ? e.message : 'unknown'}`);
+        }
+    };
 
     const handleCreate = async (bizId: number) => {
         setLoaderFor(bizId, true);
@@ -74,6 +131,14 @@ export default function DraftSitesPage() {
         }
     };
 
+    function stepLabel(step?: string | null): string {
+        const map: Record<string, string> = {
+            running_ai_pipeline: '🤖 מריץ AI…',
+            saving_draft: '💾 שומר טיוטה…',
+        };
+        return step ? (map[step] || step) : '⏳ בתור…';
+    }
+
     return (
         <Card>
             <SectionTitle>✨ ניהול אתרי טיוטה</SectionTitle>
@@ -91,6 +156,8 @@ export default function DraftSitesPage() {
                 {businesses.map(biz => {
                     const draft = draftByBiz(biz.id);
                     const busy = !!loading[biz.id];
+                    const taskId = taskIds[biz.id];
+                    const taskStatus = taskStatuses[biz.id];
                     const st = statusLabel(draft?.status || '');
                     return (
                         <div key={biz.id} style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', padding: '12px 0', borderBottom: '1px solid #f1f5f9' }}>
@@ -100,6 +167,12 @@ export default function DraftSitesPage() {
                                 <div className="muted" style={{ fontSize: 13, marginTop: 2 }}>
                                     {biz.city || '—'} · {biz.category || '—'} · {biz.phone || '—'}
                                 </div>
+                                {/* Polling progress indicator */}
+                                {taskId && (
+                                    <div style={{ fontSize: 12, color: '#6366f1', marginTop: 4 }}>
+                                        {taskStatus ? stepLabel(taskStatus.step) : '⏳ ממתין לסטטוס…'}
+                                    </div>
+                                )}
                             </div>
 
                             {/* Status badge */}
@@ -112,11 +185,18 @@ export default function DraftSitesPage() {
                             {/* Actions */}
                             <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
                                 {!draft ? (
-                                    <Tooltip text="בנה אתר טיוטה בעזרת AI לעסק זה">
-                                        <Button onClick={() => handleCreate(biz.id)} disabled={busy}>
-                                            {busy ? '⏳ יוצר…' : '✨ צור אתר'}
-                                        </Button>
-                                    </Tooltip>
+                                    <>
+                                        <Tooltip text="צור אתר AI ב-background — עדכון אוטומטי עם סיום">
+                                            <Button onClick={() => handleAsyncGenerate(biz.id)} disabled={busy}>
+                                                {taskId ? stepLabel(taskStatus?.step) : '⚡ AI אסינכרוני'}
+                                            </Button>
+                                        </Tooltip>
+                                        <Tooltip text="בנה אתר טיוטה בעזרת AI לעסק זה (סינכרוני)">
+                                            <Button onClick={() => handleCreate(biz.id)} disabled={busy} style={{ background: '#e0e7ff', color: '#3730a3' }}>
+                                                {busy && !taskId ? '⏳ יוצר…' : '✨ צור אתר'}
+                                            </Button>
+                                        </Tooltip>
+                                    </>
                                 ) : (
                                     <>
                                         {previewUrl(draft) && (
@@ -126,9 +206,14 @@ export default function DraftSitesPage() {
                                                 </a>
                                             </Tooltip>
                                         )}
-                                        <Tooltip text="בנה מחדש את האתר — שלב AI נוסף יחדש את התוכן">
-                                            <Button onClick={() => handleRegenerate(draft)} disabled={busy}>
-                                                {busy ? '⏳ מחדש…' : '🔄 צור מחדש'}
+                                        <Tooltip text="בנה מחדש ב-background — ה-AI יחדש את התוכן">
+                                            <Button onClick={() => handleAsyncGenerate(biz.id)} disabled={busy}>
+                                                {taskId ? stepLabel(taskStatus?.step) : '⚡ AI מחדש'}
+                                            </Button>
+                                        </Tooltip>
+                                        <Tooltip text="בנה מחדש את האתר — שלב AI נוסף יחדש את התוכן (סינכרוני)">
+                                            <Button onClick={() => handleRegenerate(draft)} disabled={busy} style={{ background: '#e0e7ff', color: '#3730a3' }}>
+                                                {busy && !taskId ? '⏳ מחדש…' : '🔄 צור מחדש'}
                                             </Button>
                                         </Tooltip>
                                     </>

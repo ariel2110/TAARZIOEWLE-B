@@ -223,6 +223,11 @@ class CEOGrokService:
                 approval_type="campaign_launch",
                 status="proposed",
                 summary=summary,
+                payload_json={
+                    "action_type": action_type,
+                    "target_component": target or "",
+                    "new_value": new_value or "",
+                },
             )
             db.add(item)
             db.commit()

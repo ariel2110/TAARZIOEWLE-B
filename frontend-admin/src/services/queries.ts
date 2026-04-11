@@ -87,6 +87,8 @@ export const getApprovals = () => apiGet<Approval[]>('/admin/approvals');
 export const getApprovalDetail = (id: number) => apiGet<ApprovalDetail>(`/admin/approvals/${id}`);
 export const approve = (id: number) => apiPost(`/admin/approvals/${id}/approve`, {});
 export const reject = (id: number) => apiPost(`/admin/approvals/${id}/reject`, {});
+export type ApplyResult = { id: number; status: string; applied: boolean; execution?: { status: string; message: string } };
+export const applyApproval = (id: number) => apiPost<ApplyResult>(`/admin/approvals/${id}/apply`, {});
 export const getProfiles = () => apiGet<Profile[]>('/admin/targeting/profiles');
 export const getCampaigns = () => apiGet<Campaign[]>('/admin/targeting/campaigns');
 export const getCampaignResults = (id: number) => apiGet<CampaignResults>(`/admin/targeting/campaigns/${id}/results`);

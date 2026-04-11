@@ -18,6 +18,7 @@ const T = {
     approval_detail: { he: 'פרטי אישור', en: 'Approval Detail' },
     open_detail: { he: 'פתח פרטים', en: 'Open detail' },
     approve: { he: 'אשר', en: 'Approve' },
+    execute: { he: '▶ בצע', en: '▶ Execute' },
     reject: { he: 'דחה', en: 'Reject' },
     why: { he: 'למה', en: 'Why' },
     evidence: { he: 'עדות', en: 'Evidence' },

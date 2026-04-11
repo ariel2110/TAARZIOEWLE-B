@@ -215,8 +215,15 @@ export default function MagicPortal() {
             {/* ══════════════════════════════════════════════════════ SEARCH ══ */}
             {phase === 'search' && (
                 <div className="mp-search-page">
+                    {/* Top nav */}
+                    <nav className="mp-topnav">
+                        <span className="mp-topnav-logo">SiteNest ✦</span>
+                        <a href="https://admin.sitenest.site" className="mp-topnav-login">
+                            <span className="mp-topnav-login-icon">👤</span>
+                            כניסה לניהול
+                        </a>
+                    </nav>
                     <div className="mp-hero">
-                        <div className="mp-logo">SiteNest ✦</div>
                         <h1 className="mp-headline">
                             תוך 3 דקות<br />
                             <span className="mp-accent">הפכנו את הידע שלך לאתר מקצועי</span>
@@ -271,6 +278,14 @@ export default function MagicPortal() {
             {/* ══════════════════════════════════════════════════════ BUILDING ══ */}
             {phase === 'building' && (
                 <div className="mp-building-page">
+                    {/* Exit button */}
+                    <button
+                        className="mp-exit-btn"
+                        onClick={() => { setPhase('search'); setQuery(''); clearInterval(pollRef.current); clearInterval(stepAdvTimer.current); }}
+                        title="חזור לחיפוש"
+                    >
+                        ✕ חזור
+                    </button>
                     <div className="mp-factory">
                         <div className="mp-factory-header">
                             <div className="mp-spinner" />
@@ -349,6 +364,13 @@ export default function MagicPortal() {
                                 onClick={() => window.open(`${API.replace('/api/v1', '')}/ceo-chat`, '_blank')}
                             >
                                 💬 שוחח עם המנכ״ל AI
+                            </button>
+                            <button
+                                className="mp-btn-restart"
+                                onClick={() => { setPhase('search'); setQuery(''); setPreviewUrl(''); setPhoneSaved(false); }}
+                                title="בנה אתר לעסק אחר"
+                            >
+                                🔄 עסק אחר
                             </button>
                         </div>
                     </div>

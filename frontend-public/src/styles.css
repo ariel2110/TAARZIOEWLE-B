@@ -25,8 +25,52 @@ input { font-family: inherit; }
   background: radial-gradient(ellipse at top, #1a1f3a 0%, #0b0f1a 70%);
   display: flex; align-items: center; justify-content: center;
   padding: 40px 20px;
+  position: relative;
 }
 .mp-hero { max-width: 680px; width: 100%; text-align: center; }
+
+/* Top nav */
+.mp-topnav {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 30;
+}
+
+.mp-topnav-logo {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: #f5c842;
+}
+
+.mp-topnav-login {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: rgba(22, 28, 46, 0.92);
+  border: 1px solid rgba(245, 200, 66, 0.45);
+  color: #f0f4ff;
+  font-size: 0.9rem;
+  font-weight: 700;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.mp-topnav-login:hover {
+  transform: translateY(-1px);
+  background: rgba(30, 38, 64, 0.98);
+}
+
+.mp-topnav-login-icon {
+  font-size: 1rem;
+}
 
 .mp-logo {
   font-size: 20px; font-weight: 800; letter-spacing: 1px;
@@ -114,7 +158,29 @@ input { font-family: inherit; }
   min-height: 100vh; padding-top: 56px;
   background: radial-gradient(ellipse at top, #0f1629 0%, #0b0f1a 70%);
   display: flex; align-items: center; justify-content: center;
+  position: relative;
 }
+
+.mp-exit-btn {
+  position: absolute;
+  top: 72px;
+  left: 24px;
+  z-index: 25;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(11, 15, 26, 0.88);
+  color: #d7deef;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.mp-exit-btn:hover {
+  background: rgba(22, 28, 46, 0.98);
+  border-color: rgba(245, 200, 66, 0.6);
+}
+
 .mp-factory {
   background: #111827; border: 1px solid #1e2d45;
   border-radius: 24px; padding: 40px; max-width: 560px; width: 100%;
@@ -228,6 +294,22 @@ input { font-family: inherit; }
 }
 .mp-btn-outline:hover { background: rgba(0,0,0,.08); }
 
+.mp-btn-restart {
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  background: rgba(255, 255, 255, 0.35);
+  color: #000;
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 10px 16px;
+  border-radius: 999px;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.mp-btn-restart:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
 /* iFrame demo */
 .mp-iframe {
   flex: 1; width: 100%; border: none; margin-top: 56px; min-height: calc(100vh - 56px);
@@ -236,6 +318,10 @@ input { font-family: inherit; }
 /* ── Responsive ─────────────────────────────────────────────────────────────── */
 @media (max-width: 600px) {
   .mp-headline { font-size: 1.9rem; }
+  .mp-topnav { top: 14px; left: 12px; right: 12px; }
+  .mp-topnav-logo { font-size: 17px; }
+  .mp-topnav-login { padding: 8px 12px; font-size: 0.8rem; }
+  .mp-exit-btn { top: 62px; left: 12px; }
   .mp-sticky-bar { flex-direction: column; align-items: flex-start; }
   .mp-sticky-actions { width: 100%; justify-content: flex-start; }
   .mp-factory { padding: 28px 20px; }

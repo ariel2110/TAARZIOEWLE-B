@@ -57,6 +57,45 @@ class DraftSiteService:
     def get_draft(self, db: Session, draft_id: int) -> DraftSite | None:
         return db.query(DraftSite).filter(DraftSite.id == draft_id).first()
 
+    def _generate_html(self, raw: dict) -> str:
+        """Try the 3-stage AI pipeline first; fall back to the static template."""
+        import json as _json
+
+        # Build a raw-text summary for the pipeline (mimics Google Maps data)
+        pipeline_input_parts = [
+            f"Name: {raw.get('name') or raw.get('site_title', '')}",
+            f"Phone: {raw.get('phone', '')}",
+            f"City: {raw.get('city', '')}",
+            f"Category: {raw.get('category', '')}",
+            f"Address: {raw.get('address', '')}",
+        ]
+        if raw.get('rating'):
+            pipeline_input_parts.append(f"Rating: {raw['rating']} ({raw.get('reviews_count', 0)} reviews)")
+        if raw.get('top_review'):
+            pipeline_input_parts.append(f"Top review: {raw['top_review']}")
+        if raw.get('opening_hours'):
+            hrs = raw['opening_hours']
+            if isinstance(hrs, list):
+                hrs = " | ".join(hrs[:3])
+            pipeline_input_parts.append(f"Hours: {hrs}")
+        if raw.get('website'):
+            pipeline_input_parts.append(f"Website: {raw['website']}")
+
+        pipeline_input = "\n".join(pipeline_input_parts)
+
+        try:
+            from app.services.generator.autosite_pipeline_service import AutoSitePipelineService
+            html = AutoSitePipelineService().run(pipeline_input)
+            if html and len(html) > 500:
+                return html
+        except Exception:
+            import logging
+            logging.getLogger(__name__).info("AutoSite pipeline unavailable, using static template fallback")
+
+        # Fallback: use our own static template
+        context = ContextBuilder().build(raw)
+        return TemplateRenderService().render(context)
+
     def _build_enriched_context(self, db: Session, item: DraftSite) -> dict:
         """Merge draft fields, business data, and enrichment cache into one context dict."""
         import json as _json
@@ -116,9 +155,10 @@ class DraftSiteService:
         item = self.get_draft(db, draft_id)
         if not item:
             return None
+
         raw = self._build_enriched_context(db, item)
-        context = ContextBuilder().build(raw)
-        html = TemplateRenderService().render(context)
+        html = self._generate_html(raw)
+
         out_dir = Path(__file__).resolve().parents[2] / 'static_sites' / 'drafts'
         out_dir.mkdir(parents=True, exist_ok=True)
         out_file = out_dir / f'draft_{item.id}.html'

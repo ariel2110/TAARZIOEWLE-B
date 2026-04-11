@@ -25,7 +25,7 @@ class SiteCopyGeneratorService:
 
         llm = LLMRouterService()
         prompt = self._build_prompt(name=name, city=city, category=category)
-        raw = llm.call("generate_site_copy", prompt)
+        raw = llm.call("generate_site_copy", prompt, json_mode=True)
         if raw:
             parsed = self._parse_response(raw)
             if parsed:

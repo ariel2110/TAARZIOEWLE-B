@@ -5,10 +5,10 @@ import { DemoRecord, getDemos, markDemoSent, markDemoConverted, deleteDemo } fro
 const DEMO_BASE = 'https://admin.sitenest.site';
 
 const STATUS_LABELS: Record<string, { label: string; bg: string; color: string }> = {
-    draft:     { label: '📝 טיוטה',   bg: '#f3f4f6', color: '#374151' },
-    sent:      { label: '📤 נשלח',    bg: '#dbeafe', color: '#1e40af' },
-    viewed:    { label: '👁️ נצפה',    bg: '#fef3c7', color: '#92400e' },
-    converted: { label: '✅ הומר',    bg: '#d1fae5', color: '#065f46' },
+    draft: { label: '📝 טיוטה', bg: '#f3f4f6', color: '#374151' },
+    sent: { label: '📤 נשלח', bg: '#dbeafe', color: '#1e40af' },
+    viewed: { label: '👁️ נצפה', bg: '#fef3c7', color: '#92400e' },
+    converted: { label: '✅ הומר', bg: '#d1fae5', color: '#065f46' },
 };
 
 function cleanPhone(phone: string): string {

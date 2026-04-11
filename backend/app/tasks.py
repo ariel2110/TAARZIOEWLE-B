@@ -223,6 +223,154 @@ def followup_task(self: Task) -> dict:
             return {'status': 'error', 'message': str(exc)}
 
 
+# ── Task 5: Inbound Magic Portal — customer-initiated full build ─────────────
+
+@celery_app.task(
+    base=_BaseTask,
+    bind=True,
+    name='app.tasks.inbound_build_task',
+    max_retries=1,
+    default_retry_delay=30,
+    time_limit=480,
+    soft_time_limit=450,
+)
+def inbound_build_task(self: Task, business_id: int) -> dict:
+    """
+    Full AI pipeline triggered by a public inbound request (Magic Portal).
+
+    Progress states emitted for frontend polling:
+      scouting   → fetching Maps + social data
+      scouted    → data ready; frontend shows phone-capture wall
+      building   → Claude HTML generation in progress
+      done       → draft ready
+
+    Returns:
+        {"status": "success"|"error", "preview_url": str, "draft_site_id": int}
+    """
+    logger.info('[inbound_build_task] starting for business_id=%d', business_id)
+    try:
+        import json as _json
+        from app.db.session import SessionLocal
+        from app.models.business import Business
+        from app.models.draft_site import DraftSite
+        from app.services.draft_sites.draft_site_service import DraftSiteService
+
+        db = SessionLocal()
+        try:
+            business = db.query(Business).filter(Business.id == business_id).first()
+            if not business:
+                return {'status': 'error', 'business_id': business_id, 'message': f'Business {business_id} not found'}
+
+            svc = DraftSiteService()
+
+            # ── Stage 0 prep: get or create draft ────────────────────────────
+            self.update_state(state='PROGRESS', meta={
+                'step': 'scouting', 'percent': 8,
+                'label': 'שואב דירוגים וביקורות מגוגל מפות...',
+            })
+            existing = db.query(DraftSite).filter(DraftSite.business_id == business_id).first()
+            draft = existing or svc.create_for_business(db, business_id)
+            if not draft:
+                return {'status': 'error', 'business_id': business_id, 'message': 'Could not create draft'}
+
+            # ── Stage 0 enrichment context (reads cache — fast) ───────────────
+            enrichment = svc._build_enriched_context(db, draft)
+
+            self.update_state(state='PROGRESS', meta={
+                'step': 'social', 'percent': 22,
+                'label': 'מאתר חשבון אינסטגרם וטיקטוק שלך...',
+            })
+
+            # ── Run social discovery ──────────────────────────────────────────
+            from app.services.generator.autosite_pipeline_service import AutoSitePipelineService
+            pipeline = AutoSitePipelineService()
+            social = pipeline._stage0_social_discovery(enrichment)
+            enrichment = {**enrichment, '_social': social}
+
+            self.update_state(state='PROGRESS', meta={
+                'step': 'scouted', 'percent': 40,
+                'label': 'מצאנו הכל! מנתח שירותים מובילים מתוך איזי...',
+            })
+
+            # ── Stage 1a: GPT content generation ─────────────────────────────
+            self.update_state(state='PROGRESS', meta={
+                'step': 'content', 'percent': 55,
+                'label': 'ה-AI מנתח ומבין את העסק שלך...',
+            })
+            raw_str = _json.dumps({
+                'name': enrichment.get('name', business.name),
+                'city': enrichment.get('city', business.city or ''),
+                'category': enrichment.get('category', business.category or ''),
+                'phone': enrichment.get('phone', business.phone or ''),
+                'address': enrichment.get('address', business.address or ''),
+                'rating': enrichment.get('rating'),
+                'reviews_count': enrichment.get('reviews_count', 0),
+                'website': enrichment.get('website', ''),
+                'top_review': enrichment.get('top_review', ''),
+                'opening_hours': enrichment.get('opening_hours', []),
+            }, ensure_ascii=False)
+
+            content = pipeline._stage1a_content(raw_str, social=social)
+
+            # ── Stage 1b: Gemini design ───────────────────────────────────────
+            self.update_state(state='PROGRESS', meta={
+                'step': 'designing', 'percent': 68,
+                'label': 'מעצב לפי צבעי המותג שלך...',
+            })
+            design = pipeline._stage1b_design(raw_str)
+
+            # ── Stage 2: Claude HTML ──────────────────────────────────────────
+            self.update_state(state='PROGRESS', meta={
+                'step': 'building', 'percent': 80,
+                'label': 'ה-AI בונה כעת את האתר שלך...',
+            })
+            html = pipeline._stage2_build(content, design, enrichment) if content else None
+
+            if not html:
+                # Fallback to standard DraftSiteService if custom pipeline failed
+                result_draft = svc.generate_preview(db, draft.id)
+            else:
+                # Save HTML to draft
+                from app.services.draft_sites.draft_site_service import DraftSiteService as _DSS
+                import os
+                draft.html_content = html
+                draft.status = 'preview_ready'
+                static_dir = os.path.join(os.path.dirname(__file__), 'static_sites', 'drafts')
+                os.makedirs(static_dir, exist_ok=True)
+                html_path = os.path.join(static_dir, f'draft_{draft.id}.html')
+                with open(html_path, 'w', encoding='utf-8') as f:
+                    f.write(html)
+                draft.preview_url = f'/static/drafts/draft_{draft.id}.html'
+                db.commit()
+                result_draft = draft
+
+            if not result_draft:
+                return {'status': 'error', 'business_id': business_id, 'message': 'Pipeline returned no result'}
+
+            self.update_state(state='PROGRESS', meta={
+                'step': 'done', 'percent': 100,
+                'label': '🎉 האתר מוכן!',
+            })
+
+            logger.info('[inbound_build_task] done — business_id=%d draft_id=%d', business_id, result_draft.id)
+            return {
+                'status': 'success',
+                'business_id': business_id,
+                'draft_site_id': result_draft.id,
+                'preview_url': result_draft.preview_url,
+                'message': 'Demo site ready!',
+            }
+        finally:
+            db.close()
+
+    except Exception as exc:
+        logger.error('[inbound_build_task] exception for business_id=%d: %s', business_id, exc, exc_info=True)
+        try:
+            raise self.retry(exc=exc)
+        except self.MaxRetriesExceededError:
+            return {'status': 'error', 'business_id': business_id, 'message': f'Pipeline failed: {exc}'}
+
+
 # ── Task 4: CEO digest worker ────────────────────────────────────────────────
 
 @celery_app.task(

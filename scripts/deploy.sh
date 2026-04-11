@@ -48,4 +48,7 @@ sudo systemctl restart localbiz-backend 2>/dev/null || echo "[warn] systemctl no
 echo "[deploy] Restarting Celery worker..."
 sudo systemctl restart sitenest-celery 2>/dev/null || echo "[warn] sitenest-celery service not configured — start manually: make celery"
 
+echo "[deploy] Restarting Celery Beat scheduler..."
+sudo systemctl restart sitenest-celery-beat 2>/dev/null || echo "[warn] sitenest-celery-beat not configured — start manually: make beat"
+
 echo "[deploy] Done! — $(date)"

@@ -47,4 +47,18 @@ celery_app.conf.update(
     # Worker settings
     worker_prefetch_multiplier=1,   # one task at a time per worker process
     task_acks_late=True,            # ack only after task completes
+    # ── Celery Beat periodic schedule ────────────────────────────────────────
+    # Requires running: celery -A app.core.celery_app beat --loglevel=info
+    beat_schedule={
+        'followup-daily-9am': {
+            'task': 'app.tasks.followup_task',
+            'schedule': 60 * 60 * 24,   # every 24 hours
+            'options': {'queue': 'sitenest'},
+        },
+        'ceo-digest-every-6h': {
+            'task': 'app.tasks.ceo_digest_task',
+            'schedule': 60 * 60 * 6,    # every 6 hours
+            'options': {'queue': 'sitenest'},
+        },
+    },
 )

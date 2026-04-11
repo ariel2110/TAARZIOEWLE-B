@@ -23,6 +23,8 @@ class LeadImportService:
         reader = csv.DictReader(io.StringIO(content))
         created = 0
         for row in reader:
+            rating_raw = row.get('rating') or row.get('Rating')
+            reviews_raw = row.get('reviews_count') or row.get('reviews') or row.get('reviews_count')
             lead = LeadRecord(
                 imported_name=row.get('imported_name') or row.get('name') or 'Unnamed lead',
                 city=row.get('city'),
@@ -31,6 +33,8 @@ class LeadImportService:
                 address=row.get('address'),
                 website_url=row.get('website_url'),
                 score=int(row.get('score') or 0),
+                rating=float(rating_raw) if rating_raw else None,
+                reviews_count=int(reviews_raw) if reviews_raw else None,
                 status=row.get('status') or 'imported',
             )
             db.add(lead)

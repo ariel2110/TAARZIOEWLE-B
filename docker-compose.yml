@@ -79,6 +79,29 @@ services:
       redis:
         condition: service_healthy
 
+  celery_beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: localbiz-celery-beat
+    env_file:
+      - ./backend/.env.example
+    environment:
+      USE_POSTGRES: 'true'
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: localbiz
+      POSTGRES_USER: localbiz
+      POSTGRES_PASSWORD: localbiz
+      CELERY_BROKER_URL: 'redis://redis:6379/0'
+      CELERY_RESULT_BACKEND: 'redis://redis:6379/0'
+    command: celery -A app.core.celery_app beat --loglevel=info --scheduler celery.beat:PersistentScheduler
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
 volumes:
   postgres_data:
   redis_data:

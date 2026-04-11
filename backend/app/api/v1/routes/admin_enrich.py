@@ -170,6 +170,8 @@ def import_to_leads(
                 phone=biz.get('phone', ''),
                 website_url=biz.get('website', ''),
                 score=biz.get('completeness_score', 20),
+                rating=biz.get('rating'),
+                reviews_count=biz.get('reviews_count'),
                 status='imported',
             )
             lead_svc.create_lead(db, lead)

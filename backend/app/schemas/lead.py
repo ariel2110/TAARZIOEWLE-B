@@ -10,6 +10,8 @@ class LeadCreate(BaseModel):
     address: str | None = None
     website_url: str | None = None
     score: int = 0
+    rating: float | None = None
+    reviews_count: int | None = None
     status: str = 'imported'
     campaign_id: int | None = None
     targeting_profile_id: int | None = None

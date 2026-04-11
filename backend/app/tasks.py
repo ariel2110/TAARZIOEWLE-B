@@ -1,12 +1,13 @@
 """
 tasks.py — Celery background tasks for SiteNest.
 
-All heavy AI operations that would block the API server run here:
-  - generate_site_task  → runs the 4-agent pipeline for a business
-  - batch_outreach_task → queues outreach messages for a list of business IDs
+All heavy AI operations and scheduled maintenance that would block the API
+server (or should run periodically) live here:
 
-Tasks write progress updates to their own Celery result backend so the
-frontend can poll /admin/tasks/{task_id}/status.
+  - generate_site_task   → 4-agent AI pipeline for one business
+  - batch_generate_task  → fan-out site generation for N businesses
+  - followup_task        → scan sent outreach, mark followup_due / stale
+  - ceo_digest_task      → regenerate the CEO brain daily digest
 """
 from __future__ import annotations
 
@@ -116,3 +117,63 @@ def batch_generate_task(self: Task, business_ids: list[int]) -> dict:
         task = generate_site_task.delay(bid)
         sub_tasks.append({'business_id': bid, 'task_id': task.id})
     return {'status': 'dispatched', 'count': len(sub_tasks), 'tasks': sub_tasks}
+
+
+# ── Task 3: Follow-up worker ─────────────────────────────────────────────────
+
+@celery_app.task(
+    base=_BaseTask,
+    bind=True,
+    name='app.tasks.followup_task',
+    max_retries=1,
+    default_retry_delay=60,
+)
+def followup_task(self: Task) -> dict:
+    """
+    Scan sent outreach messages and mark them as followup_due or stale.
+
+    Runs from Celery Beat every day at 09:00.
+    Delegates to the existing followup_worker.run() logic (single source of truth).
+    """
+    logger.info('[followup_task] starting')
+    try:
+        from app.workers.followup_worker import run as _run_followup
+        _run_followup()
+        return {'status': 'ok'}
+    except Exception as exc:
+        logger.error('[followup_task] failed: %s', exc, exc_info=True)
+        try:
+            raise self.retry(exc=exc)
+        except self.MaxRetriesExceededError:
+            return {'status': 'error', 'message': str(exc)}
+
+
+# ── Task 4: CEO digest worker ────────────────────────────────────────────────
+
+@celery_app.task(
+    base=_BaseTask,
+    bind=True,
+    name='app.tasks.ceo_digest_task',
+    max_retries=1,
+    default_retry_delay=120,
+    time_limit=600,
+    soft_time_limit=540,
+)
+def ceo_digest_task(self: Task) -> dict:
+    """
+    Regenerate the CEO daily digest (AI-powered summary of platform KPIs).
+
+    Runs from Celery Beat every 6 hours.
+    Delegates to ceo_digest_worker.run() — heavy LLM call, hence off-thread.
+    """
+    logger.info('[ceo_digest_task] starting')
+    try:
+        from app.workers.ceo_digest_worker import run as _run_digest
+        _run_digest()
+        return {'status': 'ok'}
+    except Exception as exc:
+        logger.error('[ceo_digest_task] failed: %s', exc, exc_info=True)
+        try:
+            raise self.retry(exc=exc)
+        except self.MaxRetriesExceededError:
+            return {'status': 'error', 'message': str(exc)}

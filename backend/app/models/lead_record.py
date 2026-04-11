@@ -1,5 +1,5 @@
 
-from sqlalchemy import String, Integer, Text, ForeignKey
+from sqlalchemy import String, Integer, Float, Text, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 from app.models.mixins import TimestampMixin
@@ -16,6 +16,9 @@ class LeadRecord(Base, TimestampMixin):
     address: Mapped[str | None] = mapped_column(String(255), nullable=True)
     website_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
     score: Mapped[int] = mapped_column(Integer, default=0, index=True)
+    # Google Maps signals — the source of truth for hot-lead scoring
+    rating: Mapped[float | None] = mapped_column(Float, nullable=True, index=True)
+    reviews_count: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
     status: Mapped[str] = mapped_column(String(50), default='imported', index=True)
     campaign_id: Mapped[int | None] = mapped_column(ForeignKey('campaigns.id', ondelete='SET NULL'), nullable=True, index=True)
     targeting_profile_id: Mapped[int | None] = mapped_column(ForeignKey('targeting_profiles.id', ondelete='SET NULL'), nullable=True, index=True)

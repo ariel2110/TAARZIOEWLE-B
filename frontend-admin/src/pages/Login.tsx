@@ -1,11 +1,9 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { GoogleLogin } from '@react-oauth/google';
 import { Card, SectionTitle } from '../components/ui';
 import { googleLogin, ensureDevLogin } from '../services/queries';
 
 export default function LoginPage() {
-    const navigate = useNavigate();
     const [error, setError] = useState('');
     const [autoLogging, setAutoLogging] = useState(false);
 
@@ -17,19 +15,19 @@ export default function LoginPage() {
         ensureDevLogin()
             .then(() => {
                 if (localStorage.getItem('admin_access_token')) {
-                    navigate('/', { replace: true });
+                    window.location.replace('/');
                 } else {
                     setAutoLogging(false);
                 }
             })
             .catch(() => setAutoLogging(false));
-    }, [navigate]);
+    }, []);
 
     const handleSuccess = async (credentialResponse: { credential?: string }) => {
         if (!credentialResponse.credential) { setError('לא התקבל טוקן מGoogle'); return; }
         try {
             await googleLogin(credentialResponse.credential);
-            navigate('/', { replace: true });
+            window.location.replace('/');
         } catch {
             setError('הכניסה נכשלה. ודא שהמייל שלך מורשה.');
         }
@@ -41,7 +39,7 @@ export default function LoginPage() {
         try {
             await ensureDevLogin();
             if (localStorage.getItem('admin_access_token')) {
-                navigate('/', { replace: true });
+                window.location.replace('/');
             } else {
                 setError('כניסה נכשלה — בדוק את ה-token ב-.env');
             }

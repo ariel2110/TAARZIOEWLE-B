@@ -8,6 +8,7 @@ from fastapi import Depends
 
 from app.db.session import get_db
 from app.models.demo_site import DemoSite
+from app.services.public.site_domain_service import build_demo_public_url
 
 router = APIRouter(prefix='/public/demo', tags=['public-demo'])
 
@@ -26,6 +27,7 @@ def get_public_demo(slug: str, db: Session = Depends(get_db)):
 
     return {
         'slug': demo.slug,
+        'public_url': build_demo_public_url(demo.slug),
         'business_name': demo.business_name,
         'tagline': demo.tagline,
         'phone': demo.phone,

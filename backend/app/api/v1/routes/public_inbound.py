@@ -48,6 +48,7 @@ class TaskStatusResponse(BaseModel):
     label: str | None = None
     percent: int | None = None
     preview_url: str | None = None
+    public_url: str | None = None
     error: str | None = None
 
 
@@ -282,6 +283,7 @@ def task_status(task_id: str):
     label: str | None = None
     percent: int | None = None
     preview_url: str | None = None
+    public_url: str | None = None
     error: str | None = None
 
     if state == 'PROGRESS':
@@ -295,6 +297,7 @@ def task_status(task_id: str):
         percent = 100
         label = '🎉 האתר מוכן!'
         preview_url = res.get('preview_url')
+        public_url = res.get('public_url')
         if res.get('status') == 'error':
             state = 'FAILURE'
             error = res.get('message')
@@ -309,6 +312,7 @@ def task_status(task_id: str):
         label=label,
         percent=percent,
         preview_url=preview_url,
+        public_url=public_url,
         error=error,
     )
 

@@ -194,7 +194,7 @@ export const getPayments = (skip = 0, limit = 100) => apiGet<Payment[]>(`/admin/
 
 // ---- Demo Sites ----
 export type DemoRecord = {
-  id: number; slug: string; place_id?: string | null;
+  id: number; slug: string; public_url?: string | null; place_id?: string | null;
   business_name: string; tagline?: string | null;
   phone?: string | null; address?: string | null; city?: string | null;
   rating?: number | null; reviews_count?: number | null;

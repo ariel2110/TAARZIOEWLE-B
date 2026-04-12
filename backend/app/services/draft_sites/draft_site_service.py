@@ -179,9 +179,8 @@ class DraftSiteService:
         # ── Auto-create AI-generated outreach message ─────────────────────────
         if outreach_message and item.business_id:
             try:
-                from app.core.config import settings
-                base_url = getattr(settings, 'api_base_url', 'https://api.sitenest.site')
-                full_demo_url = f"{base_url}{item.preview_url}"
+                from app.services.public.site_domain_service import build_draft_public_url
+                full_demo_url = build_draft_public_url(item.id, raw.get('name'))
                 final_message = outreach_message.replace('[DEMO_LINK]', full_demo_url)
 
                 from app.models.outreach_message import OutreachMessage as OutreachModel

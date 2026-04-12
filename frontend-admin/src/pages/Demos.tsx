@@ -2,7 +2,12 @@ import { useEffect, useState } from 'react';
 import { Card, SectionTitle } from '../components/ui';
 import { DemoRecord, getDemos, markDemoSent, markDemoConverted, deleteDemo } from '../services/queries';
 
-const DEMO_BASE = 'https://admin.sitenest.site';
+function buildDemoUrl(demo: DemoRecord): string {
+    if (demo.public_url) {
+        return demo.public_url;
+    }
+    return `https://${demo.slug}.sitenest.site`;
+}
 
 const STATUS_LABELS: Record<string, { label: string; bg: string; color: string }> = {
     draft: { label: '📝 טיוטה', bg: '#f3f4f6', color: '#374151' },
@@ -20,7 +25,7 @@ function cleanPhone(phone: string): string {
 
 function buildWhatsApp(demo: DemoRecord): string {
     if (!demo.phone) return '';
-    const demoUrl = `${DEMO_BASE}/demo/${demo.slug}`;
+    const demoUrl = buildDemoUrl(demo);
     const msg = encodeURIComponent(
         `שלום ${demo.business_name} 👋\n\n` +
         `ראינו שאין לכם אתר אינטרנט, אז הכנו לכם אחד *במתנה* — ` +
@@ -143,7 +148,7 @@ export default function DemosPage() {
             {/* Demo cards */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {demos.map(demo => {
-                    const demoUrl = `${DEMO_BASE}/demo/${demo.slug}`;
+                    const demoUrl = buildDemoUrl(demo);
                     const waLink = buildWhatsApp(demo);
 
                     return (

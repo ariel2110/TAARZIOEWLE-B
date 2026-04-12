@@ -11,6 +11,7 @@ from app.api.deps import get_current_admin
 from app.db.session import get_db
 from app.models.user import User
 from app.models.demo_site import DemoSite
+from app.services.public.site_domain_service import build_demo_public_url, normalize_dns_label
 
 router = APIRouter(prefix='/admin/demos', tags=['admin-demos'])
 
@@ -82,8 +83,9 @@ def _extract_city(address: str) -> str:
 
 
 def _make_slug(db: Session, prefix: str = 'biz') -> str:
+    safe_prefix = normalize_dns_label(prefix)[:20] or 'biz'
     for _ in range(10):
-        slug = f"{prefix}-{secrets.token_urlsafe(6)}"
+        slug = f"{safe_prefix}-{secrets.token_hex(4)}"
         if not db.execute(select(DemoSite).where(DemoSite.slug == slug)).scalar_one_or_none():
             return slug
     raise RuntimeError('Could not generate unique slug')
@@ -93,6 +95,7 @@ def _serialize(d: DemoSite) -> dict:
     return {
         'id': d.id,
         'slug': d.slug,
+        'public_url': build_demo_public_url(d.slug),
         'place_id': d.place_id,
         'business_name': d.business_name,
         'tagline': d.tagline,

@@ -18,6 +18,7 @@ interface TaskStatus {
     label: string | null;
     percent: number | null;
     preview_url: string | null;
+    public_url: string | null;
     error: string | null;
 }
 
@@ -71,6 +72,7 @@ export default function MagicPortal() {
 
     // Demo
     const [previewUrl, setPreviewUrl] = useState<string>('');
+    const [publicUrl, setPublicUrl] = useState<string>('');
 
     const { display: countdown, expired: countdownExpired } = useCountdown(SCARCITY_MINUTES);
 
@@ -149,6 +151,7 @@ export default function MagicPortal() {
                     clearInterval(pollRef.current);
                     clearInterval(stepAdvTimer.current);
                     setPreviewUrl(status.preview_url);
+                    setPublicUrl(status.public_url || '');
                     setDisplayStep(PROGRESS_STEPS.length - 1);
                     setTimeout(() => setPhase('done'), 1200);
                 } else if (status.state === 'FAILURE') {
@@ -367,7 +370,7 @@ export default function MagicPortal() {
                             </button>
                             <button
                                 className="mp-btn-restart"
-                                onClick={() => { setPhase('search'); setQuery(''); setPreviewUrl(''); setPhoneSaved(false); }}
+                                onClick={() => { setPhase('search'); setQuery(''); setPreviewUrl(''); setPublicUrl(''); setPhoneSaved(false); }}
                                 title="בנה אתר לעסק אחר"
                             >
                                 🔄 עסק אחר
@@ -379,7 +382,7 @@ export default function MagicPortal() {
                     {phoneSaved || true /* show demo regardless */ ? (
                         <iframe
                             className="mp-iframe"
-                            src={`https://api.sitenest.site${previewUrl}`}
+                            src={publicUrl || `https://api.sitenest.site${previewUrl}`}
                             title={`אתר הדמו — ${businessName}`}
                             sandbox="allow-same-origin allow-scripts"
                         />

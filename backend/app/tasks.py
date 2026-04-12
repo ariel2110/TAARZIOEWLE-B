@@ -352,12 +352,16 @@ def inbound_build_task(self: Task, business_id: int) -> dict:
                 'label': '🎉 האתר מוכן!',
             })
 
+            from app.services.public.site_domain_service import build_draft_public_url
+            public_url = build_draft_public_url(result_draft.id, business.name)
+
             logger.info('[inbound_build_task] done — business_id=%d draft_id=%d', business_id, result_draft.id)
             return {
                 'status': 'success',
                 'business_id': business_id,
                 'draft_site_id': result_draft.id,
                 'preview_url': result_draft.preview_url,
+                'public_url': public_url,
                 'message': 'Demo site ready!',
             }
         finally:

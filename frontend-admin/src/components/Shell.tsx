@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useLang, useTheme } from '../i18n';
 import { Tooltip } from './ui';
+import { HelpPanel } from './HelpPanel';
 
 type NavItem = { to: string; end?: boolean; icon: string; label: string; tip: string };
 type NavGroup = { id: string; label: string; icon: string; items: NavItem[] };
@@ -183,6 +184,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         </div>
         {children}
       </main>
+      <HelpPanel />
     </div>
   );
 }

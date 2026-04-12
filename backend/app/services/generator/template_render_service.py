@@ -1,5 +1,6 @@
 import json
 import re
+from html import escape as _e
 
 
 def _get_theme(category: str, types: str) -> dict:
@@ -59,6 +60,18 @@ class TemplateRenderService:
         category = c.get('category') or ''
         types = c.get('business_types') or ''
         is_demo = c.get('is_demo', True)
+
+        # ── XSS sanitisation: escape all user-supplied text before HTML insertion ──
+        name        = _e(name)
+        hero        = _e(hero)
+        about       = _e(about)
+        address     = _e(address)
+        tagline     = _e(tagline)
+        top_review  = _e(top_review)
+        services    = [_e(s) for s in services]
+        opening_hours = [_e(h) for h in opening_hours]
+        # phone_clean already stripped to digits only — safe
+        # website / maps_url / wa_url are URL-typed — kept as-is (not reflected into text nodes)
 
         theme = _get_theme(category, types)
         primary = theme['primary']

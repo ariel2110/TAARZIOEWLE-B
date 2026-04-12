@@ -4,6 +4,7 @@ Allows potential customers to submit their business info, social links, and imag
 """
 import json
 import os
+import re
 import secrets
 import uuid
 from pathlib import Path
@@ -55,7 +56,10 @@ def _safe_url(url: str | None) -> str | None:
     if not url:
         return None
     url = url.strip()
-    if url and not url.startswith(('http://', 'https://')):
+    # Block dangerous URI schemes (javascript:, data:, vbscript:, etc.)
+    if re.match(r'^(javascript|data|vbscript|blob)\s*:', url, re.IGNORECASE):
+        return None
+    if not url.startswith(('http://', 'https://')):
         url = 'https://' + url
     return url[:500] if url else None
 

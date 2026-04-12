@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
 from app.db.session import get_db
 from app.api.deps import get_current_customer
 from app.models.customer_account import CustomerAccount
@@ -122,4 +123,165 @@ def customer_billing(account: CustomerAccount = Depends(get_current_customer)):
         'package_name': account.package_name,
         'billing_visibility': 'starter',
         'note': 'Starter billing visibility only. Full billing center is not enabled in this repo stage.'
+    }
+
+
+# ── AI Site Editor ────────────────────────────────────────────────────────────
+
+class AiEditRequest(BaseModel):
+    message: str          # customer's natural-language instruction
+    section: str          # which section to edit  e.g. 'hero_title', 'about_text'
+    current_value: str | None = None  # existing content of that section
+
+
+class AiEditResponse(BaseModel):
+    suggestion: str       # AI-generated new content
+    section: str
+    explanation: str      # short explanation of what it changed
+
+
+class ApplyAiEditRequest(BaseModel):
+    section: str
+    new_value: str
+    ai_suggestion: str | None = None  # store original AI suggestion for audit
+
+
+EDITABLE_SECTIONS = {
+    'hero_title':    'כותרת ראשית',
+    'about_text':    'טקסט "אודות"',
+    'site_title':    'שם האתר',
+    'contact_phone': 'טלפון ליצירת קשר',
+    'facebook_url':  'קישור לפייסבוק',
+    'instagram_url': 'קישור לאינסטגרם',
+    'tiktok_url':    'קישור לטיקטוק',
+    'address':       'כתובת',
+}
+
+
+@router.post('/ai-edit', response_model=AiEditResponse)
+def customer_ai_edit(
+    payload: AiEditRequest,
+    db: Session = Depends(get_db),
+    account: CustomerAccount = Depends(get_current_customer),
+) -> AiEditResponse:
+    """Generate an AI suggestion for a site section edit based on the customer's instruction."""
+    from app.services.llm.router_service import LLMRouterService
+    from app.models.business import Business
+
+    section = payload.section
+    if section not in EDITABLE_SECTIONS:
+        raise HTTPException(status_code=400, detail=f'Section "{section}" is not editable')
+
+    business = db.query(Business).filter(Business.id == account.business_id).first()
+    biz_name = business.name if business else 'העסק'
+    biz_category = business.category if business else ''
+    section_label = EDITABLE_SECTIONS[section]
+
+    system_prompt = (
+        "אתה עורך תוכן מקצועי לאתרי אינטרנט לעסקים קטנים בישראל. "
+        "תפקידך הוא לשפר ולערוך טקסטים לאתרים בהתאם לבקשות הלקוח. "
+        "ענה תמיד בעברית. החזר תשובה בפורמט JSON בלבד:\n"
+        "{\"suggestion\": \"...\", \"explanation\": \"...\"}\n"
+        "suggestion — הטקסט החדש המוכן לפרסום. explanation — משפט קצר המסביר מה שינית."
+    )
+
+    current_val_note = f'הערך הנוכחי: "{payload.current_value}"' if payload.current_value else 'אין ערך קיים'
+    user_prompt = (
+        f"שם העסק: {biz_name}\n"
+        f"קטגוריה: {biz_category}\n"
+        f"חלק באתר שצריך לשנות: {section_label}\n"
+        f"{current_val_note}\n\n"
+        f"בקשת הלקוח: {payload.message}\n\n"
+        "צור תוכן חדש לחלק זה. החזר JSON בלבד."
+    )
+
+    llm = LLMRouterService()
+    raw = llm.call('generate_site_copy', user_prompt, system=system_prompt, max_tokens=600, json_mode=True)
+
+    if not raw:
+        raise HTTPException(status_code=503, detail='שירות ה-AI אינו זמין כרגע. נסה שוב עוד רגע.')
+
+    import json
+    try:
+        data = json.loads(raw)
+        suggestion = str(data.get('suggestion', '') or '').strip()
+        explanation = str(data.get('explanation', '') or '').strip()
+    except (json.JSONDecodeError, AttributeError):
+        # Fallback: treat full response as suggestion
+        suggestion = raw.strip()
+        explanation = 'הוצע טקסט חדש על ידי AI'
+
+    if not suggestion:
+        raise HTTPException(status_code=503, detail='ה-AI לא הצליח לייצר הצעה. נסה לנסח את הבקשה מחדש.')
+
+    return AiEditResponse(suggestion=suggestion, section=section, explanation=explanation)
+
+
+@router.post('/apply-ai-edit')
+def customer_apply_ai_edit(
+    payload: ApplyAiEditRequest,
+    db: Session = Depends(get_db),
+    account: CustomerAccount = Depends(get_current_customer),
+) -> dict:
+    """Save an approved AI edit as a change request (pending admin review)."""
+    from app.models.change_request import ChangeRequest
+    from app.models.activity_log import ActivityLog
+
+    section = payload.section
+    if section not in EDITABLE_SECTIONS:
+        raise HTTPException(status_code=400, detail=f'Section "{section}" is not editable')
+
+    section_label = EDITABLE_SECTIONS[section]
+    note = f'[AI עריכה] הצעה מקורית: {payload.ai_suggestion[:200]}' if payload.ai_suggestion else None
+
+    item = ChangeRequest(
+        customer_account_id=account.id,
+        business_id=account.business_id,
+        request_type='ai_edit',
+        title=f'עדכון {section_label}',
+        description=(
+            f'שדה: {section}\n'
+            f'ערך חדש: {payload.new_value}\n'
+            + (f'הערה: {note}' if note else '')
+        ),
+    )
+    db.add(item)
+    db.add(ActivityLog(
+        actor_type='customer',
+        actor_id=account.id,
+        business_id=account.business_id,
+        action_type='customer_ai_edit_applied',
+        action_payload_json={'section': section, 'value_length': len(payload.new_value)},
+    ))
+    db.commit()
+    db.refresh(item)
+    return {'ok': True, 'change_request_id': item.id, 'status': item.status}
+
+
+@router.get('/site-content')
+def customer_site_content(
+    db: Session = Depends(get_db),
+    account: CustomerAccount = Depends(get_current_customer),
+) -> dict:
+    """Return the editable content of the customer's active/draft site."""
+    from app.models.draft_site import DraftSite
+    from app.models.business import Business
+
+    business = db.query(Business).filter(Business.id == account.business_id).first()
+    draft = db.query(DraftSite).filter(DraftSite.business_id == account.business_id).order_by(DraftSite.id.desc()).first()
+
+    return {
+        'editable_sections': EDITABLE_SECTIONS,
+        'current_values': {
+            'hero_title':    getattr(draft, 'hero_title', None) if draft else None,
+            'about_text':    getattr(draft, 'about_text', None) if draft else None,
+            'site_title':    getattr(draft, 'site_title', None) if draft else None,
+            'contact_phone': business.phone if business else None,
+            'facebook_url':  business.facebook_url if business else None,
+            'instagram_url': business.instagram_url if business else None,
+            'tiktok_url':    business.tiktok_url if business else None,
+            'address':       business.address if business else None,
+        },
+        'site_preview_url': draft.preview_url if draft else None,
+        'site_status':      draft.status if draft else None,
     }

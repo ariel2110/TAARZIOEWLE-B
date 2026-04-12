@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import './styles.css';
 
 const API = import.meta.env.VITE_API_BASE || 'https://api.sitenest.site/api/v1';
@@ -313,9 +313,265 @@ function SettingsTab({ token, onPasswordChanged }: { token: string; onPasswordCh
   );
 }
 
+// ── AI Site Editor Tab ─────────────────────────────────────────────
+const SECTIONS: { key: string; label: string; icon: string; hint: string }[] = [
+  { key: 'hero_title', label: 'כותרת ראשית', icon: '🏷️', hint: 'המשפט הראשי שרואים בעמוד הבית' },
+  { key: 'about_text', label: 'טקסט "אודות"', icon: '📝', hint: 'תיאור העסק — מי אתה, מה אתה עושה' },
+  { key: 'site_title', label: 'שם האתר', icon: '🌐', hint: 'שם שמופיע בלשונית הדפדפן' },
+  { key: 'contact_phone', label: 'טלפון ליצירת קשר', icon: '📞', hint: 'מספר הטלפון המוצג בדף' },
+  { key: 'address', label: 'כתובת', icon: '📍', hint: 'כתובת העסק המוצגת באתר' },
+  { key: 'facebook_url', label: 'קישור פייסבוק', icon: '📘', hint: 'כתובת עמוד הפייסבוק שלך' },
+  { key: 'instagram_url', label: 'קישור אינסטגרם', icon: '📸', hint: 'כתובת פרופיל האינסטגרם' },
+  { key: 'tiktok_url', label: 'קישור טיקטוק', icon: '🎵', hint: 'כתובת פרופיל הטיקטוק' },
+];
+
+interface SiteContent {
+  current_values: Record<string, string | null>;
+  site_preview_url: string | null;
+  site_status: string | null;
+}
+
+interface ChatMessage {
+  role: 'user' | 'ai' | 'system';
+  text: string;
+  suggestion?: string;
+  section?: string;
+  applied?: boolean;
+}
+
+function AIEditorTab({ token }: { token: string }) {
+  const [siteContent, setSiteContent] = useState<SiteContent | null>(null);
+  const [selectedSection, setSelectedSection] = useState<string>('hero_title');
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    { role: 'system', text: '✨ שלום! אני ה-AI שיעזור לך לערוך את האתר שלך. בחר איזה חלק אתה רוצה לשנות ואמור לי מה לכתוב.' },
+  ]);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [applyingIdx, setApplyingIdx] = useState<number | null>(null);
+  const [appliedCount, setAppliedCount] = useState(0);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    apiCall('/customer/site-content', token).then(setSiteContent).catch(() => { });
+  }, [token]);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const currentSection = SECTIONS.find(s => s.key === selectedSection)!;
+  const currentValue = siteContent?.current_values?.[selectedSection];
+
+  async function sendMessage() {
+    const trimmed = input.trim();
+    if (!trimmed || loading) return;
+    setInput('');
+    setMessages(prev => [...prev, { role: 'user', text: trimmed }]);
+    setLoading(true);
+    try {
+      const res = await apiCall('/customer/ai-edit', token, {
+        method: 'POST',
+        body: JSON.stringify({
+          message: trimmed,
+          section: selectedSection,
+          current_value: currentValue || null,
+        }),
+      });
+      setMessages(prev => [
+        ...prev,
+        {
+          role: 'ai',
+          text: res.explanation || 'הנה ההצעה שלי:',
+          suggestion: res.suggestion,
+          section: res.section,
+          applied: false,
+        },
+      ]);
+    } catch (e: unknown) {
+      setMessages(prev => [
+        ...prev,
+        { role: 'system', text: `❌ ${e instanceof Error ? e.message : 'שגיאה. נסה שוב.'}` },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function applyEdit(msgIdx: number, suggestion: string, section: string) {
+    setApplyingIdx(msgIdx);
+    try {
+      await apiCall('/customer/apply-ai-edit', token, {
+        method: 'POST',
+        body: JSON.stringify({ section, new_value: suggestion, ai_suggestion: suggestion }),
+      });
+      setMessages(prev => prev.map((m, i) => i === msgIdx ? { ...m, applied: true } : m));
+      setAppliedCount(c => c + 1);
+      setMessages(prev => [
+        ...prev,
+        { role: 'system', text: `✅ השינוי ב"${SECTIONS.find(s => s.key === section)?.label}" נשלח לאישור הצוות ויופעל בקרוב.` },
+      ]);
+    } catch (e: unknown) {
+      setMessages(prev => [
+        ...prev,
+        { role: 'system', text: `❌ ${e instanceof Error ? e.message : 'שגיאה בשמירה'}` },
+      ]);
+    } finally {
+      setApplyingIdx(null);
+    }
+  }
+
+  function rejectEdit(msgIdx: number) {
+    setMessages(prev => prev.map((m, i) => i === msgIdx ? { ...m, applied: false, suggestion: undefined } : m));
+    setMessages(prev => [...prev, { role: 'system', text: '↩️ הצעה בוטלה. ספר לי מה לשנות אחרת.' }]);
+  }
+
+  return (
+    <div className="ai-editor-root">
+      {/* ── Section selector panel ── */}
+      <div className="ai-sections-panel">
+        <div className="ai-sections-title">✏️ בחר חלק לעריכה</div>
+        {SECTIONS.map(s => {
+          const val = siteContent?.current_values?.[s.key];
+          return (
+            <button
+              key={s.key}
+              className={`ai-section-item ${selectedSection === s.key ? 'active' : ''}`}
+              onClick={() => {
+                setSelectedSection(s.key);
+                setMessages([{ role: 'system', text: `✨ עורכים: ${s.label}. ${s.hint}. מה לשנות?` }]);
+                setInput('');
+              }}
+            >
+              <span className="ai-section-icon">{s.icon}</span>
+              <span className="ai-section-info">
+                <span className="ai-section-label">{s.label}</span>
+                {val && <span className="ai-section-current">{val.length > 40 ? val.slice(0, 37) + '...' : val}</span>}
+              </span>
+            </button>
+          );
+        })}
+
+        {appliedCount > 0 && (
+          <div className="ai-applied-note">
+            ✅ {appliedCount} שינוי{appliedCount !== 1 ? 'ים' : ''} ממתין{appliedCount !== 1 ? 'ים' : ''} לאישור
+          </div>
+        )}
+
+        {siteContent?.site_preview_url && (
+          <a
+            className="ai-preview-link"
+            href={`https://api.sitenest.site${siteContent.site_preview_url}`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            👀 צפה באתר הנוכחי
+          </a>
+        )}
+      </div>
+
+      {/* ── Chat panel ── */}
+      <div className="ai-chat-panel">
+        {/* Header */}
+        <div className="ai-chat-header">
+          <div className="ai-chat-header-icon">{currentSection.icon}</div>
+          <div>
+            <div className="ai-chat-header-title">עורך {currentSection.label}</div>
+            <div className="ai-chat-header-sub">{currentSection.hint}</div>
+          </div>
+        </div>
+
+        {/* Current value */}
+        {currentValue && (
+          <div className="ai-current-value">
+            <span className="ai-current-label">ערך נוכחי:</span>
+            <span className="ai-current-text">{currentValue}</span>
+          </div>
+        )}
+
+        {/* Messages */}
+        <div className="ai-messages">
+          {messages.map((msg, i) => (
+            <div key={i} className={`ai-msg ai-msg-${msg.role}`}>
+              {msg.role === 'ai' && (
+                <div className="ai-msg-avatar">🤖</div>
+              )}
+              {msg.role === 'user' && (
+                <div className="ai-msg-avatar ai-msg-avatar-user">👤</div>
+              )}
+              <div className="ai-msg-content">
+                <div className="ai-msg-text">{msg.text}</div>
+                {msg.suggestion && !msg.applied && (
+                  <div className="ai-suggestion-card">
+                    <div className="ai-suggestion-label">הצעת AI:</div>
+                    <div className="ai-suggestion-text">{msg.suggestion}</div>
+                    <div className="ai-suggestion-actions">
+                      <button
+                        className="ai-btn-apply"
+                        onClick={() => applyEdit(i, msg.suggestion!, msg.section!)}
+                        disabled={applyingIdx === i}
+                      >
+                        {applyingIdx === i ? '⏳ שומר...' : '✅ אשר ושמור'}
+                      </button>
+                      <button
+                        className="ai-btn-reject"
+                        onClick={() => rejectEdit(i)}
+                        disabled={applyingIdx === i}
+                      >
+                        ✕ נסה שוב
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {msg.suggestion && msg.applied && (
+                  <div className="ai-suggestion-applied">✅ שינוי נשלח לאישור</div>
+                )}
+              </div>
+            </div>
+          ))}
+          {loading && (
+            <div className="ai-msg ai-msg-ai">
+              <div className="ai-msg-avatar">🤖</div>
+              <div className="ai-msg-content">
+                <div className="ai-typing">
+                  <span /><span /><span />
+                </div>
+              </div>
+            </div>
+          )}
+          <div ref={chatEndRef} />
+        </div>
+
+        {/* Input */}
+        <div className="ai-input-row">
+          <textarea
+            className="ai-input"
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
+            placeholder={`ספר ל-AI מה לשנות ב${currentSection.label}... (Enter לשליחה)`}
+            rows={2}
+            disabled={loading}
+          />
+          <button
+            className="ai-send-btn"
+            onClick={sendMessage}
+            disabled={loading || !input.trim()}
+          >
+            {loading ? '⏳' : '➤'}
+          </button>
+        </div>
+        <p className="ai-input-note">
+          💡 דוגמאות: "כתוב קצת יותר מוזמן" · "הוסף שעות פתיחה" · "שנה לכיוון מקצועי יותר"
+        </p>
+      </div>
+    </div>
+  );
+}
+
 // ── App ────────────────────────────────────────────────────────────
 const TABS = [
   { key: 'overview', label: '🏠 סקירה כללית' },
+  { key: 'ai_editor', label: '✨ עריכה עם AI' },
   { key: 'edit', label: '✏️ עדכון פרטים' },
   { key: 'requests', label: '📬 בקשות שינוי' },
   { key: 'support', label: '💬 תמיכה' },
@@ -359,6 +615,7 @@ export default function App() {
       <main className="content">
         {me.must_change_password && tab !== 'settings' && <ChangePasswordBanner token={token} onDone={refreshMe} />}
         {tab === 'overview' && <OverviewTab token={token} me={me} />}
+        {tab === 'ai_editor' && <AIEditorTab token={token} />}
         {tab === 'edit' && <EditInfoTab token={token} />}
         {tab === 'requests' && <ChangeRequestsTab token={token} />}
         {tab === 'support' && <SupportTab token={token} />}

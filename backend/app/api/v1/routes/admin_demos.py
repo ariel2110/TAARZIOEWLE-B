@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import secrets
+import json
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -11,7 +12,11 @@ from app.api.deps import get_current_admin
 from app.db.session import get_db
 from app.models.user import User
 from app.models.demo_site import DemoSite
-from app.services.public.site_domain_service import build_demo_public_url, normalize_dns_label
+from app.models.draft_site import DraftSite
+from app.models.business import Business
+from app.models.lead_record import LeadRecord
+from app.models.enriched_biz_cache import EnrichedBizCache
+from app.services.public.site_domain_service import build_demo_public_url, normalize_dns_label, build_draft_subdomain
 
 router = APIRouter(prefix='/admin/demos', tags=['admin-demos'])
 
@@ -116,6 +121,56 @@ def _serialize(d: DemoSite) -> dict:
     }
 
 
+def _upsert_demo_for_draft(db: Session, draft: DraftSite) -> DemoSite | None:
+    biz = db.query(Business).filter(Business.id == draft.business_id).first()
+    if not biz:
+        return None
+
+    slug = build_draft_subdomain(draft.id, biz.name)
+    row = db.execute(select(DemoSite).where(DemoSite.slug == slug)).scalar_one_or_none()
+
+    lead = db.query(LeadRecord).filter(LeadRecord.id == biz.lead_id).first() if biz.lead_id else None
+    cache = db.query(EnrichedBizCache).filter(EnrichedBizCache.name == biz.name).order_by(EnrichedBizCache.id.desc()).first()
+
+    raw = {}
+    if cache and cache.raw_json:
+        try:
+            raw = json.loads(cache.raw_json) if isinstance(cache.raw_json, str) else (cache.raw_json or {})
+        except Exception:
+            raw = {}
+
+    info = {
+        'category': biz.category or (lead.category if lead else None),
+        'business_types': cache.business_types if cache else '',
+    }
+
+    values = {
+        'slug': slug,
+        'place_id': cache.place_id if cache else None,
+        'business_name': biz.name,
+        'tagline': _guess_tagline(info),
+        'phone': biz.phone or (lead.phone if lead else None) or (cache.phone if cache else None),
+        'address': biz.address or (lead.address if lead else None) or (cache.address if cache else None),
+        'city': biz.city or (lead.city if lead else None) or (cache.city if cache else None),
+        'rating': (lead.rating if lead and lead.rating is not None else (cache.rating if cache else None)),
+        'reviews_count': (lead.reviews_count if lead and lead.reviews_count is not None else (cache.reviews_count if cache else None)),
+        'google_maps_url': raw.get('google_maps_url', '') if isinstance(raw, dict) else '',
+        'top_review': raw.get('top_review', '') if isinstance(raw, dict) else '',
+        'business_types': cache.business_types if cache else None,
+        'category': biz.category or (lead.category if lead else None),
+    }
+
+    if row:
+        for k, v in values.items():
+            setattr(row, k, v)
+        return row
+
+    row = DemoSite(**values, status='draft')
+    db.add(row)
+    db.flush()
+    return row
+
+
 # ---------------------------------------------------------------------------
 # POST /admin/demos/create-from-enriched
 # ---------------------------------------------------------------------------
@@ -173,6 +228,23 @@ def create_demos_from_enriched(
 
     db.commit()
     return {'created': len(created), 'demos': created}
+
+
+@router.post('/sync-from-drafts')
+def sync_from_drafts(
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_admin),
+):
+    """Backfill DemoSite rows from existing DraftSite rows (idempotent)."""
+    drafts = db.execute(select(DraftSite).order_by(DraftSite.id.desc())).scalars().all()
+    synced = 0
+    for draft in drafts:
+        row = _upsert_demo_for_draft(db, draft)
+        if row:
+            synced += 1
+    db.commit()
+    demos = db.execute(select(DemoSite).order_by(DemoSite.created_at.desc())).scalars().all()
+    return {'synced': synced, 'total_demos': len(demos)}
 
 
 # ---------------------------------------------------------------------------

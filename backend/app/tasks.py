@@ -352,8 +352,37 @@ def inbound_build_task(self: Task, business_id: int) -> dict:
                 'label': '🎉 האתר מוכן!',
             })
 
-            from app.services.public.site_domain_service import build_draft_public_url
+            from app.services.public.site_domain_service import build_draft_public_url, build_draft_subdomain
+            from app.models.demo_site import DemoSite
             public_url = build_draft_public_url(result_draft.id, business.name)
+
+            # Keep /admin/demos in sync with inbound-created draft sites.
+            try:
+                demo_slug = build_draft_subdomain(result_draft.id, business.name)
+                demo = db.query(DemoSite).filter(DemoSite.slug == demo_slug).first()
+                demo_values = {
+                    'slug': demo_slug,
+                    'business_name': business.name,
+                    'phone': business.phone,
+                    'address': business.address,
+                    'city': business.city,
+                    'rating': enrichment.get('rating'),
+                    'reviews_count': enrichment.get('reviews_count', 0),
+                    'google_maps_url': enrichment.get('maps_url', ''),
+                    'top_review': enrichment.get('top_review', ''),
+                    'business_types': enrichment.get('business_types', ''),
+                    'category': business.category,
+                    'status': 'draft',
+                }
+                if demo:
+                    for key, value in demo_values.items():
+                        setattr(demo, key, value)
+                else:
+                    demo = DemoSite(**demo_values)
+                    db.add(demo)
+                db.commit()
+            except Exception:
+                logger.exception('[inbound_build_task] failed to sync demo row for draft_id=%d', result_draft.id)
 
             logger.info('[inbound_build_task] done — business_id=%d draft_id=%d', business_id, result_draft.id)
             return {

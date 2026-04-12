@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>קפה 51 – גבעתיים</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    * { font-family: 'Heebo', sans-serif; }
+
+    /* Carousel */
+    .carousel-track {
+      display: flex;
+      gap: 1.5rem;
+      animation: scrollCarousel 28s linear infinite;
+      width: max-content;
+    }
+    .carousel-track:hover { animation-play-state: paused; }
+    @keyframes scrollCarousel {
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+    .carousel-wrapper {
+      overflow: hidden;
+      position: relative;
+    }
+    .carousel-wrapper::before,
+    .carousel-wrapper::after {
+      content: '';
+      position: absolute;
+      top: 0; bottom: 0;
+      width: 80px;
+      z-index: 10;
+      pointer-events: none;
+    }
+    .carousel-wrapper::before { right: 0; background: linear-gradient(to left, #f8fafc, transparent); }
+    .carousel-wrapper::after  { left: 0;  background: linear-gradient(to right, #f8fafc, transparent); }
+
+    /* Reveal animation */
+    .reveal {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.65s ease, transform 0.65s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Service card hover */
+    .service-card {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .service-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 20px 40px rgba(30,58,138,0.15);
+    }
+
+    /* Hero gradient */
+    .hero-bg {
+      background: linear-gradient(135deg, #1E3A8A 0%, #1e40af 40%, #3B82F6 100%);
+    }
+
+    /* CTA button pulse */
+    .btn-pulse {
+      animation: pulse 2.5s cubic-bezier(0.4,0,0.6,1) infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(59,130,246,0.5); }
+      50%       { box-shadow: 0 0 0 12px rgba(59,130,246,0); }
+    }
+
+    /* WA float */
+    .wa-float {
+      position: fixed;
+      bottom: 24px;
+      left: 24px;
+      z-index: 999;
+      transition: transform 0.3s ease;
+    }
+    .wa-float:hover { transform: scale(1.12); }
+
+    /* Trust chip */
+    .trust-chip {
+      transition: transform 0.25s ease;
+    }
+    .trust-chip:hover { transform: scale(1.05); }
+
+    /* Stars gold */
+    .star-gold { color: #F59E0B; }
+
+    /* Hours table */
+    .hours-row:nth-child(even) { background: rgba(59,130,246,0.06); }
+  </style>
+</head>
+<body class="bg-slate-50 text-gray-800 antialiased">
+
+<!-- ===================== HERO ===================== -->
+<section class="hero-bg text-white min-h-screen flex flex-col justify-center items-center text-center px-4 py-24 relative overflow-hidden">
+  <!-- Decorative circles -->
+  <div class="absolute top-[-80px] right-[-80px] w-72 h-72 bg-white opacity-5 rounded-full"></div>
+  <div class="absolute bottom-[-60px] left-[-60px] w-56 h-56 bg-white opacity-5 rounded-full"></div>
+
+  <div class="relative z-10 max-w-3xl mx-auto">
+    <!-- Logo / Brand -->
+    <div class="flex justify-center mb-6">
+      <div class="bg-white bg-opacity-15 backdrop-blur-sm rounded-full px-6 py-3 flex items-center gap-3 border border-white border-opacity-20">
+        <span class="text-3xl">☕</span>
+        <span class="font-bold text-xl tracking-wide">קפה 51</span>
+      </div>
+    </div>
+
+    <h1 class="text-4xl md:text-6xl font-black leading-tight mb-5 drop-shadow-lg">
+      קפה 51 בגבעתיים –<br/>
+      <span class="text-blue-200">המקום המושלם</span><br/>
+      להתחיל את היום שלך!
+    </h1>
+    <p class="text-lg md:text-2xl text-blue-100 font-light mb-10 leading-relaxed max-w-xl mx-auto">
+      מגוון קפה איכותי ומאפים טריים שמחכים לך בלב העיר.
+    </p>
+
+    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+      <a href="tel:972559379151"
+         class="btn-pulse bg-white text-blue-800 font-bold text-lg px-8 py-4 rounded-2xl shadow-xl hover:bg-blue-50 transition-all duration-300">
+        📞 התקשרו עכשיו
+      </a>
+      <a href="https://wa.me/972559379151" target="_blank" rel="noopener noreferrer"
+         class="bg-green-500 hover:bg-green-400 text-white font-bold text-lg px-8 py-4 rounded-2xl shadow-xl transition-all duration-300">
+        💬 וואטסאפ
+      </a>
+    </div>
+
+    <!-- Rating badge hero -->
+    <div class="mt-10 inline-flex items-center gap-2 bg-white bg-opacity-15 backdrop-blur-sm rounded-full px-5 py-2 border border-white border-opacity-20">
+      <span class="star-gold text-xl">★★★★★</span>
+      <span class="font-semibold text-white">4.6 / 5</span>
+      <span class="text-blue-200 text-sm">| 963 ביקורות ב-Google</span>
+    </div>
+  </div>
+
+  <!-- Wave -->
+  <div class="absolute bottom-0 left-0 w-full overflow-hidden leading-[0]">
+    <svg viewBox="0 0 1440 60" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" class="w-full h-16">
+      <path d="M0,40 C360,80 1080,0 1440,40 L1440,60 L0,60 Z" fill="#f8fafc"/>
+    </svg>
+  </div>
+</section>
+
+<!-- ===================== TRUST BADGES ===================== -->
+<section class="bg-slate-50 py-10 px-4">
+  <div class="max-w-5xl mx-auto">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="trust-chip bg-white rounded-2xl shadow-md px-4 py-5 flex flex-col items-center text-center border border-blue-50">
+        <span class="text-3xl mb-2">⚡</span>
+        <span class="font-bold text-blue-800 text-sm">שירות מהיר</span>
+        <span class="text-gray-500 text-xs mt-1">מוכן תוך דקות</span>
+      </div>
+      <div class="trust-chip bg-white rounded-2xl shadow-md px-4 py-5 flex flex-col items-center text-center border border-blue-50">
+        <span class="text-3xl mb-2">🏆</span>
+        <span class="font-bold text-blue-800 text-sm">איכות מוכחת</span>
+        <span class="text-gray-500 text-xs mt-1">963+ ביקורות מרוצות</span>
+      </div>
+      <div class="trust-chip bg-white rounded-2xl shadow-md px-4 py-5 flex flex-col items-center text-center border border-blue-50">
+        <span class="text-3xl mb-2">💰</span>
+        <span class="font-bold text-blue-800 text-sm">מחיר הוגן</span>
+        <span class="text-gray-500 text-xs mt-1">ערך אמיתי לכסף</span>
+      </div>
+      <div class="trust-chip bg-white rounded-2xl shadow-md px-4 py-5 flex flex-col items-center text-center border border-blue-50">
+        <span class="text-3xl mb-2">❤️</span>
+        <span class="font-bold text-blue-800 text-sm">אווירה חמה</span>
+        <span class="text-gray-500 text-xs mt-1">מרחב מזמין ונעים</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== SERVICES ===================== -->
+<section class="py-20 px-4 bg-white">
+  <div class="max-w-6xl mx-auto">
+    <div class="text-center mb-14 reveal">
+      <span class="inline-block bg-blue-100 text-blue-800 text-sm font-semibold px-4 py-1 rounded-full mb-3">מה אנחנו מציעים</span>
+      <h2 class="text-3xl md:text-4xl font-black text-gray-900 mb-3">התפריט שלנו</h2>
+      <p class="text-gray-500 max-w-lg mx-auto">כל מה שתצטרכו לבוקר מושלם – תחת קורת גג אחת</p>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+
+      <!-- Card 1 -->
+      <div class="service-card reveal bg-gradient-to-br from-blue-50 to-white rounded-2xl p-6 border border-blue-100 shadow-sm">
+        <div class="w-14 h-14 bg-blue-800 rounded-xl flex items-center justify-center text-2xl mb-4 shadow">☕</div>
+        <h3 class="text-xl font-bold text-gray-900 mb-2">קפה טרי ומיוחד</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">פולי קפה מובחרים, מחוּמָּאים בקפידה לטעם עשיר ועמוק בכל כוס.</p>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="service-card reveal bg-gradient-to-br from-blue-50 to-white rounded-2xl p-6 border border-blue-100 shadow-sm">
+        <div class="w-14 h-14 bg-blue-700 rounded-xl flex items-center justify-center text-2xl mb-4 shadow">🥐</div>
+        <h3 class="text-xl font-bold text-gray-900 mb-2">מאפים טריים ומגוונים</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">קרואסונים, בורקסים ועוגות תוצרת בית שמוכנים בכל בוקר רק בשבילכם.</p>
+      </div>
+
+      <!-- Card 3 -->
+      <div class="service-card reveal bg-gradient-to-br from-blue-50 to-white rounded-2xl p-6 border border-blue-100 shadow-sm">
+        <div class="w-14 h-14 bg-blue-600 rounded-xl flex items-center justify-center text-2xl mb-4 shadow">🍳</div>
+        <h3 class="text-xl font-bold text-gray-900 mb-2">ארוחות בוקר מפנקות</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">ארוחות בוקר שלמות ועשירות שיתנו לכם אנרגיה לכל היום.</p>
+      </div>
+
+      <!-- Card 4 -->
+      <div class="service-card reveal bg-gradient-to-br from-blue-50 to-white rounded-2xl p-6 border border-blue-100 shadow-sm">
+        <div class="w-14 h-14 bg-sky-600 rounded-xl flex items-center justify-center text-2xl mb-4 shadow">🧃</div>
+        <h3 class="text-xl font-bold text-gray-900 mb-2">שתייה קרה ומרעננת</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">מגוון שייקים, לימונדות ומשקאות קרים לרענון בכל שעה ביום.</p>
+      </div>
+
+      <!-- Card 5 -->
+      <div class="service-card reveal bg-gradient-to-br from-blue-50 to-white rounded-2xl p-6 border border-blue-100 shadow-sm">
+        <div class="w-14 h-14 bg-indigo-600 rounded-xl flex items-center justify-center text-2xl mb-4 shadow">🥪</div>
+        <h3 class="text-xl font-bold text-gray-900 mb-2">סנדוויצ'ים טריים וטעימים</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">סנדוויצ'ים עם מילויים עדכניים, מוכנים לפי הזמנה בחומרים הטריים ביותר.</p>
+      </div>
+
+      <!-- Card 6 -->
+      <div class="service-card reveal bg-gradient-to-br from-blue-50 to-white rounded-2xl p-6 border border-blue-100 shadow-sm">
+        <div class="w-14 h-14 bg-blue-900 rounded-xl flex items-center justify-center text-2xl mb-4 shadow">💼</div>
+        <h3 class="text-xl font-bold text-gray-900 mb-2">מרחב לעבודה ופגישות</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">אווירה שקטה, Wi-Fi מהיר ושולחנות נוחים – המשרד השני שלכם בגבעתיים.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ===================== REVIEWS CAROUSEL ===================== -->
+<section class="py-20 px-4 bg-slate-50 overflow-hidden">
+  <div class="max-w-6xl mx-auto">
+    <div class="text-center mb-4 reveal">
+      <span class="inline-block bg-blue-100 text-blue-800 text-sm font-semibold px-4 py-1 rounded-full mb-3">הלקוחות שלנו מדברים</span>
+      <h2 class="text-3xl md:text-4xl font-black text-gray-900 mb-4">ביקורות</h2>
+      <!-- Google Rating Badge -->
+      <div class="inline-flex items-center gap-3 bg-white border border-yellow-200 shadow-md rounded-2xl px-6 py-3 mb-10">
+        <span class="text-yellow-400 text-2xl">⭐</span>
+        <span class="font-black text-2xl text-gray-900">4.6</span>
+        <span class="text-gray-400 font-medium">/ 5</span>
+        <span class="w-px h-6 bg-gray-200 mx-1"></span>
+        <span class="text-gray-600 font-semibold">963 ביקורות Google</span>
+      </div>
+    </div>
+
+    <div class="carousel-wrapper">
+      <div class="carousel-track py-4">
+        <!-- Review 1 (real) -->
+        <div class="bg-white shadow-lg rounded-2xl p-6 w-72 flex-shrink-0 border border-blue-50">
+          <div class="star-gold text-xl mb-3">★★★★★</div>
+          <p class="text-gray-700 text-sm leading-relaxed mb-4">"בית קפה מקסים עם אווירה נהדרת וקפה משובח!"</p>
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full bg-blue-800 text-white flex items-center justify-center font-bold text-sm">ל</div>
+            <span class="font-semibold text-gray-800 text-sm">לקוח מרוצה</span>
+          </div>
+        </div>
+        <!-- Placeholder reviews to fill carousel -->
+        <div class="bg-white shadow-lg rounded-2xl p-6 w-72 flex-shrink-0 border border-blue-50">
+          <div class="star-gold text-xl mb-3">★★★★★</div>
+          <p class="text-gray-700 text-sm leading-relaxed mb-4">"הקפה הכי טוב בגבעתיים! האווירה חמה ומזמינה. חוזרת כל בוקר."</p>
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full bg-blue-700 text-white flex items-center justify-center font-bold text-sm">מ</div>
+            <span class="font-semibold text-gray-800 text-sm">מיכל כ.</span>
+          </div>
+        </div>
+        <div class="bg-white shadow-lg rounded-2xl p-6 w-72 flex-shrink-0 border border-blue-50">
+          <div class="star-gold text-xl mb-3">★★★★★</div>
+          <p class="text-gray-700 text-sm leading-relaxed mb-4">"המאפים פה הם משהו אחר לגמרי. טריים, פריכים ומדהימים. ממליץ בחום!"</p>
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-sm">ר</div>
+            <span class="font-semibold text-gray-800 text-sm">רועי ב.</span>
+          </div>
+        </div>
+        <div class="bg-white shadow-lg rounded-2xl p-6 w-72 flex-shrink-0 border border-blue-50">
+          <div class="star-gold text-xl mb-3">★★★★☆</div>
+          <p class="text-gray-700 text-sm leading-relaxed mb-4">"מקום נהדר לעבוד ממנו. Wi-Fi מעולה, קפה טעים ושירות חייכני."</p>
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full bg-sky-600 text-white flex items-center justify-center font-bold text-sm">ד</div>
+            <span class="font-semibold text-gray-800 text-sm">דנה ש.</span>
+          </div>
+        </div>
+        <div class="bg-white shadow-lg rounded-2xl p-6 w-72 flex-shrink-0 border border-blue-50">
+          <div class="star-gold text-xl mb-3">★★★★★</div>
+          <p class="text-gray-700 text-sm leading-relaxed mb-4">"ארוחת הבוקר שלהם פשוט מושלמת. כבר שנתיים לקוח קבוע!"</p>
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full bg-blue-800 text-white flex items-center justify-center font-bold text-sm">א</div>
+            <span class="font-semibold text-gray-800 text-sm">אבי מ.</span>
+          </div>
+        </div>
+        <div class="bg-white shadow-lg rounded-2xl p-6 w-72 flex-shrink-0 border border-blue-50">
+          <div class="star-gold text-xl mb-3">★★★★★</div>
+          <p class="text-gray-700 text-sm leading-relaxed mb-4">"הסנדוויצ'ים הכי טריים ועסיסיים שטעמתי. שירות מהיר ונחמד."</p>
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm">ש</div>
+            <span class="font-semibold text-gray-800 text-sm">שירה ל.</span>
+          </div>
+        </div>
+
+        <!-- Duplicate for infinite loop -->
+        <div class="bg-white shadow-lg rounded-2xl p-6 w-72 flex-shrink-0 border border-blue-50">
+          <div class="star-gold text-xl mb-3">★★★★★</div>
+          <p class="text-gray-700 text-sm leading-relaxed mb-4">"בית קפה מקסים עם אווירה נהדרת וקפה משובח!"</p>
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full bg-blue-800 text-white flex items-center justify-center font-bold text-sm">ל</div>
+            <span class="font-semibold text-gray-800 text-sm">לקוח מרוצה</span>
+          </div>
+        </div>
+        <div class="bg-white shadow-lg rounded-2xl p-6 w-72 flex-shrink-0 border border-blue-50">
+          <div class="star-gold text-xl mb-3">★★★★★</div>
+          <p class="text-gray-700 text-sm leading-relaxed mb-4">"הקפה הכי טוב בגבעתיים! האווירה חמה ומזמינה. חוזרת כל בוקר."</p>
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full bg-blue-700 text-white flex items-center justify-center font-bold text-sm">מ</div>
+            <span class="font-semibold text-gray-800 text-sm">מיכל כ.</span>
+          </div>
+        </div>
+        <div class="bg-white shadow-lg rounded-2xl p-6 w-72 flex-shrink-0 border border-blue-50">
+          <div class="star-gold text-xl mb-3">★★★★★</div>
+          <p class="text-gray-700 text-sm leading-relaxed mb-4">"המאפים פה הם משהו אחר לגמרי. טריים, פריכים ומדהימים. ממליץ בחום!"</p>
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-sm">ר</div>
+            <span class="font-semibold text-gray-800 text-sm">רועי ב.</span>
+          </div>
+        </div>
+        <div class="bg-white shadow-lg rounded-2xl p-6 w-72 flex-shrink-0 border border-blue-50">
+          <div class="star-gold text-xl mb-3">★★★★☆</div>
+          <p class="text-gray-700 text-sm leading-relaxed mb-4">"מקום נהדר לעבוד ממנו. Wi-Fi מעולה, קפה טעים ושירות חייכני."</p>
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full bg-sky-600 text-white flex items-center justify-center font-bold text-sm">ד</div>
+            <span class="font-semibold text-gray-800 text-sm">דנה ש.</span>
+          </div>
+        </div>
+        <div class="bg-white shadow-lg rounded-2xl p-6 w-72 flex-shrink-0 border border-blue-50">
+          <div class="star-gold text-xl mb-3">★★★★★</div>
+          <p class="text-gray-700 text-sm leading-relaxed mb-4">"ארוחת הבוקר שלהם פשוט מושלמת. כבר שנתיים לקוח קבוע!"</p>
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full bg-blue-800 text-white flex items-center justify-center font-bold text-sm">א</div>
+            <span class="font-semibold text-gray-800 text-sm">אבי מ.</span>
+          </div>
+        </div>
+        <div class="bg-white shadow-lg rounded-2xl p-6 w-72 flex-shrink-0 border border-blue-50">
+          <div class="star-gold text-xl mb-3">★★★★★</div>
+          <p class="text-gray-700 text-sm leading-relaxed mb-4">"הסנדוויצ'ים הכי טריים ועסיסיים שטעמתי. שירות מהיר ונחמד."</p>
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm">ש</div>
+            <span class="font-semibold text-gray-800 text-sm">שירה ל.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== WHY US ===================== -->
+<section class="py-20 px-4 bg-white">
+  <div class="max-w-5xl mx-auto">
+    <div class="text-center mb-14 reveal">
+      <span class="inline-block bg-blue-100 text-blue-800 text-sm font-semibold px-4 py-1 rounded-full mb-3">למה לבחור בנו</span>
+      <h2 class="text-3xl md:text-4xl font-black text-gray-900">היתרונות שלנו</h2>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <div class="reveal flex items-start gap-4 bg-blue-50 rounded-2xl p-5 border border-blue-100">
+        <span class="text-3xl flex-shrink-0">☕</span>
+        <div>
+          <h4 class="font-bold text-blue-900 mb-1">קפה ברמה בינלאומית</h4>
+          <p class="text-gray-600 text-sm">פולי קפה מובחרים מרחבי העולם, חימוּם מקצועי לכל כוס.</p>
+        </div>
+      </div>
+      <div class="reveal flex items-start gap-4 bg-blue-50 rounded-2xl p-5 border border-blue-100">
+        <span class="text-3xl flex-shrink-0">🌅</span>
+        <div>
+          <h4 class="font-bold text-blue-900 mb-1">פתוחים כל יום</h4>
+          <p class="text-gray-600 text-sm">כולל שבת! כי הבוקר המושלם מגיע גם בסוף שבוע.</p>
+        </div>
+      </div>
+      <div class="reveal flex items-start gap-4 bg-blue-50 rounded-2xl p-5 border border-blue-100">
+        <span class="text-3xl flex-shrink-0">😊</span>
+        <div>
+          <h4 class="font-bold text-blue-900 mb-1">שירות אישי וחם</h4>
+          <p class="text-gray-600 text-sm">הצוות שלנו מכיר לקוחות קבועים ושמח לפגוש פנים חדשות.</p>
+        </div>
+      </div>
+      <div class="reveal flex items-start gap-4 bg-blue-50 rounded-2xl p-5 border border-blue-100">
+        <span class="text-3xl flex-shrink-0">📍</span>
+</html>

@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pilates Life by Sharon Ofir</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    * { font-family: 'Heebo', sans-serif; }
+
+    :root {
+      --primary: #1E3A8A;
+      --secondary: #3B82F6;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    .gradient-hero {
+      background: linear-gradient(135deg, #1E3A8A 0%, #2563EB 50%, #3B82F6 100%);
+    }
+
+    .gradient-card {
+      background: linear-gradient(145deg, #ffffff, #f0f6ff);
+    }
+
+    /* Carousel */
+    .carousel-track {
+      display: flex;
+      gap: 1.5rem;
+      animation: scrollCarousel 28s linear infinite;
+      width: max-content;
+    }
+
+    .carousel-wrapper {
+      overflow: hidden;
+      position: relative;
+    }
+
+    .carousel-wrapper::before,
+    .carousel-wrapper::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 80px;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .carousel-wrapper::before {
+      right: 0;
+      background: linear-gradient(to left, white, transparent);
+    }
+
+    .carousel-wrapper::after {
+      left: 0;
+      background: linear-gradient(to right, white, transparent);
+    }
+
+    .carousel-track:hover { animation-play-state: paused; }
+
+    @keyframes scrollCarousel {
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    /* Animations */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    @keyframes pulse-wa {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(37,211,102,0.5); }
+      50%       { box-shadow: 0 0 0 12px rgba(37,211,102,0); }
+    }
+
+    .animate-fadeUp { animation: fadeUp 0.8s ease forwards; }
+    .animate-fadeIn { animation: fadeIn 1s ease forwards; }
+    .delay-100 { animation-delay: 0.1s; }
+    .delay-200 { animation-delay: 0.2s; }
+    .delay-300 { animation-delay: 0.3s; }
+    .delay-400 { animation-delay: 0.4s; }
+
+    .wa-btn { animation: pulse-wa 2.5s infinite; }
+
+    .card-hover {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .card-hover:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 20px 40px rgba(30,58,138,0.15);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #1E3A8A, #3B82F6);
+      transition: all 0.3s ease;
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #163069, #2563EB);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(30,58,138,0.4);
+    }
+
+    .btn-white {
+      background: white;
+      color: #1E3A8A;
+      transition: all 0.3s ease;
+    }
+    .btn-white:hover {
+      background: #f0f6ff;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(255,255,255,0.3);
+    }
+
+    .section-divider {
+      width: 60px;
+      height: 4px;
+      background: linear-gradient(90deg, #1E3A8A, #3B82F6);
+      border-radius: 999px;
+      margin: 0 auto 1.5rem;
+    }
+
+    .instagram-gradient {
+      background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+    }
+  </style>
+</head>
+<body class="bg-white text-gray-800 overflow-x-hidden">
+
+<!-- ========== HERO ========== -->
+<section class="gradient-hero min-h-screen flex items-center justify-center relative overflow-hidden">
+  <!-- Decorative circles -->
+  <div class="absolute top-0 left-0 w-96 h-96 bg-white opacity-5 rounded-full -translate-x-1/2 -translate-y-1/2"></div>
+  <div class="absolute bottom-0 right-0 w-80 h-80 bg-white opacity-5 rounded-full translate-x-1/3 translate-y-1/3"></div>
+  <div class="absolute top-1/2 left-1/4 w-40 h-40 bg-blue-300 opacity-10 rounded-full"></div>
+
+  <div class="relative z-10 text-center px-6 max-w-4xl mx-auto py-24">
+    <div class="inline-block bg-white bg-opacity-20 text-white text-sm font-500 px-4 py-1 rounded-full mb-6 animate-fadeIn">
+      🌟 המדריכה המובילה בפילאטיס בהוד השרון
+    </div>
+    <h1 class="text-4xl md:text-6xl font-900 text-white leading-tight mb-6 animate-fadeUp">
+      חיים חדשים עם פילאטיס<br />
+      <span class="text-blue-200">בלב הוד השרון!</span>
+    </h1>
+    <p class="text-xl md:text-2xl text-blue-100 font-400 mb-10 max-w-2xl mx-auto animate-fadeUp delay-200">
+      קבלו את הגוף שתמיד חלמתם עליו עם שרון אופיר, המדריכה המובילה בפילאטיס
+    </p>
+    <div class="flex flex-col sm:flex-row gap-4 justify-center animate-fadeUp delay-300">
+      <a href="https://wa.me/972542255821" target="_blank" rel="noopener noreferrer"
+         class="btn-primary text-white font-700 text-lg px-8 py-4 rounded-2xl shadow-xl inline-block">
+        🎉 הצטרפו לשיעור ניסיון חינם!
+      </a>
+      <a href="tel:972542255821"
+         class="btn-white font-700 text-lg px-8 py-4 rounded-2xl shadow-xl inline-block">
+        📞 התקשרו עכשיו
+      </a>
+    </div>
+  </div>
+
+  <!-- Wave -->
+  <div class="absolute bottom-0 left-0 right-0">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 80" preserveAspectRatio="none" class="w-full h-16 md:h-20">
+      <path fill="#ffffff" d="M0,40 C360,80 1080,0 1440,40 L1440,80 L0,80 Z"/>
+    </svg>
+  </div>
+</section>
+
+<!-- ========== TRUST BADGES ========== -->
+<section class="py-12 bg-white">
+  <div class="max-w-5xl mx-auto px-6">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="flex flex-col items-center text-center p-5 bg-blue-50 rounded-2xl card-hover">
+        <span class="text-3xl mb-2">⚡</span>
+        <span class="font-700 text-gray-800 text-sm">מענה מהיר</span>
+        <span class="text-gray-500 text-xs mt-1">תגובה תוך שעות</span>
+      </div>
+      <div class="flex flex-col items-center text-center p-5 bg-blue-50 rounded-2xl card-hover">
+        <span class="text-3xl mb-2">🏆</span>
+        <span class="font-700 text-gray-800 text-sm">ניסיון עשיר</span>
+        <span class="text-gray-500 text-xs mt-1">שנים של מקצועיות</span>
+      </div>
+      <div class="flex flex-col items-center text-center p-5 bg-blue-50 rounded-2xl card-hover">
+        <span class="text-3xl mb-2">❤️</span>
+        <span class="font-700 text-gray-800 text-sm">גישה אישית</span>
+        <span class="text-gray-500 text-xs mt-1">תוכנית מותאמת לכם</span>
+      </div>
+      <div class="flex flex-col items-center text-center p-5 bg-blue-50 rounded-2xl card-hover">
+        <span class="text-3xl mb-2">✅</span>
+        <span class="font-700 text-gray-800 text-sm">תוצאות אמיתיות</span>
+        <span class="text-gray-500 text-xs mt-1">לקוחות מרוצים</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== SERVICES ========== -->
+<section class="py-20 bg-gray-50" id="services">
+  <div class="max-w-6xl mx-auto px-6">
+    <div class="text-center mb-14">
+      <div class="section-divider"></div>
+      <h2 class="text-3xl md:text-4xl font-800 text-gray-900 mb-3">השירותים שלנו</h2>
+      <p class="text-gray-500 text-lg max-w-xl mx-auto">מגוון תוכניות פילאטיס מקצועיות לכל גיל ורמה</p>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+
+      <div class="gradient-card rounded-2xl p-7 shadow-md card-hover border border-blue-100">
+        <div class="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center text-2xl mb-5">🧘</div>
+        <h3 class="text-xl font-700 text-gray-800 mb-2">שיעורי פילאטיס אישיים</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">תשומת לב מלאה לכם בלבד. שרון מתאימה כל שיעור בדיוק לצרכים ולמטרות שלכם.</p>
+        <div class="mt-4 inline-flex items-center text-blue-600 font-600 text-sm">
+          <span>קבעו שיעור</span>
+          <span class="mr-1">←</span>
+        </div>
+      </div>
+
+      <div class="gradient-card rounded-2xl p-7 shadow-md card-hover border border-blue-100">
+        <div class="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center text-2xl mb-5">👥</div>
+        <h3 class="text-xl font-700 text-gray-800 mb-2">קבוצות פילאטיס קטנות</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">אווירה חברתית ותומכת עם תשומת לב אישית. קבוצות מיני לחוויה הטובה ביותר.</p>
+        <div class="mt-4 inline-flex items-center text-blue-600 font-600 text-sm">
+          <span>למידע נוסף</span>
+          <span class="mr-1">←</span>
+        </div>
+      </div>
+
+      <div class="gradient-card rounded-2xl p-7 shadow-md card-hover border border-blue-100">
+        <div class="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center text-2xl mb-5">📋</div>
+        <h3 class="text-xl font-700 text-gray-800 mb-2">תוכניות מותאמות אישית</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">תוכנית אימון מדויקת שנבנית עבורכם — לפי היעדים, הזמן הפנוי והגוף שלכם.</p>
+        <div class="mt-4 inline-flex items-center text-blue-600 font-600 text-sm">
+          <span>התחילו עכשיו</span>
+          <span class="mr-1">←</span>
+        </div>
+      </div>
+
+      <div class="gradient-card rounded-2xl p-7 shadow-md card-hover border border-blue-100">
+        <div class="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center text-2xl mb-5">🤰</div>
+        <h3 class="text-xl font-700 text-gray-800 mb-2">פילאטיס לנשים בהריון</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">שיעורים בטוחים ומיוחדים לתקופת ההיריון. חיזוק, נשימה ורווחה לאמא ולתינוק.</p>
+        <div class="mt-4 inline-flex items-center text-blue-600 font-600 text-sm">
+          <span>קבעי תור</span>
+          <span class="mr-1">←</span>
+        </div>
+      </div>
+
+      <div class="gradient-card rounded-2xl p-7 shadow-md card-hover border border-blue-100">
+        <div class="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center text-2xl mb-5">💪</div>
+        <h3 class="text-xl font-700 text-gray-800 mb-2">חיזוק וייצוב הגוף</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">תרגילים ממוקדים לחיזוק שרירי הליבה, שיפור יציבה ובניית גוף חזק ויציב.</p>
+        <div class="mt-4 inline-flex items-center text-blue-600 font-600 text-sm">
+          <span>גלו עוד</span>
+          <span class="mr-1">←</span>
+        </div>
+      </div>
+
+      <div class="gradient-card rounded-2xl p-7 shadow-md card-hover border border-blue-100">
+        <div class="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center text-2xl mb-5">🏥</div>
+        <h3 class="text-xl font-700 text-gray-800 mb-2">שיקום פיזי אחרי פציעות</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">חזרה לתפקוד מלא בצורה מדודה ובטוחה. שרון מלווה אתכם לאורך כל תהליך ההחלמה.</p>
+        <div class="mt-4 inline-flex items-center text-blue-600 font-600 text-sm">
+          <span>נצור קשר</span>
+          <span class="mr-1">←</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ========== REVIEWS ========== -->
+<section class="py-20 bg-white" id="reviews">
+  <div class="max-w-6xl mx-auto px-6">
+    <div class="text-center mb-10">
+      <div class="section-divider"></div>
+      <h2 class="text-3xl md:text-4xl font-800 text-gray-900 mb-3">מה אומרים עלינו</h2>
+      <!-- Google Rating Badge -->
+      <div class="inline-flex items-center gap-2 bg-blue-50 border border-blue-100 px-5 py-2 rounded-full mt-3 shadow-sm">
+        <span class="text-yellow-400 text-lg">⭐</span>
+        <span class="font-700 text-gray-800">5.0 / 5</span>
+        <span class="text-gray-500 text-sm">— 10 ביקורות ב-Google</span>
+      </div>
+    </div>
+
+    <!-- Carousel -->
+    <div class="carousel-wrapper py-4">
+      <div class="carousel-track">
+        <!-- Review 1 -->
+        <div class="bg-white shadow-lg rounded-2xl p-7 min-w-[320px] max-w-[360px] flex flex-col gap-3">
+          <div class="flex gap-1 text-yellow-400 text-xl">★★★★★</div>
+          <p class="text-gray-600 text-sm leading-relaxed">"כמה ידע, כמה דיוק. מעריכה מאוד את שיטת העבודה שלך ואת ההיכרות שלך עם הגוף שלי ומה הוא צריך. ממליצה בחום!"</p>
+          <div class="flex items-center gap-3 mt-2">
+            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 font-700 text-lg">ש</div>
+            <span class="font-700 text-gray-800">שרוני האלופה</span>
+          </div>
+        </div>
+        <!-- Placeholder 2 -->
+        <div class="bg-white shadow-lg rounded-2xl p-7 min-w-[320px] max-w-[360px] flex flex-col gap-3">
+          <div class="flex gap-1 text-yellow-400 text-xl">★★★★★</div>
+          <p class="text-gray-600 text-sm leading-relaxed">"שרון מדהימה! השיעורים שלה שינו לי את החיים. הגב כבר לא כואב ואני מרגישה חזקה ובריאה יותר."</p>
+          <div class="flex items-center gap-3 mt-2">
+            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 font-700 text-lg">מ</div>
+            <span class="font-700 text-gray-800">מיכל כ.</span>
+          </div>
+        </div>
+        <!-- Placeholder 3 -->
+        <div class="bg-white shadow-lg rounded-2xl p-7 min-w-[320px] max-w-[360px] flex flex-col gap-3">
+          <div class="flex gap-1 text-yellow-400 text-xl">★★★★★</div>
+          <p class="text-gray-600 text-sm leading-relaxed">"אחרי הלידה חזרתי לעצמי בזכות שרון. תוכנית שיקום מושלמת, מקצועית ועם הרבה סבלנות. ממליצה לכולן!"</p>
+          <div class="flex items-center gap-3 mt-2">
+            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 font-700 text-lg">ר</div>
+            <span class="font-700 text-gray-800">רחל ט.</span>
+          </div>
+        </div>
+        <!-- Placeholder 4 -->
+        <div class="bg-white shadow-lg rounded-2xl p-7 min-w-[320px] max-w-[360px] flex flex-col gap-3">
+          <div class="flex gap-1 text-yellow-400 text-xl">★★★★★</div>
+          <p class="text-gray-600 text-sm leading-relaxed">"מדריכה יוצאת דופן! היא מכירה כל תנועה, כל שריר. מרגישים שהיא באמת אכפת לה מהתוצאה שלנו."</p>
+          <div class="flex items-center gap-3 mt-2">
+            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 font-700 text-lg">נ</div>
+            <span class="font-700 text-gray-800">נועה ל.</span>
+          </div>
+        </div>
+        <!-- Duplicate for infinite scroll -->
+        <div class="bg-white shadow-lg rounded-2xl p-7 min-w-[320px] max-w-[360px] flex flex-col gap-3">
+          <div class="flex gap-1 text-yellow-400 text-xl">★★★★★</div>
+          <p class="text-gray-600 text-sm leading-relaxed">"כמה ידע, כמה דיוק. מעריכה מאוד את שיטת העבודה שלך ואת ההיכרות שלך עם הגוף שלי ומה הוא צריך. ממליצה בחום!"</p>
+          <div class="flex items-center gap-3 mt-2">
+            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 font-700 text-lg">ש</div>
+            <span class="font-700 text-gray-800">שרוני האלופה</span>
+          </div>
+        </div>
+        <div class="bg-white shadow-lg rounded-2xl p-7 min-w-[320px] max-w-[360px] flex flex-col gap-3">
+          <div class="flex gap-1 text-yellow-400 text-xl">★★★★★</div>
+          <p class="text-gray-600 text-sm leading-relaxed">"שרון מדהימה! השיעורים שלה שינו לי את החיים. הגב כבר לא כואב ואני מרגישה חזקה ובריאה יותר."</p>
+          <div class="flex items-center gap-3 mt-2">
+            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 font-700 text-lg">מ</div>
+            <span class="font-700 text-gray-800">מיכל כ.</span>
+          </div>
+        </div>
+        <div class="bg-white shadow-lg rounded-2xl p-7 min-w-[320px] max-w-[360px] flex flex-col gap-3">
+          <div class="flex gap-1 text-yellow-400 text-xl">★★★★★</div>
+          <p class="text-gray-600 text-sm leading-relaxed">"אחרי הלידה חזרתי לעצמי בזכות שרון. תוכנית שיקום מושלמת, מקצועית ועם הרבה סבלנות. ממליצה לכולן!"</p>
+          <div class="flex items-center gap-3 mt-2">
+            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 font-700 text-lg">ר</div>
+            <span class="font-700 text-gray-800">רחל ט.</span>
+          </div>
+        </div>
+        <div class="bg-white shadow-lg rounded-2xl p-7 min-w-[320px] max-w-[360px] flex flex-col gap-3">
+          <div class="flex gap-1 text-yellow-400 text-xl">★★★★★</div>
+          <p class="text-gray-600 text-sm leading-relaxed">"מדריכה יוצאת דופן! היא מכירה כל תנועה, כל שריר. מרגישים שהיא באמת אכפת לה מהתוצאה שלנו."</p>
+          <div class="flex items-center gap-3 mt-2">
+            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 font-700 text-lg">נ</div>
+            <span class="font-700 text-gray-800">נועה ל.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== WHY US ========== -->
+<section class="py-20 bg-gradient-to-br from-blue-50 to-white" id="why">
+  <div class="max-w-5xl mx-auto px-6">
+    <div class="text-center mb-14">
+      <div class="section-divider"></div>
+      <h2 class="text-3xl md:text-4xl font-800 text-gray-900 mb-3">למה לבחור בנו?</h2>
+      <p class="text-gray-500 text-lg">כי אנחנו לא סתם סטודיו — אנחנו שותפים למסע שלכם</p>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <div class="flex items-start gap-5 bg-white p-6 rounded-2xl shadow-sm border border-blue-50 card-hover">
+        <div class="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center text-white text-xl shrink-0">🎯</div>
+        <div>
+          <h4 class="font-700 text-gray-800 text-lg mb-1">מקצועיות ללא פשרות</h4>
+          <p class="text-gray-500 text-sm">שרון מוסמכת ומנוסה, עם ידע עמוק בפילאטיס ובאנטומיה של הגוף האנושי.</p>
+        </div>
+      </div>
+      <div class="flex items-start gap-5 bg-white p-6 rounded-2xl shadow-sm border border-blue-50 card-hover">
+        <div class="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center text-white text-xl shrink-0">🌱</div>
+        <div>
+          <h4 class="font-700 text-gray-800 text-lg mb-1">גישה הוליסטית</h4>
+          <p class="text-gray-500 text-sm">לא רק כושר — בריאות כוללת של גוף ונפש. כל שיעור הוא חוויה שמרגישים.</p>
+        </div>
+      </div>
+      <div class="flex items-start gap-5 bg-white p-6 rounded-2xl shadow-sm border border-blue-50 card-hover">
+        <div class="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center text-white text-xl shrink-0">🔬</div>
+        <div>
+          <h4 class="font-700 text-gray-800 text-lg mb-1">מדויקים בכל תנועה</h4>
+          <p class="text-gray-500 text-sm">כל תרגיל מותאם אישית, כל תנועה נבנית בדייקנות — כדי שתרגישו את ההבדל.</p>
+        </div>
+      </div>
+      <div class="flex items-start gap-5 bg-white p-6 rounded-2xl shadow-sm border border-blue-50 card-hover">
+        <div class="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center text-white text-xl shrink-0">🏡</div>
+        <div>
+          <h4 class="font-700 text-gray-800 text-lg mb-1">סביבה חמה ומזמינה</h4>
+          <p class="text-gray-500 text-sm">סטודיו נעים בהוד הש
+</html>

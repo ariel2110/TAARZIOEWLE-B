@@ -59,6 +59,9 @@ export default function LeadsPage() {
         <SectionTitle>לידים ({filtered.length})</SectionTitle>
         <div style={{ display: 'flex', gap: 8 }}>
           <input ref={fileRef} type="file" accept=".csv" style={{ display: 'none' }} onChange={handleCSV} />
+          <Tooltip text="כשר אוטומטית לידים עם ציון ≥70 ללא אתר קיים">
+            <Button onClick={() => action(() => autoQualifyLeads().then(r => { setMsg(`כושרו אוטומטית ${r.qualified} לידים`); return r; }), '')} style={{ background: '#7c3aed', color: '#fff' }}>⚡ כישור אוטומטי</Button>
+          </Tooltip>
           <Button onClick={() => fileRef.current?.click()} style={{ background: '#2563eb', color: '#fff' }}>📤 ייבוא CSV</Button>
           <Button onClick={() => setShowAdd(v => !v)} style={{ background: '#111827', color: '#fff' }}>
             {showAdd ? 'סגור' : '+ הוסף ליד'}

@@ -27,6 +27,7 @@ from app.models.onboarding_session import OnboardingSession
 from app.models.login_challenge import LoginChallenge
 from app.models.rate_limit_event import RateLimitEvent
 from app.models.login_delivery_attempt import LoginDeliveryAttempt
+from app.models.public_intake import PublicIntake
 
 from app.models.security_alert import SecurityAlert
 

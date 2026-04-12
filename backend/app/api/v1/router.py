@@ -1,3 +1,4 @@
+from app.api.v1.routes.public_intake import router as public_intake_router
 from app.api.v1.routes import public_portal
 from app.api.v1.routes.public_inbound import router as public_inbound_router
 from fastapi import APIRouter
@@ -63,4 +64,5 @@ api_router.include_router(admin_users_router)
 api_router.include_router(admin_tasks_router)
 api_router.include_router(public_inbound_router)
 
+api_router.include_router(public_intake_router)
 api_router.include_router(public_portal.router)

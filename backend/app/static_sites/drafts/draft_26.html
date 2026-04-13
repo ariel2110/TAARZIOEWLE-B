@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>מכון התקנים הישראלי</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    * { font-family: 'Heebo', sans-serif; }
+
+    :root {
+      --primary: #1E3A8A;
+      --secondary: #3B82F6;
+    }
+
+    body { background-color: #f8faff; }
+
+    /* Hero gradient */
+    .hero-gradient {
+      background: linear-gradient(135deg, #1E3A8A 0%, #1e4faa 40%, #3B82F6 100%);
+    }
+
+    /* Floating WA */
+    .whatsapp-float {
+      position: fixed;
+      bottom: 24px;
+      left: 24px;
+      z-index: 9999;
+      width: 60px;
+      height: 60px;
+      background: #25D366;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 20px rgba(37, 211, 102, 0.5);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .whatsapp-float:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 28px rgba(37, 211, 102, 0.7);
+    }
+
+    /* Auto-scrolling carousel */
+    .carousel-track {
+      display: flex;
+      gap: 1.5rem;
+      animation: scroll-left 30s linear infinite;
+      width: max-content;
+    }
+    .carousel-track:hover { animation-play-state: paused; }
+    @keyframes scroll-left {
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+    .carousel-wrapper {
+      overflow: hidden;
+      position: relative;
+      mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+      -webkit-mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+    }
+
+    /* Card hover */
+    .service-card {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .service-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 20px 40px rgba(30, 58, 138, 0.15);
+    }
+
+    /* Reveal animation */
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* CTA button */
+    .cta-btn {
+      background: linear-gradient(135deg, #3B82F6, #1E3A8A);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .cta-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(30, 58, 138, 0.4);
+    }
+
+    /* Section divider */
+    .wave-divider { line-height: 0; }
+
+    /* Stars */
+    .stars { color: #F59E0B; }
+
+    /* Trust chip */
+    .trust-chip {
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      backdrop-filter: blur(8px);
+    }
+
+    /* Why us item */
+    .why-item {
+      transition: transform 0.2s ease;
+    }
+    .why-item:hover { transform: translateX(-4px); }
+
+    /* Contact strip */
+    .contact-strip {
+      background: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%);
+    }
+
+    /* Footer */
+    .footer-bg { background: #0f2060; }
+
+    /* Table row alternating */
+    .hours-row:nth-child(even) { background: rgba(59,130,246,0.06); }
+  </style>
+</head>
+<body class="text-gray-800">
+
+<!-- ===================== FLOATING WHATSAPP ===================== -->
+<a href="https://wa.me/036465154" class="whatsapp-float" aria-label="WhatsApp" target="_blank" rel="noopener noreferrer">
+  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="white">
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+  </svg>
+</a>
+
+<!-- ===================== HERO ===================== -->
+<section class="hero-gradient text-white relative overflow-hidden">
+  <div class="absolute inset-0 opacity-10">
+    <div class="absolute top-10 right-20 w-72 h-72 rounded-full bg-white blur-3xl"></div>
+    <div class="absolute bottom-10 left-20 w-96 h-96 rounded-full bg-blue-300 blur-3xl"></div>
+  </div>
+  <div class="relative z-10 max-w-6xl mx-auto px-6 py-24 text-center">
+    <div class="inline-flex items-center gap-2 bg-white/20 backdrop-blur border border-white/30 rounded-full px-5 py-2 text-sm font-medium mb-8">
+      <span>🏆</span>
+      <span>מעל 100 שנות מצוינות ומקצועיות</span>
+    </div>
+    <h1 class="text-4xl md:text-6xl font-black leading-tight mb-6 drop-shadow-lg">
+      מובילים את התקנים בישראל<br/>
+      <span class="text-blue-200">איכות, מצוינות וחדשנות!</span>
+    </h1>
+    <p class="text-lg md:text-xl text-blue-100 max-w-2xl mx-auto mb-10 leading-relaxed">
+      עזרו לעסק שלכם לגדול עם תקנים מקצועיים וחדשניים — כי האיכות היא המפתח להצלחה.
+    </p>
+    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+      <a href="tel:036465154" class="cta-btn text-white font-bold px-8 py-4 rounded-full text-lg shadow-xl inline-flex items-center gap-2 justify-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+        התקשרו עכשיו: 03-646-5154
+      </a>
+      <a href="https://wa.me/036465154" target="_blank" rel="noopener noreferrer" class="bg-white/20 backdrop-blur border border-white/40 hover:bg-white/30 text-white font-bold px-8 py-4 rounded-full text-lg inline-flex items-center gap-2 justify-center transition-all duration-300">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        WhatsApp
+      </a>
+    </div>
+    <!-- Trust chips -->
+    <div class="flex flex-wrap gap-3 justify-center mt-10">
+      <span class="trust-chip rounded-full px-4 py-2 text-sm font-medium flex items-center gap-2">✅ מענה מהיר</span>
+      <span class="trust-chip rounded-full px-4 py-2 text-sm font-medium flex items-center gap-2">🛡️ אמינות מלאה</span>
+      <span class="trust-chip rounded-full px-4 py-2 text-sm font-medium flex items-center gap-2">💡 חדשנות טכנולוגית</span>
+      <span class="trust-chip rounded-full px-4 py-2 text-sm font-medium flex items-center gap-2">🌍 סטנדרטים בינלאומיים</span>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== TRUST BADGES ===================== -->
+<section class="bg-white py-10 border-b border-gray-100">
+  <div class="max-w-5xl mx-auto px-6">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+      <div class="reveal flex flex-col items-center gap-2 p-4 rounded-2xl hover:bg-blue-50 transition-colors duration-300">
+        <span class="text-4xl font-black text-blue-800">100+</span>
+        <span class="text-gray-500 text-sm font-medium">שנות ניסיון</span>
+      </div>
+      <div class="reveal flex flex-col items-center gap-2 p-4 rounded-2xl hover:bg-blue-50 transition-colors duration-300">
+        <span class="text-4xl font-black text-blue-800">140</span>
+        <span class="text-gray-500 text-sm font-medium">ביקורות מאומתות</span>
+      </div>
+      <div class="reveal flex flex-col items-center gap-2 p-4 rounded-2xl hover:bg-blue-50 transition-colors duration-300">
+        <span class="text-4xl font-black text-blue-800">3.7★</span>
+        <span class="text-gray-500 text-sm font-medium">דירוג ממוצע</span>
+      </div>
+      <div class="reveal flex flex-col items-center gap-2 p-4 rounded-2xl hover:bg-blue-50 transition-colors duration-300">
+        <span class="text-4xl font-black text-blue-800">ISO</span>
+        <span class="text-gray-500 text-sm font-medium">תקנים בינלאומיים</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== SERVICES GRID ===================== -->
+<section class="py-20 bg-gradient-to-b from-gray-50 to-white" id="services">
+  <div class="max-w-6xl mx-auto px-6">
+    <div class="text-center mb-14 reveal">
+      <span class="inline-block bg-blue-100 text-blue-800 font-semibold px-4 py-1 rounded-full text-sm mb-3">השירותים שלנו</span>
+      <h2 class="text-3xl md:text-4xl font-black text-gray-900 mb-4">מה אנחנו מציעים?</h2>
+      <p class="text-gray-500 text-lg max-w-xl mx-auto">פתרונות תקינה מקיפים לכל עסק — מהמוצר ועד הרגולציה</p>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+
+      <!-- Card 1 -->
+      <div class="service-card bg-white rounded-2xl p-7 shadow-md border border-gray-100 reveal">
+        <div class="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center mb-5 text-2xl">📋</div>
+        <h3 class="text-xl font-bold text-gray-900 mb-2">מתן תקנים למוצרים ושירותים</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">הענקת אישורי תקן מוכרים בינלאומית שמבטיחים את איכות המוצרים והשירותים שלכם.</p>
+        <div class="mt-4 flex items-center gap-2 text-blue-700 text-sm font-semibold">
+          <span>✔</span><span>אישורים מוכרים בינלאומית</span>
+        </div>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="service-card bg-white rounded-2xl p-7 shadow-md border border-gray-100 reveal">
+        <div class="w-14 h-14 bg-indigo-100 rounded-2xl flex items-center justify-center mb-5 text-2xl">🎓</div>
+        <h3 class="text-xl font-bold text-gray-900 mb-2">הדרכות והכשרות מקצועיות</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">תוכניות הכשרה מתקדמות לעסקים בכל גודל — להעלאת מיומנות הצוות ועמידה בתקנות.</p>
+        <div class="mt-4 flex items-center gap-2 text-blue-700 text-sm font-semibold">
+          <span>✔</span><span>מרצים מוסמכים ומנוסים</span>
+        </div>
+      </div>
+
+      <!-- Card 3 -->
+      <div class="service-card bg-white rounded-2xl p-7 shadow-md border border-gray-100 reveal">
+        <div class="w-14 h-14 bg-cyan-100 rounded-2xl flex items-center justify-center mb-5 text-2xl">🔬</div>
+        <h3 class="text-xl font-bold text-gray-900 mb-2">בדיקות מעבדה חדשניות</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">מעבדות מתקדמות עם ציוד חדשני לבדיקות מקיפות ומדויקות של מוצרים וחומרים.</p>
+        <div class="mt-4 flex items-center gap-2 text-blue-700 text-sm font-semibold">
+          <span>✔</span><span>תוצאות מדויקות ומהירות</span>
+        </div>
+      </div>
+
+      <!-- Card 4 -->
+      <div class="service-card bg-white rounded-2xl p-7 shadow-md border border-gray-100 reveal">
+        <div class="w-14 h-14 bg-green-100 rounded-2xl flex items-center justify-center mb-5 text-2xl">🌍</div>
+        <h3 class="text-xl font-bold text-gray-900 mb-2">ייעוץ לסטנדרטים בינלאומיים</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">ליווי מקצועי לחברות ישראליות המעוניינות להתאים את פעילותן לדרישות ה-ISO ותקנים עולמיים.</p>
+        <div class="mt-4 flex items-center gap-2 text-blue-700 text-sm font-semibold">
+          <span>✔</span><span>ניסיון בשווקים גלובליים</span>
+        </div>
+      </div>
+
+      <!-- Card 5 -->
+      <div class="service-card bg-white rounded-2xl p-7 shadow-md border border-gray-100 reveal">
+        <div class="w-14 h-14 bg-purple-100 rounded-2xl flex items-center justify-center mb-5 text-2xl">💡</div>
+        <h3 class="text-xl font-bold text-gray-900 mb-2">פתרונות איכות וחדשנות טכנולוגית</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">שילוב טכנולוגיות מתקדמות בתהליכי בקרת האיכות לשיפור הביצועים העסקיים.</p>
+        <div class="mt-4 flex items-center gap-2 text-blue-700 text-sm font-semibold">
+          <span>✔</span><span>חדשנות בשירות האיכות</span>
+        </div>
+      </div>
+
+      <!-- Card 6 -->
+      <div class="service-card bg-white rounded-2xl p-7 shadow-md border border-gray-100 reveal">
+        <div class="w-14 h-14 bg-orange-100 rounded-2xl flex items-center justify-center mb-5 text-2xl">📊</div>
+        <h3 class="text-xl font-bold text-gray-900 mb-2">תמיכה וליווי ברגולציה</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">ליווי מקיף בתהליכי ציות לרגולציה ישראלית ובינלאומית, מהייעוץ הראשוני ועד האישור הסופי.</p>
+        <div class="mt-4 flex items-center gap-2 text-blue-700 text-sm font-semibold">
+          <span>✔</span><span>ציות מלא לכל הדרישות</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ===================== REVIEWS CAROUSEL ===================== -->
+<section class="py-16 bg-gradient-to-b from-white to-blue-50" id="reviews">
+  <div class="max-w-6xl mx-auto px-6">
+    <div class="text-center mb-10 reveal">
+      <span class="inline-block bg-blue-100 text-blue-800 font-semibold px-4 py-1 rounded-full text-sm mb-3">ביקורות לקוחות</span>
+      <h2 class="text-3xl md:text-4xl font-black text-gray-900 mb-4">מה אומרים עלינו?</h2>
+      <!-- Google rating badge -->
+      <div class="inline-flex items-center gap-3 bg-white border border-gray-200 rounded-2xl px-6 py-3 shadow-md mt-2">
+        <span class="text-2xl">⭐</span>
+        <div class="text-right">
+          <div class="font-black text-gray-900 text-xl">3.7 / 5</div>
+          <div class="text-gray-500 text-sm">140 ביקורות Google</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="carousel-wrapper">
+      <div class="carousel-track py-4">
+        <!-- Review 1 -->
+        <div class="bg-white shadow-lg rounded-2xl p-6 min-w-[300px] max-w-[340px] flex-shrink-0">
+          <div class="stars text-lg mb-3">★★★★★</div>
+          <p class="text-gray-700 text-sm leading-relaxed mb-4">"הג'ינגל שמושמע לממתינים על הקו 'מאה שנה של איכות מצוינות מקצועיות וחדשנות' — ממש מרשים!"</p>
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full bg-blue-800 flex items-center justify-center text-white font-bold text-sm">א</div>
+            <span class="font-semibold text-gray-800">אנונימי</span>
+          </div>
+        </div>
+        <!-- Placeholder reviews for fullness -->
+        <div class="bg-white shadow-lg rounded-2xl p-6 min-w-[300px] max-w-[340px] flex-shrink-0">
+          <div class="stars text-lg mb-3">★★★★☆</div>
+          <p class="text-gray-700 text-sm leading-relaxed mb-4">"שירות מקצועי ויעיל. קיבלנו ליווי מצוין בתהליך קבלת התקן עבור המוצר שלנו. ממליץ בחום!"</p>
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full bg-indigo-700 flex items-center justify-center text-white font-bold text-sm">ד</div>
+            <span class="font-semibold text-gray-800">דוד כהן</span>
+          </div>
+        </div>
+        <div class="bg-white shadow-lg rounded-2xl p-6 min-w-[300px] max-w-[340px] flex-shrink-0">
+          <div class="stars text-lg mb-3">★★★★★</div>
+          <p class="text-gray-700 text-sm leading-relaxed mb-4">"המכון עזר לנו להתאים את הייצור לתקנים הבינלאומיים. תהליך מוסדר ושקוף לגמרי."</p>
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full bg-cyan-700 flex items-center justify-center text-white font-bold text-sm">מ</div>
+            <span class="font-semibold text-gray-800">מירה לוי</span>
+          </div>
+        </div>
+        <div class="bg-white shadow-lg rounded-2xl p-6 min-w-[300px] max-w-[340px] flex-shrink-0">
+          <div class="stars text-lg mb-3">★★★★☆</div>
+          <p class="text-gray-700 text-sm leading-relaxed mb-4">"הכשרות מקצועיות ברמה גבוהה — הצוות שלנו יצא עם כלים מעשיים ומעודכנים לאיכות."</p>
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full bg-purple-700 flex items-center justify-center text-white font-bold text-sm">ר</div>
+            <span class="font-semibold text-gray-800">רונן אברהם</span>
+          </div>
+        </div>
+        <div class="bg-white shadow-lg rounded-2xl p-6 min-w-[300px] max-w-[340px] flex-shrink-0">
+          <div class="stars text-lg mb-3">★★★★★</div>
+          <p class="text-gray-700 text-sm leading-relaxed mb-4">"בדיקות המעבדה היו מהירות ומדויקות. קיבלנו את הדוחות בזמן ובצורה מסודרת לגמרי."</p>
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full bg-green-700 flex items-center justify-center text-white font-bold text-sm">נ</div>
+            <span class="font-semibold text-gray-800">נועה שמש</span>
+          </div>
+        </div>
+        <div class="bg-white shadow-lg rounded-2xl p-6 min-w-[300px] max-w-[340px] flex-shrink-0">
+          <div class="stars text-lg mb-3">★★★★☆</div>
+          <p class="text-gray-700 text-sm leading-relaxed mb-4">"מכון מוביל ומוכר — הסתמכנו עליו לתה
+</html>

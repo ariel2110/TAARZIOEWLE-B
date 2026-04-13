@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>אירו סול – פתרונות תעופתיים | AeroSol Composite Materials</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    * { font-family: 'Heebo', sans-serif; }
+
+    :root {
+      --primary: #1E3A8A;
+      --secondary: #3B82F6;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    .bg-primary { background-color: #1E3A8A; }
+    .bg-secondary { background-color: #3B82F6; }
+    .text-primary { color: #1E3A8A; }
+    .text-secondary { color: #3B82F6; }
+    .border-primary { border-color: #1E3A8A; }
+
+    /* Hero gradient */
+    .hero-gradient {
+      background: linear-gradient(135deg, #0f2056 0%, #1E3A8A 45%, #2d5fd4 100%);
+    }
+
+    /* Floating particles */
+    .particle {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.06);
+      animation: float 8s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-30px) rotate(180deg); }
+    }
+
+    /* Carousel */
+    .carousel-track {
+      display: flex;
+      gap: 1.5rem;
+      animation: scrollCarousel 28s linear infinite;
+      width: max-content;
+    }
+
+    .carousel-track:hover { animation-play-state: paused; }
+
+    @keyframes scrollCarousel {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    .carousel-wrapper {
+      overflow: hidden;
+      position: relative;
+    }
+
+    .carousel-wrapper::before,
+    .carousel-wrapper::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 80px;
+      z-index: 10;
+      pointer-events: none;
+    }
+    .carousel-wrapper::before {
+      right: 0;
+      background: linear-gradient(to left, #f0f4ff, transparent);
+    }
+    .carousel-wrapper::after {
+      left: 0;
+      background: linear-gradient(to right, #f0f4ff, transparent);
+    }
+
+    /* Card hover */
+    .service-card {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .service-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 20px 40px rgba(30,58,138,0.18);
+    }
+
+    /* Reveal animation */
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* CTA button pulse */
+    .btn-pulse {
+      animation: pulse 2.5s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(59,130,246,0.5); }
+      50% { box-shadow: 0 0 0 14px rgba(59,130,246,0); }
+    }
+
+    /* WhatsApp bounce */
+    .wa-btn {
+      animation: waBounce 3s ease-in-out infinite;
+    }
+    @keyframes waBounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    /* Gradient text */
+    .gradient-text {
+      background: linear-gradient(90deg, #3B82F6, #60a5fa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* Section divider */
+    .wave-divider {
+      overflow: hidden;
+      line-height: 0;
+    }
+
+    /* Trust chip */
+    .trust-chip {
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .trust-chip:hover {
+      transform: scale(1.05);
+      box-shadow: 0 8px 24px rgba(30,58,138,0.15);
+    }
+
+    /* Review card */
+    .review-card {
+      width: 320px;
+      flex-shrink: 0;
+    }
+
+    /* Sticky header */
+    .sticky-header {
+      backdrop-filter: blur(12px);
+      background: rgba(15,32,86,0.92);
+    }
+
+    /* Footer gradient */
+    .footer-gradient {
+      background: linear-gradient(135deg, #0d1f52, #1E3A8A);
+    }
+  </style>
+</head>
+
+<body class="bg-gray-50 text-gray-800 overflow-x-hidden">
+
+  <!-- ═══════════════════════════════ STICKY HEADER ═══════════════════════════════ -->
+  <header class="sticky-header fixed top-0 w-full z-50 shadow-lg">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-secondary flex items-center justify-center shadow">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <span class="text-white font-bold text-lg leading-tight">אירו סול</span>
+      </div>
+      <nav class="hidden md:flex gap-6 text-sm text-blue-200">
+        <a href="#services" class="hover:text-white transition">שירותים</a>
+        <a href="#reviews" class="hover:text-white transition">ביקורות</a>
+        <a href="#about" class="hover:text-white transition">אודות</a>
+        <a href="#contact" class="hover:text-white transition">צור קשר</a>
+      </nav>
+      <a href="tel:035444102" class="bg-secondary hover:bg-blue-500 text-white text-sm font-semibold px-4 py-2 rounded-full transition shadow">
+        📞 03-544-4102
+      </a>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════ HERO ═══════════════════════════════ -->
+  <section class="hero-gradient relative min-h-screen flex items-center pt-20 overflow-hidden">
+    <!-- Particles -->
+    <div class="particle w-48 h-48 top-10 right-10 animation-delay-0"></div>
+    <div class="particle w-32 h-32 bottom-20 left-20" style="animation-delay:2s;width:120px;height:120px;"></div>
+    <div class="particle w-20 h-20 top-1/2 left-1/3" style="animation-delay:4s;width:80px;height:80px;"></div>
+    <div class="particle top-1/3 right-1/4" style="animation-delay:1s;width:60px;height:60px;"></div>
+
+    <!-- Grid pattern overlay -->
+    <div class="absolute inset-0 opacity-5" style="background-image: linear-gradient(rgba(255,255,255,.3) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.3) 1px, transparent 1px); background-size: 40px 40px;"></div>
+
+    <div class="relative z-10 max-w-6xl mx-auto px-4 py-24 text-center">
+      <!-- Badge -->
+      <div class="inline-flex items-center gap-2 bg-white/10 backdrop-blur border border-white/20 rounded-full px-5 py-2 mb-8 text-blue-200 text-sm font-medium">
+        <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+        מוביל בתעשיית התעופה הישראלית
+      </div>
+
+      <h1 class="text-4xl md:text-6xl lg:text-7xl font-black text-white leading-tight mb-6">
+        המרכיבים התעופתיים<br/>
+        <span class="gradient-text">שהופכים כל טיסה</span><br/>
+        לבטוחה ואמינה
+      </h1>
+      <p class="text-xl md:text-2xl text-blue-200 max-w-2xl mx-auto mb-10 font-light">
+        החומרים האיכותיים שלנו מבטיחים יציבות ושקט נפשי בכל גובה
+      </p>
+
+      <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+        <a href="tel:035444102"
+           class="btn-pulse bg-secondary hover:bg-blue-500 text-white font-bold text-lg px-10 py-4 rounded-2xl shadow-2xl transition-all duration-300 hover:scale-105 flex items-center gap-3">
+          📞 צרו קשר עכשיו
+        </a>
+        <a href="https://wa.me/035444102" target="_blank" rel="noopener noreferrer"
+           class="bg-green-500 hover:bg-green-600 text-white font-bold text-lg px-10 py-4 rounded-2xl shadow-2xl transition-all duration-300 hover:scale-105 flex items-center gap-3">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          WhatsApp
+        </a>
+      </div>
+
+      <!-- Scroll indicator -->
+      <div class="mt-16 flex flex-col items-center gap-2 text-blue-300 text-sm animate-bounce">
+        <span>גלול למטה</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 9l-7 7-7-7"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Wave bottom -->
+    <div class="wave-divider absolute bottom-0 w-full">
+      <svg viewBox="0 0 1440 80" xmlns="http://www.w3.org/2000/svg">
+        <path fill="#f0f4ff" d="M0,40 C360,80 1080,0 1440,40 L1440,80 L0,80 Z"/>
+      </svg>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════ TRUST BADGES ═══════════════════════════════ -->
+  <section class="bg-blue-50 py-12 px-4">
+    <div class="max-w-5xl mx-auto">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="trust-chip bg-white rounded-2xl p-5 text-center shadow-md border border-blue-100">
+          <div class="text-3xl mb-2">⚡</div>
+          <div class="font-bold text-primary text-sm">מענה מהיר</div>
+          <div class="text-gray-500 text-xs mt-1">תגובה תוך שעות</div>
+        </div>
+        <div class="trust-chip bg-white rounded-2xl p-5 text-center shadow-md border border-blue-100">
+          <div class="text-3xl mb-2">🛡️</div>
+          <div class="font-bold text-primary text-sm">אמינות מוכחת</div>
+          <div class="text-gray-500 text-xs mt-1">תקני תעופה בינ"ל</div>
+        </div>
+        <div class="trust-chip bg-white rounded-2xl p-5 text-center shadow-md border border-blue-100">
+          <div class="text-3xl mb-2">💎</div>
+          <div class="font-bold text-primary text-sm">איכות ללא פשרות</div>
+          <div class="text-gray-500 text-xs mt-1">בדיקות קפדניות</div>
+        </div>
+        <div class="trust-chip bg-white rounded-2xl p-5 text-center shadow-md border border-blue-100">
+          <div class="text-3xl mb-2">💼</div>
+          <div class="font-bold text-primary text-sm">מחיר הוגן</div>
+          <div class="text-gray-500 text-xs mt-1">שקיפות מלאה</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════ SERVICES ═══════════════════════════════ -->
+  <section id="services" class="py-20 px-4 bg-white">
+    <div class="max-w-6xl mx-auto">
+      <div class="text-center mb-14 reveal">
+        <span class="text-secondary font-semibold text-sm uppercase tracking-widest">מה אנחנו מציעים</span>
+        <h2 class="text-4xl font-black text-primary mt-2 mb-4">השירותים שלנו</h2>
+        <p class="text-gray-500 text-lg max-w-xl mx-auto">פתרונות תעופתיים מקצועיים המותאמים לצרכים שלכם</p>
+        <div class="w-16 h-1 bg-secondary rounded-full mx-auto mt-4"></div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        <!-- Card 1 -->
+        <div class="service-card bg-gradient-to-br from-blue-50 to-white rounded-2xl p-7 border border-blue-100 shadow-sm reveal">
+          <div class="w-14 h-14 bg-primary rounded-xl flex items-center justify-center mb-5 shadow-md">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-primary mb-3">ייצור חומרים מורכבים לתעופה</h3>
+          <p class="text-gray-600 text-sm leading-relaxed">ייצור מתקדם של חומרים קומפוזיטיים עמידים ואמינים לתעשיית התעופה, בסטנדרטים הגבוהים ביותר.</p>
+          <div class="mt-4 flex items-center gap-2 text-secondary text-sm font-medium">
+            <span>✓</span><span>עמידות גבוהה</span>
+            <span>✓</span><span>משקל קל</span>
+          </div>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="service-card bg-gradient-to-br from-blue-50 to-white rounded-2xl p-7 border border-blue-100 shadow-sm reveal">
+          <div class="w-14 h-14 bg-secondary rounded-xl flex items-center justify-center mb-5 shadow-md">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-primary mb-3">בדיקות איכות מתקדמות</h3>
+          <p class="text-gray-600 text-sm leading-relaxed">מערכות בדיקה ובקרת איכות מהמתקדמות בתעשייה, המבטיחות כי כל מוצר עומד בתקנים הגבוהים ביותר.</p>
+          <div class="mt-4 flex items-center gap-2 text-secondary text-sm font-medium">
+            <span>✓</span><span>תקן FAA</span>
+            <span>✓</span><span>אישורי EASA</span>
+          </div>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="service-card bg-gradient-to-br from-blue-50 to-white rounded-2xl p-7 border border-blue-100 shadow-sm reveal">
+          <div class="w-14 h-14 bg-primary rounded-xl flex items-center justify-center mb-5 shadow-md">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-primary mb-3">התאמה אישית לצרכים ייחודיים</h3>
+          <p class="text-gray-600 text-sm leading-relaxed">פיתוח ועיצוב פתרונות מותאמים אישית עבור פרויקטים מיוחדים, כולל חומרים בספציפיקציות ייחודיות.</p>
+          <div class="mt-4 flex items-center gap-2 text-secondary text-sm font-medium">
+            <span>✓</span><span>עיצוב ייעודי</span>
+            <span>✓</span><span>גמישות מלאה</span>
+          </div>
+        </div>
+
+        <!-- Card 4 -->
+        <div class="service-card bg-gradient-to-br from-blue-50 to-white rounded-2xl p-7 border border-blue-100 shadow-sm reveal">
+          <div class="w-14 h-14 bg-secondary rounded-xl flex items-center justify-center mb-5 shadow-md">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-primary mb-3">שירות לקוחות מקצועי ותומך</h3>
+          <p class="text-gray-600 text-sm leading-relaxed">צוות מומחים זמין לליווי מלא מהייעוץ הראשוני ועד למסירה הסופית, עם תמיכה טכנית שוטפת.</p>
+          <div class="mt-4 flex items-center gap-2 text-secondary text-sm font-medium">
+            <span>✓</span><span>ליווי מלא</span>
+            <span>✓</span><span>תמיכה שוטפת</span>
+          </div>
+        </div>
+
+        <!-- Card 5 -->
+        <div class="service-card bg-gradient-to-br from-blue-50 to-white rounded-2xl p-7 border border-blue-100 shadow-sm reveal">
+          <div class="w-14 h-14 bg-primary rounded-xl flex items-center justify-center mb-5 shadow-md">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+              <circle cx="12" cy="12" r="2"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-primary mb-3">חדשנות ופתרונות בהתאמה אישית</h3>
+          <p class="text-gray-600 text-sm leading-relaxed">מחקר ופיתוח מתמיד לשיפור חומרים ותהליכים, תוך שמירה על חזית הטכנולוגיה בתעשיית התעופה.</p>
+          <div class="mt-4 flex items-center gap-2 text-secondary text-sm font-medium">
+            <span>✓</span><span>R&D מתקדם</span>
+            <span>✓</span><span>פטנטים רשומים</span>
+          </div>
+        </div>
+
+        <!-- Card 6 -->
+        <div class="service-card bg-gradient-to-br from-blue-50 to-white rounded-2xl p-7 border border-blue-100 shadow-sm reveal">
+          <div class="w-14 h-14 bg-secondary rounded-xl flex items-center justify-center mb-5 shadow-md">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+              <path d="M5 12h14"/><path d="M12 5l7 7-7 7"/><rect x="2" y="3" width="4" height="18" rx="1"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-primary mb-3">אספקה מהירה ויעילה</h3>
+          <p class="text-gray-600 text-sm leading-relaxed">מערכת לוגיסטית מתקדמת המבטיחה אספקה בזמן לכל יעד, עם מעקב בזמן אמת ותיאום מלא.</p>
+          <div class="mt-4 flex items-center gap-2 text-secondary text-sm font-medium">
+            <span>✓</span><span>משלוח מהיר</span>
+            <span>✓</span><span>מעקב GPS</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════ REVIEWS CAROUSEL ═══════════════════════════════ -->
+  <section id="reviews" class="py-20 px-4 bg-blue-50">
+    <div class="max-w-6xl mx-auto">
+      <div class="text-center mb-10 reveal">
+        <span class="text-secondary font-semibold text-sm uppercase tracking-widest">מה אומרים עלינו</span>
+        <h2 class="text-4xl font-black text-primary mt-2 mb-4">ביקורות לקוחות</h2>
+        <div class="w-16 h-1 bg-secondary rounded-full mx-auto mt-4"></div>
+
+        <!-- Google Rating Badge -->
+        <div class="inline-flex items-center gap-3 bg-white rounded-2xl px-6 py-3 shadow-md mt-6 border border-yellow-100">
+          <div class="flex text-yellow-400 text-xl">★★★★★</div>
+          <div class="text-gray-700 font-bold text-lg">4.7 / 5</div>
+          <div class="text-gray-400 text-sm">— 18 ביקורות ב-Google</div>
+        </div>
+      </div>
+
+      <div class="carousel-wrapper py-4">
+        <div class="carousel-track">
+          <!-- Original cards -->
+          <div class="review-card bg-white rounded-2xl p-7 shadow-lg border border-blue-50">
+            <div class="flex text-yellow-400 text-xl mb-3">★★★★★</div>
+            <p class="text-gray-700 leading-relaxed mb-5 text-sm">"שירות טוב מאוד, החומרים שקיבלנו עמדו בכל הציפיות ויותר. מקצועיות ברמה גבוהה!"</p>
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold">מ</div>
+              <div>
+                <div class="font-semibold text-primary">מיכאל</div>
+                <div class="text-gray-400 text-xs">לקוח מאומת</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="review-card bg-white rounded-2xl p-7 shadow-lg border border-blue-50">
+            <div class="flex text-yellow-400 text-xl mb-3">★★★★★</div>
+            <p class="text-gray-700 leading-relaxed mb-5 text-sm">"חברה מקצועית ביותר. האספקה הגיעה בזמן, החומרים באיכות מעולה. ממליץ בחום!"</p>
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 bg-secondary rounded-full flex items-center justify-center text-white font-bold">ד</div>
+              <div>
+                <div class="font-semibold text-primary">דוד כ
+</html>

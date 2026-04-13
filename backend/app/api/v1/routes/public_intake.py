@@ -9,14 +9,16 @@ import secrets
 import uuid
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, UploadFile, File
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.models.public_intake import PublicIntake
+from app.services.common.rate_limit_service import RateLimitService
 
 router = APIRouter(prefix='/public', tags=['public-intake'])
+_rate_svc = RateLimitService()
 
 # Where uploaded images are stored (relative to backend root)
 UPLOAD_DIR = Path(__file__).resolve().parent.parent.parent.parent / 'static_sites' / 'uploads' / 'intake'
@@ -25,6 +27,13 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 MAX_IMAGE_SIZE = 5 * 1024 * 1024  # 5 MB
 ALLOWED_EXTS = {'.jpg', '.jpeg', '.png', '.webp', '.gif'}
 MAX_CORRECTIONS = 3
+
+# ── Demo submission rate limits ─────────────────────────────────────────────
+# Prevents token burning and abuse from sitenest.site public intake form.
+_DEMO_IP_MAX       = 3    # max 3 submissions per IP per 24 h
+_DEMO_IP_WINDOW    = 1440 # 24 hours in minutes
+_DEMO_PHONE_MAX    = 2    # same phone can only submit 2 demos total (all-time: use very long window)
+_DEMO_PHONE_WINDOW = 43200  # 30 days in minutes
 
 
 # ── Response schemas ────────────────────────────────────────────────────────
@@ -88,6 +97,7 @@ def _build_status_response(intake: PublicIntake) -> IntakeStatusResponse:
 # ── POST /public/intake ─────────────────────────────────────────────────────
 @router.post('/intake', response_model=IntakeSubmitResponse)
 async def submit_intake(
+    request: Request,
     business_name: str = Form(..., max_length=255),
     phone: str = Form(..., max_length=32),
     facebook_url: str | None = Form(default=None),
@@ -103,6 +113,41 @@ async def submit_intake(
         raise HTTPException(status_code=400, detail='Phone number is required')
     if not business_name.strip():
         raise HTTPException(status_code=400, detail='Business name is required')
+
+    # ── Rate limiting: IP-based (3 per 24h) ──────────────────────────────────
+    client_ip = (request.headers.get('X-Forwarded-For') or '').split(',')[0].strip() \
+                or (request.client.host if request.client else 'unknown')
+    ip_allowed, ip_count, ip_max = _rate_svc.check_and_record(
+        db,
+        scope='public_intake',
+        key=client_ip,
+        action='submit',
+        window_minutes=_DEMO_IP_WINDOW,
+        max_per_window=_DEMO_IP_MAX,
+        detail=f'ip={client_ip}',
+    )
+    if not ip_allowed:
+        raise HTTPException(
+            status_code=429,
+            detail=f'הגעת למגבלת ההגשות ({ip_max} פניות ב-24 שעות). נסה שוב מחר.',
+        )
+
+    # ── Rate limiting: phone-based (2 per 30 days) ────────────────────────────
+    phone_clean = re.sub(r'\D', '', phone.strip())
+    phone_allowed, phone_count, phone_max = _rate_svc.check_and_record(
+        db,
+        scope='public_intake_phone',
+        key=phone_clean,
+        action='submit',
+        window_minutes=_DEMO_PHONE_WINDOW,
+        max_per_window=_DEMO_PHONE_MAX,
+        detail=f'phone={phone_clean}',
+    )
+    if not phone_allowed:
+        raise HTTPException(
+            status_code=429,
+            detail='מספר הטלפון הזה כבר הגיש בקשה. צור קשר ישירות אם יש בעיה.',
+        )
 
     # Save uploaded images
     saved_filenames: list[str] = []

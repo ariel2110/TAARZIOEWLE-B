@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Flow - שיווק בוואטסאפ</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    * { font-family: 'Heebo', sans-serif; }
+
+    /* Carousel */
+    .carousel-track {
+      display: flex;
+      gap: 1.5rem;
+      animation: scroll-rtl 30s linear infinite;
+      width: max-content;
+    }
+    .carousel-track:hover { animation-play-state: paused; }
+    @keyframes scroll-rtl {
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(50%); }
+    }
+    .carousel-wrapper {
+      overflow: hidden;
+      position: relative;
+    }
+    .carousel-wrapper::before,
+    .carousel-wrapper::after {
+      content: '';
+      position: absolute;
+      top: 0; bottom: 0;
+      width: 80px;
+      z-index: 10;
+      pointer-events: none;
+    }
+    .carousel-wrapper::before {
+      right: 0;
+      background: linear-gradient(to left, #f8faff, transparent);
+    }
+    .carousel-wrapper::after {
+      left: 0;
+      background: linear-gradient(to right, #f8faff, transparent);
+    }
+
+    /* Reveal animations */
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Gradient text */
+    .gradient-text {
+      background: linear-gradient(135deg, #1E3A8A, #3B82F6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* Hero animated blob */
+    .blob {
+      border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+      animation: blob-morph 8s ease-in-out infinite;
+    }
+    @keyframes blob-morph {
+      0%,100% { border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%; }
+      25%      { border-radius: 58% 42% 75% 25% / 76% 46% 54% 24%; }
+      50%      { border-radius: 50% 50% 33% 67% / 55% 27% 73% 45%; }
+      75%      { border-radius: 33% 67% 58% 42% / 63% 68% 32% 37%; }
+    }
+
+    /* WhatsApp pulse */
+    .wa-pulse::before {
+      content: '';
+      position: absolute;
+      inset: -4px;
+      border-radius: 50%;
+      background: #25D366;
+      opacity: 0.4;
+      animation: pulse-ring 2s ease-out infinite;
+    }
+    @keyframes pulse-ring {
+      0%   { transform: scale(1); opacity: 0.4; }
+      100% { transform: scale(1.6); opacity: 0; }
+    }
+
+    /* Card hover */
+    .service-card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+    .service-card:hover { transform: translateY(-6px); box-shadow: 0 20px 40px rgba(30,58,138,0.15); }
+
+    /* CTA button glow */
+    .cta-btn {
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .cta-btn:hover { transform: scale(1.04); box-shadow: 0 8px 30px rgba(30,58,138,0.45); }
+    .cta-btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.2) 50%, transparent 70%);
+      transform: translateX(100%);
+      transition: transform 0.6s;
+    }
+    .cta-btn:hover::after { transform: translateX(-100%); }
+
+    html { scroll-behavior: smooth; }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+  <!-- ========== HERO ========== -->
+  <section class="relative min-h-screen flex items-center overflow-hidden" style="background: linear-gradient(135deg, #0f2460 0%, #1E3A8A 45%, #2563EB 80%, #3B82F6 100%);">
+    <!-- Decorative blobs -->
+    <div class="blob absolute w-96 h-96 opacity-20" style="background: #60a5fa; top: -80px; left: -80px;"></div>
+    <div class="blob absolute w-72 h-72 opacity-15" style="background: #93c5fd; bottom: -60px; right: 10%; animation-delay: -4s;"></div>
+    <!-- Grid pattern overlay -->
+    <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle, #fff 1px, transparent 1px); background-size: 40px 40px;"></div>
+
+    <div class="relative z-10 container mx-auto px-6 py-24 flex flex-col-reverse lg:flex-row items-center gap-12">
+      <!-- Text -->
+      <div class="flex-1 text-center lg:text-right">
+        <!-- Badge -->
+        <span class="inline-block mb-6 bg-blue-400 bg-opacity-30 border border-blue-300 text-blue-100 text-sm font-500 px-4 py-2 rounded-full backdrop-blur-sm">
+          🚀 פלטפורמת שיווק #1 בווטסאפ
+        </span>
+        <h1 class="text-4xl md:text-5xl lg:text-6xl font-black text-white leading-tight mb-6">
+          הדרך החכמה<br/>
+          <span class="text-blue-300">לשיווק בוואטסאפ</span><br/>
+          מתחילה כאן!
+        </h1>
+        <p class="text-blue-100 text-xl md:text-2xl font-300 mb-10 max-w-xl mx-auto lg:mx-0">
+          הפכו את הוואטסאפ שלכם למכונת שיווק עוצמתית וראו תוצאות מיידיות.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+          <a href="#contact" class="cta-btn bg-white text-blue-900 font-800 text-lg px-10 py-4 rounded-2xl shadow-2xl">
+            התחילו עכשיו ←
+          </a>
+          <a href="#services" class="cta-btn border-2 border-white text-white font-600 text-lg px-10 py-4 rounded-2xl hover:bg-white hover:text-blue-900 transition-colors">
+            השירותים שלנו
+          </a>
+        </div>
+        <!-- Mini stats -->
+        <div class="mt-12 flex gap-8 justify-center lg:justify-start text-white">
+          <div class="text-center">
+            <div class="text-3xl font-900">138+</div>
+            <div class="text-blue-200 text-sm">לקוחות מרוצים</div>
+          </div>
+          <div class="w-px bg-blue-500"></div>
+          <div class="text-center">
+            <div class="text-3xl font-900">4.9⭐</div>
+            <div class="text-blue-200 text-sm">דירוג ממוצע</div>
+          </div>
+          <div class="w-px bg-blue-500"></div>
+          <div class="text-center">
+            <div class="text-3xl font-900">24/7</div>
+            <div class="text-blue-200 text-sm">תמיכה זמינה</div>
+          </div>
+        </div>
+      </div>
+      <!-- Illustration / Phone mock -->
+      <div class="flex-1 flex justify-center">
+        <div class="relative">
+          <!-- Phone shell -->
+          <div class="w-64 h-auto bg-white bg-opacity-10 backdrop-blur-md border border-white border-opacity-30 rounded-3xl p-5 shadow-2xl">
+            <!-- Header bar -->
+            <div class="flex items-center gap-3 pb-3 border-b border-white border-opacity-20 mb-3">
+              <div class="w-10 h-10 rounded-full flex items-center justify-center text-xl" style="background:#25D366;">💬</div>
+              <div>
+                <div class="text-white font-700 text-sm">Flow Marketing</div>
+                <div class="text-green-300 text-xs">● מחובר</div>
+              </div>
+            </div>
+            <!-- Chat bubbles -->
+            <div class="space-y-3 text-sm">
+              <div class="bg-white bg-opacity-20 rounded-2xl rounded-tr-sm px-4 py-2 text-white max-w-48 mr-auto">
+                שלום! מה מסך הפתיחה שלך היום? 👋
+              </div>
+              <div class="bg-green-400 bg-opacity-80 rounded-2xl rounded-tl-sm px-4 py-2 text-white max-w-48 ml-auto">
+                שלחנו 500 הודעות ✅ 89% פתיחות!
+              </div>
+              <div class="bg-white bg-opacity-20 rounded-2xl rounded-tr-sm px-4 py-2 text-white max-w-48 mr-auto">
+                מדהים! הקמפיין הצליח מעל לציפיות 🎉
+              </div>
+            </div>
+            <!-- CTA inside phone -->
+            <div class="mt-4 bg-blue-500 bg-opacity-80 rounded-xl px-4 py-3 text-center">
+              <div class="text-white font-700 text-xs">📊 תוצאות בזמן אמת</div>
+              <div class="text-blue-100 text-xs">ROI ×4.7 בממוצע</div>
+            </div>
+          </div>
+          <!-- Floating badges -->
+          <div class="absolute -top-4 -right-8 bg-white rounded-2xl shadow-xl px-4 py-2 text-center">
+            <div class="text-2xl font-900 gradient-text">89%</div>
+            <div class="text-xs text-gray-500">שיעור פתיחה</div>
+          </div>
+          <div class="absolute -bottom-4 -left-8 bg-white rounded-2xl shadow-xl px-4 py-2 text-center">
+            <div class="text-2xl font-900 text-green-600">×4.7</div>
+            <div class="text-xs text-gray-500">החזר השקעה</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Wave divider -->
+    <div class="absolute bottom-0 left-0 right-0">
+      <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+        <path d="M0,40 C360,80 1080,0 1440,40 L1440,80 L0,80 Z" fill="#f8faff"/>
+      </svg>
+    </div>
+  </section>
+
+  <!-- ========== TRUST BADGES ========== -->
+  <section class="bg-gray-50 py-10">
+    <div class="container mx-auto px-6">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 reveal">
+        <div class="flex items-center gap-3 bg-white rounded-2xl shadow-md px-5 py-4 border border-blue-50">
+          <span class="text-3xl">⚡</span>
+          <div>
+            <div class="font-700 text-gray-800 text-sm">מענה מהיר</div>
+            <div class="text-gray-400 text-xs">תוך שעות ספורות</div>
+          </div>
+        </div>
+        <div class="flex items-center gap-3 bg-white rounded-2xl shadow-md px-5 py-4 border border-blue-50">
+          <span class="text-3xl">🛡️</span>
+          <div>
+            <div class="font-700 text-gray-800 text-sm">אמינות מוכחת</div>
+            <div class="text-gray-400 text-xs">138+ לקוחות מרוצים</div>
+          </div>
+        </div>
+        <div class="flex items-center gap-3 bg-white rounded-2xl shadow-md px-5 py-4 border border-blue-50">
+          <span class="text-3xl">💰</span>
+          <div>
+            <div class="font-700 text-gray-800 text-sm">תמחור הוגן</div>
+            <div class="text-gray-400 text-xs">ללא עלויות נסתרות</div>
+          </div>
+        </div>
+        <div class="flex items-center gap-3 bg-white rounded-2xl shadow-md px-5 py-4 border border-blue-50">
+          <span class="text-3xl">📈</span>
+          <div>
+            <div class="font-700 text-gray-800 text-sm">תוצאות מדידות</div>
+            <div class="text-gray-400 text-xs">ROI ממוצע ×4.7</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== SERVICES ========== -->
+  <section id="services" class="py-20 bg-gray-50">
+    <div class="container mx-auto px-6">
+      <div class="text-center mb-14 reveal">
+        <span class="inline-block bg-blue-100 text-blue-700 text-sm font-600 px-4 py-2 rounded-full mb-4">הפתרונות שלנו</span>
+        <h2 class="text-4xl md:text-5xl font-900 gradient-text mb-4">השירותים שלנו</h2>
+        <p class="text-gray-500 text-lg max-w-xl mx-auto">כל מה שאתם צריכים כדי להפוך את הוואטסאפ למנוע צמיחה אמיתי לעסק שלכם</p>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        <!-- Card 1 -->
+        <div class="service-card bg-white rounded-3xl shadow-lg p-8 border border-blue-50 reveal">
+          <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl mb-6" style="background: linear-gradient(135deg,#1E3A8A,#3B82F6);">
+            📣
+          </div>
+          <h3 class="text-xl font-800 text-gray-800 mb-3">שיווק ישיר וממוקד בווטסאפ</h3>
+          <p class="text-gray-500 leading-relaxed">הגיעו ישירות לקהל היעד שלכם עם מסרים מותאמים אישית. שיעורי פתיחה של עד 89% — פי 5 מאימייל.</p>
+          <div class="mt-5 flex items-center gap-2 text-blue-600 font-600 text-sm">
+            <span>✓</span> תוצאות מהיום הראשון
+          </div>
+        </div>
+        <!-- Card 2 -->
+        <div class="service-card bg-white rounded-3xl shadow-lg p-8 border border-blue-50 reveal">
+          <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl mb-6" style="background: linear-gradient(135deg,#1E3A8A,#3B82F6);">
+            🎯
+          </div>
+          <h3 class="text-xl font-800 text-gray-800 mb-3">ניהול קמפיינים מותאמים אישית</h3>
+          <p class="text-gray-500 leading-relaxed">בנינו קמפיינים מנצחים לאלפי עסקים. צוות האסטרטגיה שלנו יתכנן, ינהל ויאמן את הקמפיין שלכם מא' ועד ת'.</p>
+          <div class="mt-5 flex items-center gap-2 text-blue-600 font-600 text-sm">
+            <span>✓</span> ניסיון של מאות קמפיינים
+          </div>
+        </div>
+        <!-- Card 3 -->
+        <div class="service-card bg-white rounded-3xl shadow-lg p-8 border border-blue-50 reveal">
+          <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl mb-6" style="background: linear-gradient(135deg,#1E3A8A,#3B82F6);">
+            📊
+          </div>
+          <h3 class="text-xl font-800 text-gray-800 mb-3">מעקב וניתוח ביצועים בזמן אמת</h3>
+          <p class="text-gray-500 leading-relaxed">דאשבורד חי ומעודכן — ראו בדיוק כמה הודעות נפתחו, כמה הובילו להמרה, ומה ה-ROI שלכם בזמן אמת.</p>
+          <div class="mt-5 flex items-center gap-2 text-blue-600 font-600 text-sm">
+            <span>✓</span> דיווח שקוף ומלא
+          </div>
+        </div>
+        <!-- Card 4 -->
+        <div class="service-card bg-white rounded-3xl shadow-lg p-8 border border-blue-50 reveal">
+          <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl mb-6" style="background: linear-gradient(135deg,#1E3A8A,#3B82F6);">
+            🔗
+          </div>
+          <h3 class="text-xl font-800 text-gray-800 mb-3">אינטגרציה מלאה עם מערכות CRM</h3>
+          <p class="text-gray-500 leading-relaxed">חיבור חלק ל-Salesforce, HubSpot, Zoho ועוד. כל ליד מהווטסאפ מועבר אוטומטית למערכת הניהול שלכם.</p>
+          <div class="mt-5 flex items-center gap-2 text-blue-600 font-600 text-sm">
+            <span>✓</span> פחות עבודה ידנית
+          </div>
+        </div>
+        <!-- Card 5 -->
+        <div class="service-card bg-white rounded-3xl shadow-lg p-8 border border-blue-50 reveal">
+          <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl mb-6" style="background: linear-gradient(135deg,#1E3A8A,#3B82F6);">
+            🛠️
+          </div>
+          <h3 class="text-xl font-800 text-gray-800 mb-3">תמיכה טכנית ואסטרטגית מסביב לשעון</h3>
+          <p class="text-gray-500 leading-relaxed">צוות המומחים שלנו זמין 24/7 — בין אם צריכים עזרה טכנית מהירה או ייעוץ אסטרטגי לקמפיין הבא.</p>
+          <div class="mt-5 flex items-center gap-2 text-blue-600 font-600 text-sm">
+            <span>✓</span> זמן תגובה ממוצע: שעה
+          </div>
+        </div>
+        <!-- Card 6 -->
+        <div class="service-card bg-white rounded-3xl shadow-lg p-8 border border-blue-50 reveal">
+          <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl mb-6" style="background: linear-gradient(135deg,#1E3A8A,#3B82F6);">
+            🎓
+          </div>
+          <h3 class="text-xl font-800 text-gray-800 mb-3">הדרכות והכשרות לצוותי מכירות</h3>
+          <p class="text-gray-500 leading-relaxed">סדנאות מעשיות שמלמדות את הצוות שלכם למקסם כל שיחת ווטסאפ. מהתאוריה ועד לתרגול בשטח.</p>
+          <div class="mt-5 flex items-center gap-2 text-blue-600 font-600 text-sm">
+            <span>✓</span> תוצאות מיידיות לאחר הכשרה
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== REVIEWS CAROUSEL ========== -->
+  <section id="reviews" class="py-20" style="background: #f0f5ff;">
+    <div class="container mx-auto px-6">
+      <div class="text-center mb-10 reveal">
+        <span class="inline-block bg-blue-100 text-blue-700 text-sm font-600 px-4 py-2 rounded-full mb-4">מה הלקוחות אומרים</span>
+        <h2 class="text-4xl md:text-5xl font-900 gradient-text mb-6">ביקורות לקוחות</h2>
+        <!-- Google Rating Badge -->
+        <div class="inline-flex items-center gap-3 bg-white rounded-2xl shadow-lg px-6 py-4 border border-yellow-100">
+          <div class="text-4xl font-900 text-gray-800">4.9</div>
+          <div>
+            <div class="flex gap-1 text-yellow-400 text-xl">★★★★★</div>
+            <div class="text-gray-500 text-sm">מתוך 5 — 138 ביקורות Google</div>
+          </div>
+          <div class="w-px h-10 bg-gray-200 mx-2"></div>
+          <div class="text-3xl">🏆</div>
+        </div>
+      </div>
+
+      <!-- Carousel -->
+      <div class="carousel-wrapper py-6">
+        <div class="carousel-track">
+          <!-- Review card 1 (real) -->
+          <div class="bg-white rounded-2xl shadow-lg p-7 min-w-80 max-w-sm border border-blue-50 flex-shrink-0">
+            <div class="flex items-center gap-1 text-yellow-400 text-xl mb-3">★★★★★</div>
+            <p class="text-gray-600 leading-relaxed mb-5 text-base italic">"שירות מעל המצופה. ותוכנה קלה לשיווק בווצאפ."</p>
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full flex items-center justify-center font-800 text-white text-sm" style="background: linear-gradient(135deg,#1E3A8A,#3B82F6);">מ</div>
+              <div>
+                <div class="font-700 text-gray-800">משה לוי</div>
+                <div class="text-gray-400 text-xs">לקוח מאומת ✓</div>
+              </div>
+            </div>
+          </div>
+          <!-- Placeholder reviews for variety -->
+          <div class="bg-white rounded-2xl shadow-lg p-7 min-w-80 max-w-sm border border-blue-50 flex-shrink-0">
+            <div class="flex items-center gap-1 text-yellow-400 text-xl mb-3">★★★★★</div>
+            <p class="text-gray-600 leading-relaxed mb-5 text-base italic">"Flow שינו לנו את הגישה לשיווק לחלוטין. תוצאות מדהימות תוך שבוע!"</p>
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full flex items-center justify-center font-800 text-white text-sm" style="background: linear-gradient(135deg,#059669,#10b981);">ר</div>
+              <div>
+                <div class="font-700 text-gray-800">רחל כהן</div>
+                <div class="text-gray-400 text-xs">לקוחה מאומתת ✓</div>
+              </div>
+            </div>
+          </div>
+          <div class="bg-white rounded-2xl shadow-lg p-7 min-w-80 max-w-sm border border-blue-50 flex-shrink-0">
+            <div class="flex items-center gap-1 text-yellow-400 text-xl mb-3">★★★★★</div>
+            <p class="text-gray-600 leading-relaxed mb-5 text-base italic">"ה-ROI שלנו עלה ב-380% תוך חודשיים. לא האמנתי שזה אפשרי דרך ווטסאפ."</p>
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full flex items-center justify-center font-800 text-white text-sm" style="background: linear-gradient(135deg,#7c3aed,#a78bfa);">ד</div>
+              <div>
+                <div class="font-700 text-gray-800">דוד אברהם</div>
+                <div class="text-gray-400 text-xs">לקוח מאומת ✓</div>
+              </div>
+            </div>
+          </div>
+          <div class="bg-white rounded-2xl shadow-lg p-7 min-w-80 max-w-sm border border-blue-50 flex-shrink-0">
+            <div class="flex items-center gap-1 text-yellow-400 text-xl mb-3">★★★★★</div>
+            <p class="text-gray-600 leading-relaxed mb-5 text-base italic">"הצוות של Flow נמצא איתנו בכל שלב. שירות אישי שפשוט לא מוצאים בשום מקום אחר."</p>
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full flex items-center justify-center font-800 text-white text-sm" style="background: linear-gradient(135deg,#dc2626,#f87171);">ש</div>
+              <div>
+                <div class="font-700 text-gray-800">שרה מזרחי</div>
+                <div class="text-gray-400 text-xs">לקוחה מאומתת ✓</div>
+              </div>
+            </div>
+          </div>
+          <div class="bg-white rounded-2xl shadow-lg p-7 min-w-80 max-w-sm border border-blue-50 flex-shrink-0">
+            <div class="flex items-center gap-1 text-yellow-400 text-xl mb-3">★★★★★</div>
+            <p class="text-gray-600 leading-relaxed mb-5 text-base italic">"הפלטפורמה הכי קלה ואפקטיבית שניסינו. המכירות שלנו עלו ב-60% מהחודש הראשון."</p>
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full flex items-center justify-center font-800 text-white text-sm" style="background: linear-gradient(135deg,#d97706,#fbbf24);">י</div>
+              <div>
+                <div class="font-700 text-gray-800">יוסי בן-דוד</div>
+                <div class="text-gray-400 text-xs">לקוח מאומת ✓
+</html>

@@ -1,0 +1,88 @@
+# Evolution API v1.8.7 — WhatsApp Gateway for SiteNest
+# STANDALONE compose — independent from docker-compose.yml
+# Run:  docker compose -f docker-compose.evolution.yml up -d
+# Stop: docker compose -f docker-compose.evolution.yml down
+#
+# v1.8.7 is the newest release (2025-06-02) and uses file-based storage (no DB needed).
+# Port: host:8181 -> container:8080 (host 8080 is already taken)
+
+services:
+
+  evolution-redis:
+    image: redis:7-alpine
+    container_name: sitenest-evolution-redis
+    restart: unless-stopped
+    command: redis-server --save "" --loglevel warning
+    mem_limit: 64m
+    memswap_limit: 64m
+    networks:
+      - evolution_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  evolution-api:
+    image: atendai/evolution-api:v1.8.7
+    container_name: sitenest-evolution
+    restart: unless-stopped
+    depends_on:
+      evolution-redis:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8181:8080"
+    environment:
+      DOCKER_ENV: "true"
+
+      SERVER_TYPE: "http"
+      SERVER_PORT: "8080"
+      SERVER_URL: "https://evolution.sitenest.site"
+      SERVER_DISABLE_MANAGER: "false"
+      SERVER_DISABLE_DOCS: "true"
+
+      CORS_ORIGIN: "*"
+      CORS_METHODS: "POST,GET,PUT,DELETE"
+      CORS_CREDENTIALS: "true"
+
+      AUTHENTICATION_TYPE: "apikey"
+      AUTHENTICATION_API_KEY: "${EVOLUTION_API_KEY}"
+      AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES: "true"
+
+      # File-based storage — no database needed
+      STORE_MESSAGES: "false"
+      STORE_CONTACTS: "true"
+      STORE_CHATS: "true"
+
+      # Dedicated Redis
+      CACHE_REDIS_ENABLED: "true"
+      CACHE_REDIS_URI: "redis://evolution-redis:6379"
+      CACHE_REDIS_PREFIX_KEY: "evolution"
+      CACHE_REDIS_SAVE_INSTANCES: "true"
+
+      DEL_INSTANCE: "false"
+      QRCODE_LIMIT: "30"
+
+      LOG_LEVEL: "ERROR,WARN,INFO,LOG,DARK"
+      LOG_COLOR: "true"
+      LOG_BAILEYS: "error"
+
+    volumes:
+      - ./evolution_data:/evolution/instances
+
+    networks:
+      - evolution_net
+
+    mem_limit: 600m
+    memswap_limit: 600m
+
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+networks:
+  evolution_net:
+    driver: bridge

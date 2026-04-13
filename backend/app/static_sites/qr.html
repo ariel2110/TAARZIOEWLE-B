@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SiteNest — חיבור WhatsApp</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #0d1117;
+    color: #e6edf3;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .card {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 16px;
+    padding: 40px 32px;
+    max-width: 420px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  .logo { font-size: 28px; font-weight: 700; color: #58a6ff; margin-bottom: 6px; }
+  .subtitle { color: #8b949e; font-size: 14px; margin-bottom: 28px; }
+  .qr-wrap {
+    background: #fff;
+    border-radius: 12px;
+    padding: 16px;
+    display: inline-block;
+    margin-bottom: 20px;
+    position: relative;
+  }
+  .qr-img { display: block; width: 220px; height: 220px; }
+  .fade { opacity: 0.4; transition: opacity 0.3s; }
+  .status-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .dot {
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: #3fb950;
+    animation: pulse 2s infinite;
+  }
+  .dot.waiting { background: #d29922; }
+  .dot.expired { background: #f85149; animation: none; }
+  @keyframes pulse {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  .status-text { font-size: 14px; color: #8b949e; }
+  .timer {
+    font-size: 12px;
+    color: #6e7681;
+    margin-bottom: 20px;
+  }
+  .timer span { color: #d29922; font-weight: 600; }
+  .pairing {
+    background: #1f2937;
+    border: 1px solid #374151;
+    border-radius: 8px;
+    padding: 10px 16px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    color: #9ca3af;
+  }
+  .pairing code {
+    display: block;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    color: #58a6ff;
+    margin-top: 4px;
+    font-family: monospace;
+  }
+  .steps { text-align: right; font-size: 13px; color: #8b949e; line-height: 1.9; }
+  .steps strong { color: #e6edf3; }
+  hr { border: none; border-top: 1px solid #21262d; margin: 20px 0; }
+  .refresh-btn {
+    background: #238636;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 24px;
+    font-size: 14px;
+    cursor: pointer;
+    margin-top: 4px;
+  }
+  .refresh-btn:hover { background: #2ea043; }
+  .connected {
+    display: none;
+    background: #1b2d1b;
+    border: 1px solid #3fb950;
+    border-radius: 12px;
+    padding: 24px;
+    text-align: center;
+  }
+  .connected .check { font-size: 48px; margin-bottom: 8px; }
+  .connected h2 { color: #3fb950; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">SiteNest</div>
+  <div class="subtitle">חיבור WhatsApp Business</div>
+
+  <div id="qr-section">
+    <div class="qr-wrap">
+      <img id="qr-img" class="qr-img" src="/static/qr_sitenest.png" alt="QR Code">
+    </div>
+    <div class="status-row">
+      <div id="status-dot" class="dot waiting"></div>
+      <span id="status-text" class="status-text">ממתין לסריקה...</span>
+    </div>
+    <div class="timer">QR מתחדש בעוד <span id="countdown">30</span> שניות</div>
+
+    <div class="pairing">
+      קוד זיווג חלופי (Pairing Code)
+      <code id="pairing-code">---</code>
+    </div>
+
+    <hr>
+
+    <div class="steps">
+      <strong>איך מחברים:</strong><br>
+      ① פתח WhatsApp בטלפון<br>
+      ② ⚙️ הגדרות → מכשירים מקושרים<br>
+      ③ לחץ "קשר מכשיר"<br>
+      ④ סרוק את הקוד שלמעלה
+    </div>
+
+    <button class="refresh-btn" onclick="fetchQR()">🔄 רענן QR עכשיו</button>
+  </div>
+
+  <div class="connected" id="connected-section">
+    <div class="check">✅</div>
+    <h2>WhatsApp מחובר!</h2>
+    <p style="color:#8b949e;margin-top:8px;">SiteNest יכול עכשיו לשלוח הודעות</p>
+  </div>
+</div>
+
+<script>
+const API = 'http://127.0.0.1:8181';
+const APIKEY = 'RnTc0S2Nb8MAG3Iio_Bqj-sbS-lToqkY8oAQLm8-Fkw';
+const INSTANCE = 'sitenest';
+let timerVal = 30;
+let timerInterval;
+
+async function fetchQR() {
+  const img = document.getElementById('qr-img');
+  img.classList.add('fade');
+
+  try {
+    const r = await fetch('/api/v1/internal/whatsapp-qr', {cache: 'no-store'});
+    if (!r.ok) throw new Error('fetch failed');
+    const d = await r.json();
+
+    if (d.connected) {
+      document.getElementById('qr-section').style.display = 'none';
+      document.getElementById('connected-section').style.display = 'block';
+      clearInterval(timerInterval);
+      return;
+    }
+
+    if (d.base64) {
+      img.src = d.base64;
+    } else {
+      // fallback to cached PNG with cache-bust
+      img.src = '/static/qr_sitenest.png?t=' + Date.now();
+    }
+    if (d.code) {
+      document.getElementById('pairing-code').textContent = formatCode(d.code);
+    }
+    document.getElementById('status-dot').className = 'dot waiting';
+    document.getElementById('status-text').textContent = 'ממתין לסריקה...';
+    resetTimer();
+  } catch(e) {
+    img.src = '/static/qr_sitenest.png?t=' + Date.now();
+  }
+  img.classList.remove('fade');
+}
+
+async function checkStatus() {
+  try {
+    const r = await fetch('/api/v1/internal/whatsapp-status', {cache: 'no-store'});
+    if (!r.ok) return;
+    const d = await r.json();
+    if (d.status === 'open' || d.status === 'connected') {
+      document.getElementById('qr-section').style.display = 'none';
+      document.getElementById('connected-section').style.display = 'block';
+      clearInterval(timerInterval);
+    }
+  } catch(e) {}
+}
+
+function formatCode(code) {
+  // Format as XXXX-XXXX or as-is
+  if (code && code.length >= 8) {
+    return code.slice(0,4).toUpperCase() + '-' + code.slice(4,8).toUpperCase();
+  }
+  return code || '---';
+}
+
+function resetTimer() {
+  timerVal = 30;
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    timerVal--;
+    document.getElementById('countdown').textContent = timerVal;
+    if (timerVal <= 0) {
+      fetchQR();
+      checkStatus();
+    }
+  }, 1000);
+}
+
+// Initial load
+fetchQR();
+checkStatus();
+// Also check status every 5 seconds
+setInterval(checkStatus, 5000);
+</script>
+</body>
+</html>

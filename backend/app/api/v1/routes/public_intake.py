@@ -1,28 +1,40 @@
 """
 Public intake form endpoint — serves sitenest.site landing page form.
 Allows potential customers to submit their business info, social links, and images.
+
+VIP flow: POST /public/google-vip  →  exchange Google ID token for a short-lived VIP JWT
+          The VIP JWT is then sent as vip_token= in the intake form to bypass rate limiting.
 """
 import json
+import logging
 import os
 import re
 import secrets
 import uuid
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request, UploadFile, File
+import httpx
+from fastapi import APIRouter, BackgroundTasks, Depends, Form, HTTPException, Request, UploadFile, File
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
+from app.core.security import create_vip_token, verify_vip_token
 from app.db.session import get_db
 from app.models.public_intake import PublicIntake
 from app.services.common.rate_limit_service import RateLimitService
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix='/public', tags=['public-intake'])
 _rate_svc = RateLimitService()
 
 # Where uploaded images are stored (relative to backend root)
 UPLOAD_DIR = Path(__file__).resolve().parent.parent.parent.parent / 'static_sites' / 'uploads' / 'intake'
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+# Where AI-generated intake previews are saved
+PREVIEW_DIR = Path(__file__).resolve().parent.parent.parent.parent / 'static_sites' / 'intake_previews'
+PREVIEW_DIR.mkdir(parents=True, exist_ok=True)
 
 MAX_IMAGE_SIZE = 5 * 1024 * 1024  # 5 MB
 ALLOWED_EXTS = {'.jpg', '.jpeg', '.png', '.webp', '.gif'}
@@ -43,6 +55,11 @@ class IntakeSubmitResponse(BaseModel):
     message: str
 
 
+class VipTokenResponse(BaseModel):
+    vip_token: str
+    expires_in_minutes: int
+
+
 class IntakeStatusResponse(BaseModel):
     token: str
     business_name: str
@@ -58,6 +75,8 @@ class IntakeStatusResponse(BaseModel):
     corrections_remaining: int
     admin_note: str | None
     created_at: str | None
+    ai_status: str | None
+    generated_preview_url: str | None
 
 
 # ── Helper ──────────────────────────────────────────────────────────────────
@@ -91,13 +110,146 @@ def _build_status_response(intake: PublicIntake) -> IntakeStatusResponse:
         corrections_remaining=max(0, MAX_CORRECTIONS - intake.correction_count),
         admin_note=intake.admin_note,
         created_at=intake.created_at.isoformat() if intake.created_at else None,
+        ai_status=intake.ai_status,
+        generated_preview_url=intake.generated_preview_url,
     )
+
+
+# ── POST /public/google-vip ─────────────────────────────────────────────────
+class GoogleVipRequest(BaseModel):
+    id_token: str  # Google ID token from Sign-In button
+
+
+@router.post('/google-vip', response_model=VipTokenResponse)
+async def google_vip_login(payload: GoogleVipRequest) -> VipTokenResponse:
+    """Exchange a Google ID token for a short-lived VIP intake token.
+    VIP users bypass per-IP and per-phone rate limiting on the intake form.
+    """
+    if not settings.google_client_id:
+        raise HTTPException(status_code=503, detail='Google Sign-In is not configured on this server.')
+
+    # Verify the Google ID token with Google's tokeninfo endpoint
+    try:
+        resp = httpx.get(
+            'https://oauth2.googleapis.com/tokeninfo',
+            params={'id_token': payload.id_token},
+            timeout=8,
+        )
+        resp.raise_for_status()
+        token_info = resp.json()
+    except Exception:
+        raise HTTPException(status_code=401, detail='Failed to verify Google token. Please try again.')
+
+    # Validate audience matches our client ID
+    if token_info.get('aud') != settings.google_client_id:
+        raise HTTPException(status_code=401, detail='Google token audience mismatch.')
+
+    google_sub = token_info.get('sub', '')
+    email = token_info.get('email', '')
+
+    if not google_sub:
+        raise HTTPException(status_code=401, detail='Invalid Google token — no subject claim.')
+
+    vip_token = create_vip_token(google_sub=google_sub, email=email)
+    return VipTokenResponse(
+        vip_token=vip_token,
+        expires_in_minutes=settings.google_vip_token_expire_minutes,
+    )
+
+
+# ── Background task: run AI pipeline for public intake ──────────────────────
+def _run_intake_pipeline(token: str) -> None:
+    """Background task that runs the full 5-stage AutoSite pipeline on a public intake.
+    Saves the generated HTML as a preview, auto-sends WhatsApp outreach if Evolution API
+    is configured, and updates intake status to 'in_review' when done.
+    """
+    from app.services.generator.autosite_pipeline_service import AutoSitePipelineService
+    from app.services.communications.evolution_whatsapp_service import EvolutionWhatsAppService
+
+    db = None
+    try:
+        db = __import__('app.db.session', fromlist=['SessionLocal']).SessionLocal()
+        intake: PublicIntake | None = db.query(PublicIntake).filter(PublicIntake.token == token).first()
+        if not intake:
+            return
+
+        intake.ai_status = 'generating'
+        db.commit()
+
+        # Build a pseudo-Google Maps input from intake form data
+        lines = [
+            f"Name: {intake.business_name}",
+            f"Phone: {intake.phone}",
+        ]
+        if intake.facebook_url:
+            lines.append(f"Facebook: {intake.facebook_url}")
+        if intake.instagram_url:
+            lines.append(f"Instagram: {intake.instagram_url}")
+        if intake.tiktok_url:
+            lines.append(f"TikTok: {intake.tiktok_url}")
+        if intake.website_url:
+            lines.append(f"Website: {intake.website_url}")
+        if intake.description:
+            lines.append(f"Description: {intake.description}")
+
+        enrichment = {
+            'name': intake.business_name,
+            'phone': intake.phone,
+            'website_url': intake.website_url or '',
+            'facebook_url': intake.facebook_url or '',
+            'instagram_url': intake.instagram_url or '',
+            'tiktok_url': intake.tiktok_url or '',
+        }
+
+        result = AutoSitePipelineService().run('\n'.join(lines), enrichment=enrichment)
+        if not result or not result.html or len(result.html) < 500:
+            intake.ai_status = 'failed'
+            db.commit()
+            logger.warning("[IntakePipeline] Pipeline returned no HTML for token=%s", token[:8])
+            return
+
+        # Save HTML preview to filesystem
+        safe_slug = token[:16]
+        html_file = PREVIEW_DIR / f'intake_{safe_slug}.html'
+        html_file.write_text(result.html, encoding='utf-8')
+
+        intake.generated_preview_url = f'/static/intake_previews/intake_{safe_slug}.html'
+        intake.generated_html = result.html
+        intake.ai_status = 'done'
+        intake.status = 'in_review'
+        db.commit()
+
+        logger.info(
+            "[IntakePipeline] Done for token=%s — preview=%s",
+            token[:8], intake.generated_preview_url,
+        )
+
+        # Auto-send WhatsApp outreach via Evolution API (if configured)
+        if result.outreach_message and intake.phone:
+            demo_link = f"{settings.api_base_url}{intake.generated_preview_url}"
+            message = result.outreach_message.replace('[DEMO_LINK]', demo_link)
+            EvolutionWhatsAppService().send_text(intake.phone, message)
+
+    except Exception:
+        logger.exception("[IntakePipeline] Unhandled error for token=%s", token[:8] if token else '?')
+        if db:
+            try:
+                intake = db.query(PublicIntake).filter(PublicIntake.token == token).first()
+                if intake:
+                    intake.ai_status = 'failed'
+                    db.commit()
+            except Exception:
+                pass
+    finally:
+        if db:
+            db.close()
 
 
 # ── POST /public/intake ─────────────────────────────────────────────────────
 @router.post('/intake', response_model=IntakeSubmitResponse)
 async def submit_intake(
     request: Request,
+    background_tasks: BackgroundTasks,
     business_name: str = Form(..., max_length=255),
     phone: str = Form(..., max_length=32),
     facebook_url: str | None = Form(default=None),
@@ -106,6 +258,7 @@ async def submit_intake(
     website_url: str | None = Form(default=None),
     description: str | None = Form(default=None, max_length=1000),
     images: list[UploadFile] = File(default=[]),
+    vip_token: str | None = Form(default=None),   # Google VIP token bypasses rate limits
     db: Session = Depends(get_db),
 ) -> IntakeSubmitResponse:
     # Basic validation
@@ -114,40 +267,49 @@ async def submit_intake(
     if not business_name.strip():
         raise HTTPException(status_code=400, detail='Business name is required')
 
-    # ── Rate limiting: IP-based (3 per 24h) ──────────────────────────────────
-    client_ip = (request.headers.get('X-Forwarded-For') or '').split(',')[0].strip() \
-                or (request.client.host if request.client else 'unknown')
-    ip_allowed, ip_count, ip_max = _rate_svc.check_and_record(
-        db,
-        scope='public_intake',
-        key=client_ip,
-        action='submit',
-        window_minutes=_DEMO_IP_WINDOW,
-        max_per_window=_DEMO_IP_MAX,
-        detail=f'ip={client_ip}',
-    )
-    if not ip_allowed:
-        raise HTTPException(
-            status_code=429,
-            detail=f'הגעת למגבלת ההגשות ({ip_max} פניות ב-24 שעות). נסה שוב מחר.',
-        )
+    # ── VIP bypass: Google-authenticated users skip rate limiting ────────────
+    is_vip = False
+    if vip_token:
+        vip_payload = verify_vip_token(vip_token)
+        if vip_payload:
+            is_vip = True
+            logger.info("[Intake] VIP submission from %s", vip_payload.get('email', 'unknown')[:30])
 
-    # ── Rate limiting: phone-based (2 per 30 days) ────────────────────────────
-    phone_clean = re.sub(r'\D', '', phone.strip())
-    phone_allowed, phone_count, phone_max = _rate_svc.check_and_record(
-        db,
-        scope='public_intake_phone',
-        key=phone_clean,
-        action='submit',
-        window_minutes=_DEMO_PHONE_WINDOW,
-        max_per_window=_DEMO_PHONE_MAX,
-        detail=f'phone={phone_clean}',
-    )
-    if not phone_allowed:
-        raise HTTPException(
-            status_code=429,
-            detail='מספר הטלפון הזה כבר הגיש בקשה. צור קשר ישירות אם יש בעיה.',
+    if not is_vip:
+        # ── Rate limiting: IP-based (3 per 24h) ────────────────────────────
+        client_ip = (request.headers.get('X-Forwarded-For') or '').split(',')[0].strip() \
+                    or (request.client.host if request.client else 'unknown')
+        ip_allowed, ip_count, ip_max = _rate_svc.check_and_record(
+            db,
+            scope='public_intake',
+            key=client_ip,
+            action='submit',
+            window_minutes=_DEMO_IP_WINDOW,
+            max_per_window=_DEMO_IP_MAX,
+            detail=f'ip={client_ip}',
         )
+        if not ip_allowed:
+            raise HTTPException(
+                status_code=429,
+                detail=f'הגעת למגבלת ההגשות ({ip_max} פניות ב-24 שעות). נסה שוב מחר.',
+            )
+
+        # ── Rate limiting: phone-based (2 per 30 days) ────────────────────
+        phone_clean = re.sub(r'\D', '', phone.strip())
+        phone_allowed, phone_count, phone_max = _rate_svc.check_and_record(
+            db,
+            scope='public_intake_phone',
+            key=phone_clean,
+            action='submit',
+            window_minutes=_DEMO_PHONE_WINDOW,
+            max_per_window=_DEMO_PHONE_MAX,
+            detail=f'phone={phone_clean}',
+        )
+        if not phone_allowed:
+            raise HTTPException(
+                status_code=429,
+                detail='מספר הטלפון הזה כבר הגיש בקשה. צור קשר ישירות אם יש בעיה.',
+            )
 
     # Save uploaded images
     saved_filenames: list[str] = []
@@ -181,6 +343,13 @@ async def submit_intake(
     db.add(intake)
     db.commit()
     db.refresh(intake)
+
+    # ── Trigger AI pipeline in background ────────────────────────────────────
+    # Runs the full 5-stage AutoSite pipeline asynchronously.
+    # Result is saved to intake.generated_preview_url when done.
+    intake.ai_status = 'pending'
+    db.commit()
+    background_tasks.add_task(_run_intake_pipeline, intake.token)
 
     return IntakeSubmitResponse(
         token=token,

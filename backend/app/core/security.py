@@ -49,3 +49,32 @@ def verify_password(password: str, password_hash: str) -> bool:
 def needs_rehash(password_hash: str) -> bool:
     """Return True if the hash is legacy SHA-256 and should be upgraded to bcrypt."""
     return _is_legacy_hash(password_hash)
+
+
+# ── VIP intake tokens (Google-authenticated users bypass rate limiting) ───────
+
+def create_vip_token(google_sub: str, email: str = "") -> str:
+    """Create a short-lived VIP JWT for a Google Sign-In user.
+    Valid for `google_vip_token_expire_minutes` (default 60 min).
+    """
+    expires_at = datetime.now(timezone.utc) + timedelta(minutes=settings.google_vip_token_expire_minutes)
+    payload = {
+        'sub': google_sub,
+        'email': email,
+        'role': 'vip_intake',
+        'exp': expires_at,
+    }
+    return jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
+
+
+def verify_vip_token(token: str) -> dict | None:
+    """Decode and validate a VIP intake token.
+    Returns the JWT payload dict on success, or None if invalid/expired.
+    """
+    try:
+        payload = jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
+        if payload.get('role') != 'vip_intake':
+            return None
+        return payload
+    except Exception:
+        return None

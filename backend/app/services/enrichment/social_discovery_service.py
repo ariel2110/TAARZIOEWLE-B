@@ -54,6 +54,9 @@ class SocialProfile:
     legacy_text_snippets: list[str] = field(default_factory=list)
     tone_hint: str = ""                 # 'young_creative' | 'formal' | 'casual' — inferred from social
     sources: list[str] = field(default_factory=list)
+    # Apify-fetched social media content
+    instagram_media_urls: list[str] = field(default_factory=list)   # up to 3 recent IG images
+    tiktok_media_urls: list[str] = field(default_factory=list)      # up to 3 recent TikTok covers
 
 
 # ── Main service class ─────────────────────────────────────────────────────────
@@ -105,6 +108,10 @@ class SocialDiscoveryService:
 
             # 6. Infer tone from social presence
             self._infer_tone(profile)
+
+            # 7. Apify: fetch last 3 media items from verified IG/TikTok profiles
+            if settings.apify_api_token and (profile.instagram_url or profile.tiktok_url):
+                self._fetch_apify_media(profile)
 
         except Exception:
             logger.exception("[SocialDiscovery] Unhandled error for %r", business_name)
@@ -372,6 +379,76 @@ class SocialDiscoveryService:
             profile.tone_hint = "casual"
         else:
             profile.tone_hint = "neutral"
+
+    # ── Apify: social media content fetching ─────────────────────────────────
+
+    def _fetch_apify_media(self, profile: SocialProfile) -> None:
+        """Fetch last 3 media URLs from verified Instagram / TikTok profiles via Apify.
+        Runs only when APIFY_API_TOKEN is set. Fails silently on any error.
+        """
+        try:
+            from apify_client import ApifyClient
+            client = ApifyClient(settings.apify_api_token)
+        except ImportError:
+            logger.debug("[SocialDiscovery] apify-client not installed — skipping media fetch")
+            return
+
+        # ── Instagram ─────────────────────────────────────────────────────────
+        if profile.instagram_url:
+            try:
+                username = profile.instagram_url.rstrip("/").split("/")[-1].lstrip("@").split("?")[0]
+                if username:
+                    run = client.actor("apify/instagram-scraper").call(
+                        run_input={
+                            "usernames": [username],
+                            "resultsType": "posts",
+                            "resultsLimit": 3,
+                        },
+                        timeout_secs=45,
+                        memory_mbytes=256,
+                    )
+                    items = list(client.dataset(run["defaultDatasetId"]).iterate_items())
+                    media = [
+                        item.get("displayUrl") or item.get("videoUrl")
+                        for item in items
+                        if item.get("displayUrl") or item.get("videoUrl")
+                    ]
+                    profile.instagram_media_urls = [u for u in media if u][:3]
+                    logger.info(
+                        "[SocialDiscovery] Apify IG: fetched %d media for @%s",
+                        len(profile.instagram_media_urls), username,
+                    )
+            except Exception as e:
+                logger.debug("[SocialDiscovery] Apify Instagram fetch failed: %s", e)
+
+        # ── TikTok ────────────────────────────────────────────────────────────
+        if profile.tiktok_url:
+            try:
+                username = profile.tiktok_url.rstrip("/").split("/")[-1].lstrip("@").split("?")[0]
+                if username:
+                    run = client.actor("clockworks/free-tiktok-scraper").call(
+                        run_input={
+                            "profiles": [f"@{username}"],
+                            "resultsPerPage": 3,
+                            "shouldDownloadVideos": False,
+                            "shouldDownloadCovers": True,
+                        },
+                        timeout_secs=60,
+                        memory_mbytes=256,
+                    )
+                    items = list(client.dataset(run["defaultDatasetId"]).iterate_items())
+                    media = [
+                        (item.get("videoMeta") or {}).get("coverUrl")
+                        or item.get("webVideoUrl")
+                        for item in items
+                    ]
+                    profile.tiktok_media_urls = [u for u in media if u][:3]
+                    logger.info(
+                        "[SocialDiscovery] Apify TikTok: fetched %d covers for @%s",
+                        len(profile.tiktok_media_urls), username,
+                    )
+            except Exception as e:
+                logger.debug("[SocialDiscovery] Apify TikTok fetch failed: %s", e)
 
     # ── Utilities ─────────────────────────────────────────────────────────────
 

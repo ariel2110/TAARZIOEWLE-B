@@ -85,6 +85,11 @@ CRITICAL RULES:
 2. DO NOT include any conversational text, greetings, or explanations before or after the JSON.
 3. ABSOLUTELY NO MARKDOWN. Do not wrap the output in ```json blocks. Start immediately with { and end with }.
 
+REVIEWS POLICY:
+- ONLY include reviews with 4 or 5 stars. Completely discard 1–3 star reviews.
+- NEVER include complaints, criticisms, or negative experiences.
+- If fewer than 2 positive reviews exist, generate 2 realistic 5-star placeholder reviews.
+
 REQUIRED JSON STRUCTURE:
 {
   "business_name": "<Exact business name>",
@@ -103,7 +108,7 @@ REQUIRED JSON STRUCTURE:
   "top_reviews": [
     {
       "reviewer_name": "<Name>",
-      "review_text": "<Short positive snippet in Hebrew>",
+      "review_text": "<Short POSITIVE snippet in Hebrew — 4+ stars only>",
       "stars": 5
     }
   ],
@@ -135,8 +140,8 @@ REQUIRED JSON STRUCTURE:
 }"""
 
 _CLAUDE_BUILDER_SYSTEM = """\
-You are a world-class elite Frontend UI/UX Developer.
-Generate a high-converting, fully responsive Hebrew landing page based on the provided JSON.
+You are a world-class elite Frontend UI/UX Developer and conversion specialist.
+Generate a high-converting, fully responsive, information-rich Hebrew landing page based on the provided JSON.
 
 CRITICAL TECHNICAL CONSTRAINTS:
 1. Output ONLY raw valid HTML. No explanations, no markdown wrappers.
@@ -146,38 +151,59 @@ DESIGN & ARCHITECTURE RULES:
 1. Use HTML5 and Tailwind CSS via CDN (<script src="https://cdn.tailwindcss.com"></script>).
 2. The page MUST be strictly RTL with dir="rtl" on the <html> tag (Hebrew content).
 3. Import Google Font 'Heebo' for Hebrew typography.
-4. PAGE SECTIONS ORDER: Hero → Trust badges → Services grid → Reviews Carousel → Why-us bullets → About → Contact CTA strip → Footer.
+4. PAGE SECTIONS ORDER:
+   Hero → Trust Badges → Services Grid → Reviews Carousel → Why-Us Bullets
+   → Media Gallery (if media_urls present) → FAQ Section → About → SiteNest Badge
+   → Contact CTA Strip → Footer
 5. REVIEWS CAROUSEL: CSS-only auto-scrolling horizontal carousel. Each card includes:
    - Star rating (★ icons in gold), reviewer name, review quote text.
    - White background, soft shadow (shadow-lg), rounded-2xl, padding.
-   - If top_reviews array is empty, show a single placeholder testimonial.
-6. Show a Google rating badge above the carousel (e.g. "⭐ 4.8 / 5 — 120 ביקורות").
+   - ONLY show reviews from top_reviews array that appear positive and constructive.
+   - NEVER display complaints, low-star ratings, or negative content.
+   - If top_reviews is empty, show 2 generic 5-star placeholder testimonials.
+6. Show a Google rating badge above the carousel (e.g. "⭐ 4.8 / 5 — 120 ביקורות") ONLY if rating > 0.
 7. UI Elements: soft gradients, subtle shadows, rounded corners, mobile-first responsive.
 8. Floating sticky WhatsApp button at bottom-left corner (green circle, WA icon).
 9. Apply design.json colors precisely — primary_color_hex as the dominant brand color.
-10. Hero section: large gradient background, prominent headline, CTA button.
-11. Add subtle reveal animations and tasteful hover effects for cards and buttons.
-12. Add trust chips such as fast response, reliability, and fair pricing.
-13. Services section should render at least 6 rich cards with icons and benefit text.
-14. Contact strip should be highly actionable: click-to-call, WhatsApp, and map link where available.
+10. Hero section: large gradient background, prominent headline, sub-headline, two CTA buttons (call + WhatsApp).
+11. Add CSS scroll-reveal animations (IntersectionObserver or CSS @keyframes) and hover effects for cards and buttons.
+12. Trust Badges section: 4 icon chips — "מענה מהיר", "אמינות מלאה", "מחיר הוגן", "ניסיון רב שנים".
+13. Services section: minimum 6 rich cards with relevant emoji icons, benefit-driven descriptions (not just labels).
+14. Why-Us section: 3–4 bullet points with large check icons on colored background strip.
+15. Contact strip: highly actionable — click-to-call (tel: link), WhatsApp deep-link, and map/address if available.
 
-SOCIAL ASSETS (render ONLY when the URLs are non-empty strings):
-15. SOCIAL BAR in Footer: if any of facebook_url / instagram_url / tiktok_url is present,
-    add a "עקבו אחרינו" row with icon-links. Use SVG inline icons (Facebook blue, Instagram
-    gradient, TikTok black). All links MUST have target="_blank" rel="noopener noreferrer".
-    Example structure:
-      <div class="flex gap-4 justify-center mt-4">
-        <!-- Only include each icon if the URL is non-empty -->
-        <a href="{facebook_url}" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><!-- fb svg --></a>
-        <a href="{instagram_url}" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><!-- ig svg --></a>
-        <a href="{tiktok_url}" target="_blank" rel="noopener noreferrer" aria-label="TikTok"><!-- tiktok svg --></a>
-      </div>
-16. TIKTOK EMBED: if tiktok_url is present, add a "הסרטונים שלנו" section BEFORE the footer
-    with a centered TikTok profile link button (styled pill button linking to tiktok_url).
-    Do NOT use <blockquote> embed — just a stylish CTA button to the TikTok page.
-17. OPENING HOURS: if easy_hours array is non-empty, render a שעות פעילות table inside the
-    Contact section listing each entry on its own row.
-18. TRANSFORMATION LINE: always add the following tagline above the footer copyright line:
+MEDIA GALLERY (rule 16):
+16. PHOTO/VIDEO GALLERY: if media_urls array is non-empty, render a "מהרשת החברתית שלנו" section
+    BEFORE the FAQ section. Display up to 6 images/thumbnails in a responsive 3-column grid
+    (2-col mobile). Each image: rounded-xl, object-cover, aspect-square, with subtle hover zoom.
+    Link each image to the corresponding instagram_url or tiktok_url. If media_urls is empty → skip section entirely.
+
+SOCIAL ASSETS (rule 17):
+17. SOCIAL BAR in Footer: if any of facebook_url / instagram_url / tiktok_url is present,
+    add a "עקבו אחרינו" row with SVG inline icons (Facebook blue, Instagram gradient, TikTok black).
+    All links MUST have target="_blank" rel="noopener noreferrer".
+
+TIKTOK / INSTAGRAM LINKS (rule 18):
+18. If tiktok_url is present, add a "הסרטונים שלנו 🎬" section BEFORE the footer
+    with a stylish pill CTA button linking to tiktok_url (black background, white text, TikTok logo).
+
+OPENING HOURS (rule 19):
+19. If easy_hours array is non-empty, render a "שעות פעילות" table inside the Contact section.
+
+FAQ SECTION (rule 20):
+20. FAQ: generate 4–5 realistic FAQ questions relevant to the business category.
+    Use an accordion (HTML <details>/<summary>) with smooth open/close CSS transition.
+    Style: clean white cards, bold question, muted answer text.
+    Example questions: pricing, service area, response time, booking process, experience.
+
+SITENEST RECOMMENDATION BADGE (rule 21):
+21. Add a "SiteNest מאמתת עסק זה ✅" badge section just ABOVE the contact strip.
+    Style: centered pill badge, primary color background, white text, checkmark icon.
+    Text: "העסק הזה אומת ונבדק על-ידי SiteNest — הפלטפורמה המובילה לאתרי עסקים בישראל"
+    Sub-text (smaller, muted): "האתר נבנה בטכנולוגיה מתקדמת ומותאם לחיפוש Google"
+
+TRANSFORMATION LINE (rule 22):
+22. Always add this tagline above the footer copyright line:
     "לקחנו את הידע המקצועי שלכם והפכנו אותו לחוויה מודרנית ומהירה ✨"
     Style it small, muted text."""
 
@@ -297,6 +323,8 @@ class AutoSitePipelineService:
                 "easy_services": profile.easy_services,
                 "legacy_text_snippets": profile.legacy_text_snippets,
                 "tone_hint": profile.tone_hint,
+                "instagram_media_urls": profile.instagram_media_urls,
+                "tiktok_media_urls": profile.tiktok_media_urls,
             }
             logger.info("[Stage 0] Social discovery complete — gap=%r confidence=%d",
                         profile.digital_gap_label, profile.social_confidence)
@@ -354,17 +382,19 @@ class AutoSitePipelineService:
                 logger.warning("[Stage 1a] No parseable JSON (response=%r)", (response or "")[:200])
                 return None
 
-            # parse top_reviews safely
+            # parse top_reviews safely — filter out negative reviews (< 4 stars)
             raw_reviews = data.get("top_reviews") or []
             top_reviews: list[dict] = []
             if isinstance(raw_reviews, list):
                 for r in raw_reviews:
                     if isinstance(r, dict):
-                        top_reviews.append({
-                            "reviewer_name": r.get("reviewer_name", ""),
-                            "review_text": r.get("review_text", ""),
-                            "stars": int(r.get("stars", 5)),
-                        })
+                        stars = int(r.get("stars", 5))
+                        if stars >= 4:   # ← only positive reviews on demo sites
+                            top_reviews.append({
+                                "reviewer_name": r.get("reviewer_name", ""),
+                                "review_text": r.get("review_text", ""),
+                                "stars": stars,
+                            })
 
             return ContentBundle(
                 business_name=data.get("business_name", ""),
@@ -442,6 +472,12 @@ class AutoSitePipelineService:
                 opening_hours = [opening_hours]
             social: dict = enrichment.get("_social") or {}
 
+            # Collect all media URLs from Apify (Instagram + TikTok thumbnails)
+            media_urls: list[str] = []
+            media_urls.extend(social.get("instagram_media_urls", []))
+            media_urls.extend(social.get("tiktok_media_urls", []))
+            media_urls = media_urls[:6]  # cap at 6 images in gallery
+
             content_json = json.dumps({
                 "business_name": content.business_name,
                 "industry_type": content.industry_type,
@@ -457,6 +493,7 @@ class AutoSitePipelineService:
                 "rating": rating,
                 "reviews_count": reviews_count,
                 "opening_hours": opening_hours[:7],
+                "media_urls": media_urls,             # ← Apify-fetched IG/TikTok images
                 # ── Social & digital assets (from Stage 0) ──────────────────
                 "social": {
                     "facebook_url": social.get("facebook_url", ""),

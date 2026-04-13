@@ -24,3 +24,9 @@ class PublicIntake(Base, TimestampMixin):
     correction_count: Mapped[int] = mapped_column(Integer, default=0)
     admin_note: Mapped[str | None] = mapped_column(Text, nullable=True)
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=False), nullable=True)
+
+    # AI generation tracking
+    ai_status: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    # 'pending' | 'generating' | 'done' | 'failed'
+    generated_preview_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    generated_html: Mapped[str | None] = mapped_column(Text, nullable=True)

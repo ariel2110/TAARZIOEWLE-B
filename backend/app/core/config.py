@@ -46,7 +46,16 @@ class Settings(BaseSettings):
 
     # Social & Web Discovery
     serper_api_key: str | None = Field(default=None)           # https://serper.dev — 2,500 free queries/mo
+    apify_api_token: str | None = Field(default=None)          # https://apify.com — social media scraping (IG/TikTok media)
     facebook_access_token: str | None = Field(default=None)    # Facebook Graph API token (optional)
+
+    # Evolution API (self-hosted WhatsApp gateway)
+    evolution_api_url: str | None = Field(default=None)        # e.g. http://localhost:8080
+    evolution_api_key: str | None = Field(default=None)        # Evolution API auth key
+    evolution_instance: str | None = Field(default=None)       # Evolution API instance name
+
+    # VIP intake — Google Sign-In bypass for rate limiting
+    google_vip_token_expire_minutes: int = Field(default=60)   # VIP token lifetime in minutes
 
     # LLM providers
     openai_api_key: str | None = Field(default=None)

@@ -53,6 +53,7 @@ class Settings(BaseSettings):
     evolution_api_url: str | None = Field(default=None)        # e.g. http://localhost:8080
     evolution_api_key: str | None = Field(default=None)        # Evolution API auth key
     evolution_instance: str | None = Field(default=None)       # Evolution API instance name
+    whatsapp_owner_phone: str = Field(default='')              # Admin phone for approval notifications
 
     # VIP intake — Google Sign-In bypass for rate limiting
     google_vip_token_expire_minutes: int = Field(default=60)   # VIP token lifetime in minutes

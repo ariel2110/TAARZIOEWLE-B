@@ -1,15 +1,16 @@
 """
-Internal WhatsApp QR / status endpoints.
+Internal WhatsApp QR / status / approval endpoints.
 Proxies Evolution API so the browser-based QR page can work without
-exposing the Evolution API key to the client.
+exposing the Evolution API key to the client. Also exposes admin
+approval endpoints for queued outreach messages.
 
-Accessible only from localhost (127.0.0.1) — enforced via nginx or
-trusted-host checks. No auth required because the page is served from
-the same origin and the routes are intentionally short-lived for setup.
+Approval routes require ?key=<ADMIN_DEV_TOKEN> query parameter.
 """
 import httpx
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter, Request, HTTPException, Query
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
+from typing import Optional
 
 from app.core.config import settings
 
@@ -70,3 +71,93 @@ async def get_whatsapp_status():
         status = data[0].get("connectionStatus", data[0].get("status", "close"))
         return JSONResponse({"status": status})
     return JSONResponse({"status": "unknown"})
+
+
+# ── WhatsApp Approval Queue ───────────────────────────────────────────────────
+
+class ApproveBody(BaseModel):
+    message: Optional[str] = None  # if provided, sends this edited text instead
+
+
+def _require_admin(key: str) -> None:
+    """Raise 403 if the provided key does not match the admin dev token."""
+    if key != settings.admin_dev_token:
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+
+@router.get("/pending-messages")
+async def pending_messages(key: str = Query(...)):
+    """Return all pending WhatsApp messages awaiting approval."""
+    _require_admin(key)
+    from app.db.session import SessionLocal
+    from app.models.public_intake import PublicIntake
+    db = SessionLocal()
+    try:
+        rows = (
+            db.query(PublicIntake)
+            .filter(PublicIntake.whatsapp_status == "pending")
+            .order_by(PublicIntake.id.desc())
+            .all()
+        )
+        return JSONResponse([
+            {
+                "token": r.token,
+                "business_name": r.business_name,
+                "phone": r.phone,
+                "message": r.whatsapp_pending_message,
+                "preview_url": r.generated_preview_url,
+                "created_at": r.created_at.isoformat() if r.created_at else None,
+            }
+            for r in rows
+        ])
+    finally:
+        db.close()
+
+
+@router.post("/approve-message/{token}")
+async def approve_message(token: str, body: ApproveBody = ApproveBody(), key: str = Query(...)):
+    """Approve (and optionally edit) a pending WhatsApp message and send it to the lead."""
+    _require_admin(key)
+    from app.db.session import SessionLocal
+    from app.models.public_intake import PublicIntake
+    from app.services.communications.evolution_whatsapp_service import EvolutionWhatsAppService
+    db = SessionLocal()
+    try:
+        intake = db.query(PublicIntake).filter(PublicIntake.token == token).first()
+        if not intake:
+            raise HTTPException(404, "Intake not found")
+        if intake.whatsapp_status != "pending":
+            raise HTTPException(400, f"Message is not pending (status: {intake.whatsapp_status})")
+
+        final_message = body.message if body.message and body.message.strip() else intake.whatsapp_pending_message
+        if not final_message:
+            raise HTTPException(400, "No message to send")
+
+        sent = EvolutionWhatsAppService().send_text(intake.phone, final_message)
+        if not sent:
+            raise HTTPException(502, "Failed to send via Evolution API")
+
+        intake.whatsapp_status = "sent"
+        intake.whatsapp_pending_message = final_message  # save what was actually sent
+        db.commit()
+        return JSONResponse({"ok": True, "sent_to": intake.phone})
+    finally:
+        db.close()
+
+
+@router.post("/reject-message/{token}")
+async def reject_message(token: str, key: str = Query(...)):
+    """Reject a pending WhatsApp message — will not be sent."""
+    _require_admin(key)
+    from app.db.session import SessionLocal
+    from app.models.public_intake import PublicIntake
+    db = SessionLocal()
+    try:
+        intake = db.query(PublicIntake).filter(PublicIntake.token == token).first()
+        if not intake:
+            raise HTTPException(404, "Intake not found")
+        intake.whatsapp_status = "rejected"
+        db.commit()
+        return JSONResponse({"ok": True, "rejected": token})
+    finally:
+        db.close()

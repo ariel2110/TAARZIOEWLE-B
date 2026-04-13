@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SiteNest — אישור הודעות WhatsApp</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 24px 16px;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    header h1 {
+      font-size: 1.6rem;
+      color: #25d366;
+      margin-bottom: 6px;
+    }
+    header p {
+      color: #94a3b8;
+      font-size: 0.9rem;
+    }
+    #status-bar {
+      text-align: center;
+      padding: 8px 16px;
+      border-radius: 8px;
+      margin-bottom: 24px;
+      font-size: 0.88rem;
+      display: none;
+    }
+    #status-bar.info  { background: #1e3a5f; color: #93c5fd; display: block; }
+    #status-bar.ok    { background: #14532d; color: #86efac; display: block; }
+    #status-bar.error { background: #7f1d1d; color: #fca5a5; display: block; }
+    #empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #64748b;
+      display: none;
+    }
+    #empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
+    .card {
+      background: #1e2130;
+      border: 1px solid #2d3348;
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 20px;
+      max-width: 700px;
+      margin-inline: auto;
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .card-header .lead-info h2 {
+      font-size: 1.1rem;
+      color: #f1f5f9;
+    }
+    .card-header .lead-info small {
+      color: #64748b;
+      font-size: 0.82rem;
+    }
+    .badge {
+      background: #fbbf24;
+      color: #1e1e1e;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 999px;
+    }
+    .badge.sent     { background: #22c55e; color: #fff; }
+    .badge.rejected { background: #ef4444; color: #fff; }
+    .preview-link {
+      color: #60a5fa;
+      font-size: 0.82rem;
+      text-decoration: none;
+      display: inline-block;
+      margin-bottom: 12px;
+    }
+    .preview-link:hover { text-decoration: underline; }
+    label {
+      display: block;
+      font-size: 0.82rem;
+      color: #94a3b8;
+      margin-bottom: 6px;
+    }
+    textarea {
+      width: 100%;
+      background: #111827;
+      border: 1px solid #374151;
+      border-radius: 8px;
+      color: #e2e8f0;
+      padding: 12px;
+      font-size: 0.88rem;
+      line-height: 1.6;
+      resize: vertical;
+      min-height: 120px;
+      font-family: inherit;
+      direction: auto;
+    }
+    textarea:focus {
+      outline: none;
+      border-color: #25d366;
+    }
+    .actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+    button {
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: none;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    button:hover { opacity: 0.85; }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-approve { background: #25d366; color: #fff; }
+    .btn-reject  { background: #374151; color: #e2e8f0; }
+    .btn-reject:hover { background: #ef4444; color: #fff; }
+    .spinner {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid #ffffff44;
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      vertical-align: middle;
+      margin-left: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #refresh-btn {
+      display: block;
+      margin: 0 auto 28px;
+      background: #1e2130;
+      border: 1px solid #374151;
+      color: #94a3b8;
+      font-size: 0.82rem;
+      padding: 7px 18px;
+      border-radius: 8px;
+    }
+    #refresh-btn:hover { border-color: #25d366; color: #25d366; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>📋 SiteNest — אישור הודעות WhatsApp</h1>
+    <p>הודעות שנוצרו על-ידי ה-AI ממתינות לאישורך לפני שליחה ללקוח</p>
+  </header>
+
+  <div id="status-bar"></div>
+  <button id="refresh-btn" onclick="loadMessages()">🔄 רענן</button>
+
+  <div id="cards-container"></div>
+  <div id="empty-state">
+    <div class="icon">✅</div>
+    <p>אין הודעות ממתינות לאישור</p>
+  </div>
+
+  <script>
+    const API = '/api/v1/internal';
+    const params = new URLSearchParams(location.search);
+    const KEY = params.get('key') || '';
+
+    if (!KEY) {
+      document.body.innerHTML = '<div style="text-align:center;padding:60px;color:#ef4444;font-size:1.2rem">⛔ חסר פרמטר <code>?key=</code></div>';
+    }
+
+    function showStatus(msg, type = 'info') {
+      const el = document.getElementById('status-bar');
+      el.textContent = msg;
+      el.className = type;
+      if (type !== 'error') setTimeout(() => { el.style.display = 'none'; }, 4000);
+    }
+
+    async function loadMessages() {
+      document.getElementById('refresh-btn').textContent = '⏳ טוען...';
+      try {
+        const res = await fetch(`${API}/pending-messages?key=${encodeURIComponent(KEY)}`);
+        if (res.status === 403) { showStatus('❌ מפתח שגוי', 'error'); return; }
+        const msgs = await res.json();
+        renderCards(msgs);
+      } catch (e) {
+        showStatus('שגיאת רשת: ' + e.message, 'error');
+      } finally {
+        document.getElementById('refresh-btn').textContent = '🔄 רענן';
+      }
+    }
+
+    function renderCards(msgs) {
+      const container = document.getElementById('cards-container');
+      const empty = document.getElementById('empty-state');
+      container.innerHTML = '';
+      if (!msgs.length) {
+        empty.style.display = 'block';
+        return;
+      }
+      empty.style.display = 'none';
+      msgs.forEach(m => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.id = `card-${m.token}`;
+        const previewLink = m.preview_url
+          ? `<a class="preview-link" href="${m.preview_url}" target="_blank">👁️ צפה בתצוגה מקדימה</a>`
+          : '';
+        card.innerHTML = `
+          <div class="card-header">
+            <div class="lead-info">
+              <h2>${esc(m.business_name)}</h2>
+              <small>📞 ${esc(m.phone)} · ${m.created_at ? new Date(m.created_at).toLocaleString('he-IL') : ''}</small>
+            </div>
+            <span class="badge">ממתין</span>
+          </div>
+          ${previewLink}
+          <label>✏️ ערוך את ההודעה לפני שליחה:</label>
+          <textarea id="msg-${m.token}">${esc(m.message || '')}</textarea>
+          <div class="actions">
+            <button class="btn-approve" onclick="approve('${m.token}')">✅ שלח ללקוח</button>
+            <button class="btn-reject" onclick="reject('${m.token}')">🗑️ דחה</button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    async function approve(token) {
+      const ta = document.getElementById(`msg-${token}`);
+      const editedMsg = ta.value.trim();
+      const card = document.getElementById(`card-${token}`);
+      const btns = card.querySelectorAll('button');
+      btns.forEach(b => b.disabled = true);
+      btns[0].innerHTML = 'שולח... <span class="spinner"></span>';
+
+      try {
+        const res = await fetch(`${API}/approve-message/${token}?key=${encodeURIComponent(KEY)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: editedMsg }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showStatus(`✅ ההודעה נשלחה ל-${data.sent_to}`, 'ok');
+          card.querySelector('.badge').textContent = 'נשלח';
+          card.querySelector('.badge').className = 'badge sent';
+          btns.forEach(b => { b.disabled = true; });
+          setTimeout(() => card.remove(), 2500);
+        } else {
+          showStatus('שגיאה: ' + (data.detail || 'לא ידוע'), 'error');
+          btns.forEach(b => b.disabled = false);
+          btns[0].textContent = '✅ שלח ללקוח';
+        }
+      } catch (e) {
+        showStatus('שגיאת רשת: ' + e.message, 'error');
+        btns.forEach(b => b.disabled = false);
+        btns[0].textContent = '✅ שלח ללקוח';
+      }
+    }
+
+    async function reject(token) {
+      if (!confirm('לדחות הודעה זו? לא תישלח ללקוח.')) return;
+      const card = document.getElementById(`card-${token}`);
+      const btns = card.querySelectorAll('button');
+      btns.forEach(b => b.disabled = true);
+
+      try {
+        const res = await fetch(`${API}/reject-message/${token}?key=${encodeURIComponent(KEY)}`, {
+          method: 'POST',
+        });
+        if (res.ok) {
+          showStatus('🗑️ ההודעה נדחתה', 'ok');
+          card.querySelector('.badge').textContent = 'נדחה';
+          card.querySelector('.badge').className = 'badge rejected';
+          setTimeout(() => card.remove(), 2000);
+        } else {
+          const data = await res.json();
+          showStatus('שגיאה: ' + (data.detail || 'לא ידוע'), 'error');
+          btns.forEach(b => b.disabled = false);
+        }
+      } catch (e) {
+        showStatus('שגיאת רשת: ' + e.message, 'error');
+        btns.forEach(b => b.disabled = false);
+      }
+    }
+
+    function esc(s) {
+      return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    loadMessages();
+  </script>
+</body>
+</html>

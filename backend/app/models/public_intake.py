@@ -30,3 +30,8 @@ class PublicIntake(Base, TimestampMixin):
     # 'pending' | 'generating' | 'done' | 'failed'
     generated_preview_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
     generated_html: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # WhatsApp approval queue
+    whatsapp_pending_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    whatsapp_status: Mapped[str] = mapped_column(String(20), default='none')
+    # 'none' | 'pending' | 'sent' | 'rejected'

@@ -157,6 +157,27 @@ async def google_vip_login(payload: GoogleVipRequest) -> VipTokenResponse:
     )
 
 
+# ── Admin approval notification helper ─────────────────────────────────────
+def _notify_admin_approval(token: str, business_name: str, phone: str, message: str) -> None:
+    """Send the admin a WhatsApp notification with a link to approve/edit/reject the message."""
+    from app.services.communications.evolution_whatsapp_service import EvolutionWhatsAppService
+    owner_phone = getattr(settings, 'whatsapp_owner_phone', '') or ''
+    if not owner_phone:
+        return
+    approve_url = f"{settings.api_base_url}/static/approve.html?key={settings.admin_dev_token}"
+    notification = (
+        f"📋 *SiteNest - הודעה ממתינה לאישורך*\n\n"
+        f"👤 לקוח: *{business_name}*\n"
+        f"📞 טלפון: {phone}\n\n"
+        f"✉️ *ההודעה המוצעת:*\n"
+        f"─────────────────\n"
+        f"{message}\n"
+        f"─────────────────\n\n"
+        f"🔗 לאישור / עריכה / דחייה:\n{approve_url}"
+    )
+    EvolutionWhatsAppService().send_text(owner_phone, notification)
+
+
 # ── Background task: run AI pipeline for public intake ──────────────────────
 def _run_intake_pipeline(token: str) -> None:
     """Background task that runs the full 5-stage AutoSite pipeline on a public intake.
@@ -224,11 +245,14 @@ def _run_intake_pipeline(token: str) -> None:
             token[:8], intake.generated_preview_url,
         )
 
-        # Auto-send WhatsApp outreach via Evolution API (if configured)
+        # Queue WhatsApp message for admin approval before sending to lead
         if result.outreach_message and intake.phone:
             demo_link = f"{settings.api_base_url}{intake.generated_preview_url}"
             message = result.outreach_message.replace('[DEMO_LINK]', demo_link)
-            EvolutionWhatsAppService().send_text(intake.phone, message)
+            intake.whatsapp_pending_message = message
+            intake.whatsapp_status = 'pending'
+            db.commit()
+            _notify_admin_approval(intake.token, intake.business_name, intake.phone, message)
 
     except Exception:
         logger.exception("[IntakePipeline] Unhandled error for token=%s", token[:8] if token else '?')

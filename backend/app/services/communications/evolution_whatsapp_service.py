@@ -51,7 +51,7 @@ class EvolutionWhatsAppService:
             f"{settings.evolution_api_url.rstrip('/')}"
             f"/message/sendText/{settings.evolution_instance}"
         )
-        payload = {"number": phone_jid, "text": message}
+        payload = {"number": phone_jid, "textMessage": {"text": message}}
         headers = {"apikey": settings.evolution_api_key, "Content-Type": "application/json"}
 
         try:
@@ -87,7 +87,7 @@ class EvolutionWhatsAppService:
         )
         payload = {
             "number": phone_jid,
-            "text": f"{message}\n\n{url}",
+            "textMessage": {"text": f"{message}\n\n{url}"},
             "linkPreview": True,
         }
         headers = {"apikey": settings.evolution_api_key, "Content-Type": "application/json"}

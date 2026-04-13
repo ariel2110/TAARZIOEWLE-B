@@ -17,6 +17,7 @@ import LoginPage from './pages/Login';
 import EnrichPage from './pages/Enrich';
 import DemosPage from './pages/Demos';
 import DemoSitePage from './pages/DemoSite';
+import WhatsAppPage from './pages/WhatsApp';
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem('admin_access_token');
@@ -47,6 +48,7 @@ export default function App() {
               <Route path="ceo" element={<CEOConsolePage />} />
               <Route path="feedback" element={<FeedbackPage />} />
               <Route path="security" element={<SecurityMonitoring />} />
+              <Route path="whatsapp" element={<WhatsAppPage />} />
             </Routes>
           </Shell>
         </RequireAuth>

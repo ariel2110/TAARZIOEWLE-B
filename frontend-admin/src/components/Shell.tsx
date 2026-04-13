@@ -45,6 +45,7 @@ const NAV_GROUPS: NavGroup[] = [
       { to: '/ceo', icon: '🧠', label: 'מרכז מנכ"ל', tip: 'תכנון אסטרטגי יומי + Grok AI מנכ"ל מציע מהלכים' },
       { to: '/feedback', icon: '💬', label: 'פידבק', tip: 'רישום פידבק פנימי — שיפורים, תובנות וניתוח AI' },
       { to: '/security', icon: '🛡️', label: 'אבטחה', tip: 'ניטור כניסות חשודות, חסימות ורשימת חשד' },
+      { to: '/whatsapp', icon: '📱', label: 'WhatsApp', tip: 'חיבור/ניתוק WhatsApp, QR, ואישור הודעות' },
     ],
   },
 ];

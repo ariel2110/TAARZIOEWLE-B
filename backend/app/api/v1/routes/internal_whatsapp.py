@@ -161,3 +161,50 @@ async def reject_message(token: str, key: str = Query(...)):
         return JSONResponse({"ok": True, "rejected": token})
     finally:
         db.close()
+
+
+# ── WhatsApp Connection Management ───────────────────────────────────────────
+
+@router.post("/whatsapp-disconnect")
+async def whatsapp_disconnect(key: str = Query(...)):
+    """Logout the WhatsApp session (disconnect from phone). Requires QR re-scan after."""
+    _require_admin(key)
+    if not EVOLUTION_KEY:
+        raise HTTPException(503, "Evolution API not configured")
+    async with httpx.AsyncClient(timeout=15) as client:
+        r = await client.delete(
+            f"{EVOLUTION_URL}/instance/logout/{EVOLUTION_INSTANCE}",
+            headers=_headers(),
+        )
+    if r.status_code in (200, 201):
+        return JSONResponse({"ok": True, "message": "Disconnected"})
+    data = r.json() if r.headers.get("content-type", "").startswith("application/json") else {}
+    msg = data.get("response", {}).get("message", ["Unknown error"])
+    # 400 "not connected" is still a valid "already disconnected" state
+    if r.status_code == 400 and "not connected" in str(msg).lower():
+        return JSONResponse({"ok": True, "message": "Already disconnected"})
+    raise HTTPException(r.status_code, detail=str(msg))
+
+
+@router.post("/whatsapp-reconnect")
+async def whatsapp_reconnect(key: str = Query(...)):
+    """Trigger a new QR code / pairing code so the instance can reconnect."""
+    _require_admin(key)
+    if not EVOLUTION_KEY:
+        raise HTTPException(503, "Evolution API not configured")
+    async with httpx.AsyncClient(timeout=15) as client:
+        r = await client.get(
+            f"{EVOLUTION_URL}/instance/connect/{EVOLUTION_INSTANCE}",
+            headers=_headers(),
+        )
+    if r.status_code != 200:
+        raise HTTPException(r.status_code, detail="Evolution API error")
+    data = r.json()
+    if isinstance(data, dict) and data.get("base64"):
+        return JSONResponse({
+            "connected": False,
+            "base64": data["base64"],
+            "code": data.get("code", ""),
+            "count": data.get("count", 0),
+        })
+    return JSONResponse({"connected": True})

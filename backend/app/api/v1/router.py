@@ -31,6 +31,7 @@ from app.api.v1.routes.webhooks_whatsapp import router as webhooks_whatsapp_rout
 from app.api.v1.routes.admin_users import router as admin_users_router
 from app.api.v1.routes.internal_whatsapp import router as internal_whatsapp_router
 from app.api.v1.routes.admin_tasks import router as admin_tasks_router
+from app.api.v1.routes.admin_whatsapp import router as admin_whatsapp_router
 
 api_router = APIRouter()
 api_router.include_router(health_router)
@@ -68,3 +69,4 @@ api_router.include_router(public_inbound_router)
 api_router.include_router(public_intake_router)
 api_router.include_router(public_portal.router)
 api_router.include_router(internal_whatsapp_router)
+api_router.include_router(admin_whatsapp_router)

@@ -134,11 +134,22 @@ async def _route_auto_payment(parsed: dict) -> JSONResponse:
     finally:
         db.close()
 
-    threading.Thread(
-        target=_activate_site_and_notify,
-        args=(token, domain, html_content, phone, business_name),
-        daemon=True,
-    ).start()
+    # ── Trigger finalize_deployment_task (Celery) ─────────────────────
+    # Falls back to an in-process thread when Redis/Celery is unavailable
+    # (e.g. dev environment with CELERY_ALWAYS_EAGER=false and no broker).
+    try:
+        from app.tasks import finalize_deployment_task
+        finalize_deployment_task.delay(token)
+        logger.info('[MorningWebhook][auto] finalize_deployment_task queued for token=%s', token[:8])
+    except Exception as celery_exc:
+        logger.warning(
+            '[MorningWebhook][auto] Celery unavailable (%s) — falling back to thread', celery_exc
+        )
+        threading.Thread(
+            target=_activate_site_and_notify,
+            args=(token, domain, html_content, phone, business_name),
+            daemon=True,
+        ).start()
 
     return JSONResponse({'ok': True})
 

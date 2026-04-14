@@ -433,3 +433,141 @@ def ceo_digest_task(self: Task) -> dict:
             raise self.retry(exc=exc)
         except self.MaxRetriesExceededError:
             return {'status': 'error', 'message': str(exc)}
+
+
+# ── Task: Finalize deployment after successful payment ───────────────────────
+
+@celery_app.task(
+    base=_BaseTask,
+    bind=True,
+    name='app.tasks.finalize_deployment_task',
+    max_retries=3,
+    default_retry_delay=60,
+    time_limit=600,
+    soft_time_limit=570,
+)
+def finalize_deployment_task(self: Task, token: str) -> dict:
+    """
+    End-to-end site activation triggered after a successful Morning payment.
+
+    Steps:
+      1. Load PublicIntake by token — abort if not found or not paid
+      2. Validate domain (.co.il / .com only)
+      3. Purchase domain via Hostinger API (with availability pre-check)
+      4. Set DNS A record → server public IP
+      5. Deploy generated HTML to production path (/static_sites/live/{domain}/)
+      6. Create nginx virtual-host config + reload nginx
+      7. Issue SSL certificate via Certbot (--nginx --redirect)
+      8. Update DB: site_live_url, status = 'done'
+      9. Send WhatsApp congratulations to the client via Evolution API
+
+    If domain purchase fails (taken / API error), the admin is notified
+    via WhatsApp and the task is retried up to 3 times with 60 s delay.
+
+    Triggered from: POST /webhooks/morning (on SUCCESS for 'auto' tier)
+    """
+    logger.info('[finalize_deployment_task] starting for token=%s', token[:8])
+
+    try:
+        from app.db.session import SessionLocal
+        from app.models.public_intake import PublicIntake
+        from app.services.hostinger_service import HostingerService
+        from app.services.communications.evolution_whatsapp_service import EvolutionWhatsAppService
+        from app.core.config import settings
+
+        db = SessionLocal()
+        try:
+            intake = db.query(PublicIntake).filter(PublicIntake.token == token).first()
+
+            # ── Guards ────────────────────────────────────────────────────────
+            if not intake:
+                logger.error('[finalize_deployment_task] Intake not found: token=%s', token[:8])
+                return {'status': 'error', 'message': 'intake not found', 'token': token[:8]}
+
+            if intake.payment_status != 'paid':
+                logger.error(
+                    '[finalize_deployment_task] Payment not confirmed for token=%s status=%s',
+                    token[:8], intake.payment_status,
+                )
+                return {'status': 'error', 'message': 'payment not confirmed', 'token': token[:8]}
+
+            domain = intake.desired_domain or ''
+            html_content = intake.generated_html or ''
+
+            if not domain or not html_content:
+                logger.error(
+                    '[finalize_deployment_task] Missing domain or HTML for token=%s', token[:8]
+                )
+                return {'status': 'error', 'message': 'missing domain or html', 'token': token[:8]}
+
+            business_name = intake.business_name or ''
+            phone = intake.phone or ''
+        finally:
+            db.close()
+
+        # ── Steps 2-7: Hostinger full activation ──────────────────────────────
+        self.update_state(state='PROGRESS', meta={
+            'step': 'activating_site', 'domain': domain, 'token': token[:8],
+        })
+
+        ok, live_url = HostingerService().activate_site(domain, html_content)
+
+        # ── Step 8: Update DB ──────────────────────────────────────────────────
+        db = SessionLocal()
+        try:
+            intake = db.query(PublicIntake).filter(PublicIntake.token == token).first()
+            if intake:
+                intake.site_live_url = live_url if ok else ''
+                intake.status = 'done'
+                db.commit()
+        finally:
+            db.close()
+
+        # ── Step 9: WhatsApp outreach ──────────────────────────────────────────
+        if ok:
+            message = (
+                f"🎉 מזל טוב {business_name}!\n\n"
+                f"האתר שלך באוויר בכתובת החדשה:\n{live_url}\n\n"
+                f"💳 המנוי שלך הוא 39 ₪/חודש — כולל אחסון, תחזוקה ועדכונים.\n\n"
+                f"שנצליח ביחד 🚀\n_צוות SiteNest_"
+            )
+            EvolutionWhatsAppService().send_text(phone, message)
+            logger.info(
+                '[finalize_deployment_task] Done — domain=%s live_url=%s', domain, live_url
+            )
+            return {'status': 'success', 'domain': domain, 'live_url': live_url, 'token': token[:8]}
+
+        else:
+            # Notify admin; retry will re-attempt the full activation
+            _admin_phone = getattr(settings, 'whatsapp_owner_phone', '')
+            if _admin_phone:
+                EvolutionWhatsAppService().send_text(
+                    _admin_phone,
+                    f"⚠️ *SiteNest — הפעלת אתר נכשלה*\n\n"
+                    f"Token: `{token[:12]}...`\n"
+                    f"Domain: {domain}\n"
+                    f"Error: {live_url}\n\n"
+                    f"המשימה תנסה שוב אוטומטית.",
+                )
+            raise ValueError(f'activate_site failed for {domain}: {live_url}')
+
+    except ValueError as exc:
+        # Retryable failure (domain not ready, Hostinger API issues)
+        logger.error('[finalize_deployment_task] retryable error: %s', exc)
+        try:
+            raise self.retry(exc=exc)
+        except self.MaxRetriesExceededError:
+            logger.error(
+                '[finalize_deployment_task] max retries exceeded for token=%s', token[:8]
+            )
+            return {'status': 'error', 'message': str(exc), 'token': token[:8]}
+
+    except Exception as exc:
+        logger.error(
+            '[finalize_deployment_task] unhandled exception for token=%s: %s',
+            token[:8], exc, exc_info=True,
+        )
+        try:
+            raise self.retry(exc=exc)
+        except self.MaxRetriesExceededError:
+            return {'status': 'error', 'message': str(exc), 'token': token[:8]}

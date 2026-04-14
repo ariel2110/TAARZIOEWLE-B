@@ -127,7 +127,11 @@ class MorningService:
             'description': description,
             'price': _PRICE_NIS,
             'currency': 'ILS',
+            # externalId — Morning's primary correlation field (returned in webhook)
             'externalId': intake_token,
+            # custom — secondary free-text field mapped to the internal LeadID/token
+            # so Morning dashboard and webhook both carry the reference
+            'custom': intake_token,
             'successUrl': f'{settings.morning_success_url}?token={intake_token}',
             'cancelUrl': settings.morning_cancel_url,
             'client': {'name': business_name, 'phone': phone},
@@ -197,8 +201,10 @@ class MorningService:
         external_id = (
             body.get('externalId')
             or body.get('external_id')
+            or body.get('custom')          # fallback to custom field (also carries token)
             or txn.get('externalId')
             or txn.get('external_id')
+            or txn.get('custom')
         )
         transaction_id = (
             body.get('transactionId')

@@ -177,12 +177,14 @@ export default function LandingExtra({ onStartIntake }: Props) {
                                         </li>
                                     ))}
                                 </ul>
-                                <button
+                                <a
                                     className="le-plan-btn"
-                                    onClick={onStartIntake}
+                                    href={plan.paymentUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
                                 >
                                     {plan.cta}
-                                </button>
+                                </a>
                             </div>
                         ))}
                     </div>

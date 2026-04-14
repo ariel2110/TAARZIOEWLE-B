@@ -28,10 +28,79 @@ _BASE_URL = 'https://api.morning.co.il/v1'
 _TIMEOUT = 15
 _PRICE_NIS = 39
 
+# ── Plan tier definitions ─────────────────────────────────────────────────────
+
+# Maps payment amount (NIS) → internal tier label.
+# 'auto'    = 39 NIS  → full automation (Hostinger domain + SSL + deploy)
+# 'starter' = 299 NIS → manual onboarding, sub-domain only
+# 'growth'  = 699 NIS → manual onboarding, independent domain
+# 'pro'     = 1299 NIS → premium manual onboarding, personal account manager
+PLAN_AMOUNTS: dict[str, int] = {
+    'auto':    39,
+    'starter': 299,
+    'growth':  699,
+    'pro':     1299,
+}
+
+# Reverse lookup: amount → tier
+_AMOUNT_TO_TIER: dict[int, str] = {v: k for k, v in PLAN_AMOUNTS.items()}
+
+# Fixed Morning payment links (created in Morning dashboard, not generated dynamically)
+PLAN_URLS: dict[str, str] = {
+    'auto':    'https://mrng.to/Afe6Dg21q0',   # 39 NIS — automated pipeline
+    'starter': 'https://mrng.to/sHDNNsGZwX',  # 299 NIS — Starter
+    'growth':  'https://mrng.to/nTNb7uWesR',   # 699 NIS — Growth
+    'pro':     'https://mrng.to/SDxruL9Hg0',   # 1299 NIS — Pro
+}
+
+PLAN_LABELS: dict[str, str] = {
+    'auto':    'Auto — 39 ₪/חודש',
+    'starter': 'Starter — 299 ₪/חודש',
+    'growth':  'Growth — 699 ₪/חודש',
+    'pro':     'Pro — 1,299 ₪/חודש',
+}
+
 
 class MorningService:
 
     # ── Public API ────────────────────────────────────────────────────────────
+
+    def detect_tier(self, amount: int) -> str:
+        """
+        Map a payment amount (NIS) to a tier label.
+        Returns 'auto', 'starter', 'growth', 'pro', or 'unknown'.
+        """
+        return _AMOUNT_TO_TIER.get(amount, 'unknown')
+
+    def create_checkout_session(
+        self,
+        lead_id: str,
+        plan: str = 'auto',
+        business_name: str = '',
+        phone: str = '',
+        domain: str | None = None,
+    ) -> str:
+        """
+        Return the Morning checkout URL for a given lead and plan.
+
+        - plan='auto'   : creates a dynamic per-lead link with externalId=lead_id
+                          so the webhook can correlate payment → intake record.
+        - plan=anything : returns the fixed Morning URL for that plan tier.
+                          The customer pays directly; admin handles onboarding.
+        """
+        if plan == 'auto':
+            return self.create_payment_link(
+                intake_token=lead_id,
+                business_name=business_name,
+                phone=phone,
+                domain=domain,
+            )
+        url = PLAN_URLS.get(plan)
+        if not url:
+            logger.warning('[Morning] Unknown plan %r — falling back to starter URL', plan)
+            url = PLAN_URLS['starter']
+        logger.info('[Morning] Returning fixed plan URL for plan=%s lead_id=%s', plan, (lead_id or '')[:8])
+        return url
 
     def create_payment_link(
         self,
@@ -142,7 +211,25 @@ class MorningService:
             or txn.get('status')
             or 'UNKNOWN'
         )
-        amount = int(body.get('amount') or txn.get('amount') or 0)
+        amount = int(body.get('amount') or txn.get('amount') or txn.get('price') or 0)
+
+        # Extract client info (present in pro-tier fixed-link webhooks
+        # where externalId is not set)
+        client_block = body.get('client') or txn.get('client') or {}
+        client_name = (
+            client_block.get('name')
+            or body.get('clientName')
+            or body.get('client_name')
+            or txn.get('clientName')
+            or ''
+        )
+        client_phone = (
+            client_block.get('phone')
+            or client_block.get('mobile')
+            or body.get('clientPhone')
+            or body.get('client_phone')
+            or ''
+        )
 
         return {
             'type': event_type,
@@ -150,6 +237,8 @@ class MorningService:
             'transaction_id': str(transaction_id or ''),
             'amount': amount,
             'status': str(status).upper(),
+            'client_name': client_name,
+            'client_phone': client_phone,
         }
 
     # ── Helpers ───────────────────────────────────────────────────────────────

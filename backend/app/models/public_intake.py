@@ -43,3 +43,6 @@ class PublicIntake(Base, TimestampMixin):
     payment_reference: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
     payment_link: Mapped[str | None] = mapped_column(String(500), nullable=True)
     site_live_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # Which Morning plan was paid: 'auto' | 'starter' | 'growth' | 'pro'
+    # 'auto' = 39 NIS (full automation); others = manual onboarding
+    plan_tier: Mapped[str] = mapped_column(String(20), default='auto')

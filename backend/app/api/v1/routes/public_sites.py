@@ -71,7 +71,7 @@ def _draft_html_path(draft: DraftSite) -> Path:
     if rel.startswith('static/'):
       rel = f"static_sites/{rel[len('static/'):]}"
     return Path(__file__).resolve().parents[3] / rel
-    return Path(__file__).resolve().parents[3] / 'static_sites' / 'drafts' / f'draft_{draft.id}.html'
+  return Path(__file__).resolve().parents[3] / 'static_sites' / 'drafts' / f'draft_{draft.id}.html'
 
 
 @router.get('/site-by-host', response_class=HTMLResponse)

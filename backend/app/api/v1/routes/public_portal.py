@@ -1,5 +1,5 @@
 
-from fastapi import APIRouter, Depends, Query, HTTPException, Header
+from fastapi import APIRouter, Body, Depends, Query, HTTPException, Header
 from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.schemas.public_portal import (
@@ -88,8 +88,8 @@ def verify_otp(payload: PublicVerifyOtpRequest, db: Session = Depends(get_db)):
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
-@router.get('/consume-magic-link', response_model=PublicConsumeMagicLinkResponse)
-def consume_magic_link(token: str = Query(...), db: Session = Depends(get_db)):
+@router.post('/consume-magic-link', response_model=PublicConsumeMagicLinkResponse)
+def consume_magic_link(token: str = Body(..., embed=True), db: Session = Depends(get_db)):
     try:
         return service.consume_magic_link(db, token)
     except ValueError as exc:

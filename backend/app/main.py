@@ -27,7 +27,7 @@ app.add_middleware(
     allow_origins=_allowed_origins,
     allow_credentials=True,
     allow_methods=['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allow_headers=['Authorization', 'Content-Type', 'X-Admin-Token', 'X-Admin-Email', 'X-Session-Key', 'X-Forwarded-For'],
+    allow_headers=['Authorization', 'Content-Type', 'X-Admin-Token', 'X-Admin-Email', 'X-Session-Key'],
 )
 app.include_router(api_router, prefix=settings.api_v1_prefix)
 

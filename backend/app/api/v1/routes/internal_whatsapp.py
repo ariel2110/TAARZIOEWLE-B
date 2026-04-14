@@ -4,35 +4,45 @@ Proxies Evolution API so the browser-based QR page can work without
 exposing the Evolution API key to the client. Also exposes admin
 approval endpoints for queued outreach messages.
 
-Approval routes require ?key=<ADMIN_DEV_TOKEN> query parameter.
+Approval routes require a valid admin JWT (same as all other admin routes).
 """
 import httpx
-from fastapi import APIRouter, Request, HTTPException, Query
+from fastapi import APIRouter, Request, HTTPException, Depends
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Optional
 
+from app.api.deps import get_current_admin
 from app.core.config import settings
+from app.models.user import User
 
 router = APIRouter(prefix="/internal", tags=["internal"])
 
-EVOLUTION_URL = (settings.evolution_api_url or "http://127.0.0.1:8181").rstrip("/")
-EVOLUTION_KEY = settings.evolution_api_key or ""
-EVOLUTION_INSTANCE = settings.evolution_instance or "sitenest"
+
+def _evolution_url() -> str:
+    return (settings.evolution_api_url or "http://127.0.0.1:8181").rstrip("/")
+
+
+def _evolution_key() -> str:
+    return settings.evolution_api_key or ""
+
+
+def _evolution_instance() -> str:
+    return settings.evolution_instance or "sitenest"
 
 
 def _headers() -> dict:
-    return {"apikey": EVOLUTION_KEY, "Content-Type": "application/json"}
+    return {"apikey": _evolution_key(), "Content-Type": "application/json"}
 
 
 @router.get("/whatsapp-qr")
 async def get_whatsapp_qr():
     """Return current QR code (base64 PNG) for the WhatsApp instance."""
-    if not EVOLUTION_KEY:
+    if not _evolution_key():
         raise HTTPException(503, "Evolution API not configured")
     async with httpx.AsyncClient(timeout=10) as client:
         r = await client.get(
-            f"{EVOLUTION_URL}/instance/connect/{EVOLUTION_INSTANCE}",
+            f"{_evolution_url()}/instance/connect/{_evolution_instance()}",
             headers=_headers(),
         )
     if r.status_code != 200:
@@ -52,11 +62,11 @@ async def get_whatsapp_qr():
 @router.get("/whatsapp-status")
 async def get_whatsapp_status():
     """Return connection status of the WhatsApp instance."""
-    if not EVOLUTION_KEY:
+    if not _evolution_key():
         return JSONResponse({"status": "not_configured"})
     async with httpx.AsyncClient(timeout=10) as client:
         r = await client.get(
-            f"{EVOLUTION_URL}/instance/fetchInstances?instanceName={EVOLUTION_INSTANCE}",
+            f"{_evolution_url()}/instance/fetchInstances?instanceName={_evolution_instance()}",
             headers=_headers(),
         )
     if r.status_code != 200:
@@ -79,16 +89,9 @@ class ApproveBody(BaseModel):
     message: Optional[str] = None  # if provided, sends this edited text instead
 
 
-def _require_admin(key: str) -> None:
-    """Raise 403 if the provided key does not match the admin dev token."""
-    if key != settings.admin_dev_token:
-        raise HTTPException(status_code=403, detail="Forbidden")
-
-
 @router.get("/pending-messages")
-async def pending_messages(key: str = Query(...)):
+async def pending_messages(_: User = Depends(get_current_admin)):
     """Return all pending WhatsApp messages awaiting approval."""
-    _require_admin(key)
     from app.db.session import SessionLocal
     from app.models.public_intake import PublicIntake
     db = SessionLocal()
@@ -115,9 +118,8 @@ async def pending_messages(key: str = Query(...)):
 
 
 @router.post("/approve-message/{token}")
-async def approve_message(token: str, body: ApproveBody = ApproveBody(), key: str = Query(...)):
+async def approve_message(token: str, body: ApproveBody = ApproveBody(), _: User = Depends(get_current_admin)):
     """Approve (and optionally edit) a pending WhatsApp message and send it to the lead."""
-    _require_admin(key)
     from app.db.session import SessionLocal
     from app.models.public_intake import PublicIntake
     from app.services.communications.evolution_whatsapp_service import EvolutionWhatsAppService
@@ -146,9 +148,8 @@ async def approve_message(token: str, body: ApproveBody = ApproveBody(), key: st
 
 
 @router.post("/reject-message/{token}")
-async def reject_message(token: str, key: str = Query(...)):
+async def reject_message(token: str, _: User = Depends(get_current_admin)):
     """Reject a pending WhatsApp message — will not be sent."""
-    _require_admin(key)
     from app.db.session import SessionLocal
     from app.models.public_intake import PublicIntake
     db = SessionLocal()
@@ -166,14 +167,13 @@ async def reject_message(token: str, key: str = Query(...)):
 # ── WhatsApp Connection Management ───────────────────────────────────────────
 
 @router.post("/whatsapp-disconnect")
-async def whatsapp_disconnect(key: str = Query(...)):
+async def whatsapp_disconnect(_: User = Depends(get_current_admin)):
     """Logout the WhatsApp session (disconnect from phone). Requires QR re-scan after."""
-    _require_admin(key)
-    if not EVOLUTION_KEY:
+    if not _evolution_key():
         raise HTTPException(503, "Evolution API not configured")
     async with httpx.AsyncClient(timeout=15) as client:
         r = await client.delete(
-            f"{EVOLUTION_URL}/instance/logout/{EVOLUTION_INSTANCE}",
+            f"{_evolution_url()}/instance/logout/{_evolution_instance()}",
             headers=_headers(),
         )
     if r.status_code in (200, 201):
@@ -187,14 +187,13 @@ async def whatsapp_disconnect(key: str = Query(...)):
 
 
 @router.post("/whatsapp-reconnect")
-async def whatsapp_reconnect(key: str = Query(...)):
+async def whatsapp_reconnect(_: User = Depends(get_current_admin)):
     """Trigger a new QR code / pairing code so the instance can reconnect."""
-    _require_admin(key)
-    if not EVOLUTION_KEY:
+    if not _evolution_key():
         raise HTTPException(503, "Evolution API not configured")
     async with httpx.AsyncClient(timeout=15) as client:
         r = await client.get(
-            f"{EVOLUTION_URL}/instance/connect/{EVOLUTION_INSTANCE}",
+            f"{_evolution_url()}/instance/connect/{_evolution_instance()}",
             headers=_headers(),
         )
     if r.status_code != 200:

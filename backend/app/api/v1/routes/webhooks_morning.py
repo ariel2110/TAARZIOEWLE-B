@@ -56,7 +56,12 @@ async def morning_webhook(request: Request):
         or request.headers.get('X-Signature')
         or ''
     )
-    if signature and not _morning.verify_webhook_signature(body_bytes, signature):
+    secret_configured = bool(settings.morning_webhook_secret or settings.morning_api_secret)
+    if not signature:
+        if secret_configured:
+            logger.warning('[MorningWebhook] Missing signature header — rejecting')
+            raise HTTPException(status_code=403, detail='Missing webhook signature')
+    elif not _morning.verify_webhook_signature(body_bytes, signature):
         logger.warning('[MorningWebhook] Invalid signature — rejecting')
         raise HTTPException(status_code=403, detail='Invalid signature')
 

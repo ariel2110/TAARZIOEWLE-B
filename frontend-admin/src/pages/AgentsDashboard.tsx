@@ -176,6 +176,16 @@ function ApiKeyCard({ item, onSaved }: { item: ApiKeyItem; onSaved: (result: Api
     const [showVal, setShowVal] = useState(false);
     const [saving, setSaving] = useState(false);
     const [err, setErr] = useState<string | null>(null);
+    const [savedBanner, setSavedBanner] = useState(false);
+
+    const friendlyError = (e: unknown): string => {
+        const msg = e instanceof Error ? e.message : String(e);
+        if (msg.includes('400')) return 'שגיאת validation — מפתח לא תקין';
+        if (msg.includes('401')) return 'פג תוקף session — רענן את הדף';
+        if (msg.includes('403')) return 'אין הרשאה לשנות מפתח זה';
+        if (msg.includes('500')) return 'שגיאת שרת — נסה שנית או בדוק logs';
+        return msg || 'שגיאה לא ידועה';
+    };
 
     const handleSave = async () => {
         setSaving(true); setErr(null);
@@ -183,8 +193,10 @@ function ApiKeyCard({ item, onSaved }: { item: ApiKeyItem; onSaved: (result: Api
             const res = await updateApiKey(item.key, inputVal.trim() || null);
             onSaved({ ...item, configured: res.configured, masked: res.masked });
             setEditing(false); setInputVal('');
+            setSavedBanner(true);
+            setTimeout(() => setSavedBanner(false), 8000);
         } catch (e: unknown) {
-            setErr(e instanceof Error ? e.message : 'שגיאה');
+            setErr(friendlyError(e));
         } finally { setSaving(false); }
     };
 
@@ -195,7 +207,7 @@ function ApiKeyCard({ item, onSaved }: { item: ApiKeyItem; onSaved: (result: Api
             const res = await updateApiKey(item.key, null);
             onSaved({ ...item, configured: res.configured, masked: res.masked });
         } catch (e: unknown) {
-            setErr(e instanceof Error ? e.message : 'שגיאה');
+            setErr(friendlyError(e));
         } finally { setSaving(false); }
     };
 
@@ -230,6 +242,17 @@ function ApiKeyCard({ item, onSaved }: { item: ApiKeyItem; onSaved: (result: Api
                     <span style={{ marginRight: 8, color: '#6b7280' }}>{item.masked}</span>
                 )}
             </div>
+
+            {/* Celery restart warning banner */}
+            {savedBanner && (
+                <div style={{
+                    fontSize: 11, padding: '6px 10px', borderRadius: 8, marginBottom: 8,
+                    background: '#fefce8', border: '1px solid #fde047', color: '#854d0e',
+                    lineHeight: 1.5,
+                }}>
+                    ✅ נשמר בהצלחה. לכניסה מלאה לתוקף ב-Celery workers — נדרש <b>restart ידני</b>
+                </div>
+            )}
 
             {/* Edit form */}
             {editing ? (

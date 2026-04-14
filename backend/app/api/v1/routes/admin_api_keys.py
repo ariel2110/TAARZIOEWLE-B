@@ -2,8 +2,10 @@
 Admin API Keys Management
 Allows viewing (masked) and updating/deleting API tokens from the admin dashboard.
 """
+import logging
 import pathlib
 import re
+from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -12,6 +14,8 @@ from pydantic import BaseModel
 from app.api.deps import get_current_admin
 from app.core.config import settings
 from app.models.user import User
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix='/admin/api-keys', tags=['admin-api-keys'])
 
@@ -30,10 +34,11 @@ _CATALOG: list[tuple[str, str, str, str, str, str]] = [
     ('WhatsApp', 'evolution_api_url',  'Evolution URL',          'EVOLUTION_API_URL',        'כתובת שרת ה-WhatsApp העצמאי',              ''),
     ('WhatsApp', 'evolution_api_key',  'Evolution API Key',      'EVOLUTION_API_KEY',        'מפתח גישה לשרת Evolution',                 ''),
     ('WhatsApp', 'evolution_instance', 'Evolution Instance',     'EVOLUTION_INSTANCE',       'שם ה-Instance המחובר לסים',                ''),
-    ('תשלומים', 'morning_api_key',      'Morning API Key',        'MORNING_API_KEY',          'תשלומים — יצירת חשבוניות ולינקי תשלום',    'https://app.greeninvoice.co.il/settings/developers/api'),
-    ('תשלומים', 'morning_api_secret',   'Morning API Secret',    'MORNING_API_SECRET',       'חתימת בקשות API מול Morning',               'https://app.greeninvoice.co.il/settings/developers/api'),
-    ('תשלומים', 'morning_webhook_secret','Morning Webhook Secret','MORNING_WEBHOOK_SECRET',  'אימות Webhook של Morning — טריגר דומיין',   'https://app.greeninvoice.co.il/settings/developers/webhooks'),
-    ('תשתית',   'hostinger_api_token',  'Hostinger API Token',   'HOSTINGER_API_TOKEN',      'רישום דומיינים ו-DNS אוטומטי',              'https://hpanel.hostinger.com/profile/api'),
+    ('תשלומים', 'morning_api_key',           'Morning API Key',             'MORNING_API_KEY',           'תשלומים — יצירת חשבוניות ולינקי תשלום',                    'https://app.greeninvoice.co.il/settings/developers/api'),
+    ('תשלומים', 'morning_api_secret',        'Morning API Secret',          'MORNING_API_SECRET',        'חתימת בקשות API מול Morning',                               'https://app.greeninvoice.co.il/settings/developers/api'),
+    ('תשלומים', 'morning_webhook_secret',    'Morning Webhook Secret',      'MORNING_WEBHOOK_SECRET',    'אימות Webhook של Morning — טריגר דומיין',                   'https://app.greeninvoice.co.il/settings/developers/webhooks'),
+    ('תשלומים', 'morning_fixed_payment_url', 'Morning Payment URL (Auto)',  'MORNING_FIXED_PAYMENT_URL', 'לינק תשלום קבוע לתוכנית Auto (₪39)',                        'https://app.greeninvoice.co.il'),
+    ('תשתית',   'hostinger_api_token',       'Hostinger API Token',         'HOSTINGER_API_TOKEN',       'רישום דומיינים ו-DNS אוטומטי',                              'https://hpanel.hostinger.com/profile/api'),
 ]
 
 _ALLOWED_KEYS: dict[str, tuple] = {item[1]: item for item in _CATALOG}
@@ -102,6 +107,8 @@ def list_api_keys(_: User = Depends(get_current_admin)):
     groups_map: dict[str, list[dict]] = {}
     for cat, field, label, env_var, role, manage_url in _CATALOG:
         current_val = getattr(settings, field, None)
+        # Non-secret fields (URLs) show value in plain text, not masked
+        is_url_field = field.endswith('_url')
         groups_map.setdefault(cat, []).append({
             'key':        field,
             'label':      label,
@@ -109,7 +116,7 @@ def list_api_keys(_: User = Depends(get_current_admin)):
             'role':       role,
             'manage_url': manage_url,
             'configured': bool(current_val),
-            'masked':     _mask(current_val),
+            'masked':     str(current_val) if (is_url_field and current_val) else _mask(current_val),
         })
     return {
         'groups': [
@@ -123,7 +130,7 @@ def list_api_keys(_: User = Depends(get_current_admin)):
 def update_api_key(
     key_name: str,
     body: UpdateKeyRequest,
-    _: User = Depends(get_current_admin),
+    admin: User = Depends(get_current_admin),
 ):
     """Update or clear an API key. Send value=null or value='' to delete."""
     if key_name not in _ALLOWED_KEYS:
@@ -134,12 +141,21 @@ def update_api_key(
 
     # Normalise: blank string → treat as delete
     new_value: str | None = (body.value or '').strip() or None
+    action = 'delete' if new_value is None else 'update'
 
     # 1. Persist to .env (survives restarts)
     _update_env_file(env_var, new_value)
 
     # 2. Update in-memory settings so change takes effect immediately
     setattr(settings, key_name, new_value)
+
+    # 3. Audit log — who changed what and when
+    admin_email = getattr(admin, 'email', 'unknown')
+    logger.warning(
+        '[APIKeyAudit] user=%s action=%s key=%s env_var=%s at=%s',
+        admin_email, action, key_name, env_var,
+        datetime.now(timezone.utc).isoformat(),
+    )
 
     return {
         'key':        key_name,

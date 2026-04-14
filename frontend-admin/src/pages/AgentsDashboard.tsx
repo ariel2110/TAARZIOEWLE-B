@@ -207,7 +207,7 @@ function ApiKeyCard({ item, onSaved }: { item: ApiKeyItem; onSaved: (result: Api
             flex: '1 1 260px', minWidth: 240,
         }}>
             {/* Header row */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                 <span style={{ fontWeight: 700, fontSize: 14, flex: 1 }}>{item.label}</span>
                 <span style={{
                     fontSize: 10, padding: '2px 7px', borderRadius: 20, fontWeight: 700,
@@ -218,7 +218,12 @@ function ApiKeyCard({ item, onSaved }: { item: ApiKeyItem; onSaved: (result: Api
                 </span>
             </div>
 
-            {/* Masked value */}
+            {/* Role description */}
+            {item.role && (
+                <div style={{ fontSize: 12, color: '#3b82f6', marginBottom: 8, fontWeight: 500 }}>{item.role}</div>
+            )}
+
+            {/* Masked value + env var */}
             <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 10, fontFamily: 'monospace' }}>
                 {item.env_var}
                 {item.masked && (
@@ -274,6 +279,17 @@ function ApiKeyCard({ item, onSaved }: { item: ApiKeyItem; onSaved: (result: Api
                     >
                         ✏️ {item.configured ? 'החלף' : 'הגדר'}
                     </button>
+                    {item.manage_url && (
+                        <a
+                            href={item.manage_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title="פתח ניהול"
+                            style={{ padding: '6px 10px', background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', borderRadius: 8, cursor: 'pointer', fontSize: 14, textDecoration: 'none', display: 'flex', alignItems: 'center' }}
+                        >
+                            🔗
+                        </a>
+                    )}
                     {item.configured && (
                         <button
                             onClick={handleDelete} disabled={saving}

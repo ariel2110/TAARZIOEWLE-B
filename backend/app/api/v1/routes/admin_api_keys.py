@@ -16,27 +16,27 @@ from app.models.user import User
 router = APIRouter(prefix='/admin/api-keys', tags=['admin-api-keys'])
 
 # ---------------------------------------------------------------------------
-# Key catalog — (category, settings_field, display_label, env_var_name)
+# Key catalog — (category, settings_field, display_label, env_var_name, role, manage_url)
 # ---------------------------------------------------------------------------
-_CATALOG: list[tuple[str, str, str, str]] = [
-    ('LLM',           'openai_api_key',          'GPT (OpenAI)',              'OPENAI_API_KEY'),
-    ('LLM',           'anthropic_api_key',        'Claude (Anthropic)',        'ANTHROPIC_API_KEY'),
-    ('LLM',           'gemini_api_key',            'Gemini (Google AI)',        'GEMINI_API_KEY'),
-    ('LLM',           'xai_api_key',              'Grok (xAI)',                'XAI_API_KEY'),
-    ('חיפוש ונתונים', 'google_places_api_key',    'Google Places API',         'GOOGLE_PLACES_API_KEY'),
-    ('חיפוש ונתונים', 'serper_api_key',           'Serper (Google Search)',    'SERPER_API_KEY'),
-    ('חיפוש ונתונים', 'apify_api_token',          'Apify (Web Scraping)',      'APIFY_API_TOKEN'),
-    ('חיפוש ונתונים', 'facebook_access_token',    'Facebook Access Token',     'FACEBOOK_ACCESS_TOKEN'),
-    ('WhatsApp',      'evolution_api_url',         'Evolution URL',             'EVOLUTION_API_URL'),
-    ('WhatsApp',      'evolution_api_key',         'Evolution API Key',         'EVOLUTION_API_KEY'),
-    ('WhatsApp',      'evolution_instance',        'Evolution Instance',        'EVOLUTION_INSTANCE'),
-    ('תשלומים',       'morning_api_key',           'Morning API Key',           'MORNING_API_KEY'),
-    ('תשלומים',       'morning_api_secret',        'Morning API Secret',        'MORNING_API_SECRET'),
-    ('תשלומים',       'morning_webhook_secret',    'Morning Webhook Secret',    'MORNING_WEBHOOK_SECRET'),
-    ('תשתית',         'hostinger_api_token',       'Hostinger API Token',       'HOSTINGER_API_TOKEN'),
+_CATALOG: list[tuple[str, str, str, str, str, str]] = [
+    ('LLM', 'openai_api_key',         'GPT-4o (OpenAI)',        'OPENAI_API_KEY',          'כותב תוכן — קופירייטינג לאתרים',           'https://platform.openai.com/api-keys'),
+    ('LLM', 'anthropic_api_key',      'Claude (Anthropic)',     'ANTHROPIC_API_KEY',        'אדריכל WOW — בניית מבנה אתר יצירתי',       'https://console.anthropic.com/settings/keys'),
+    ('LLM', 'gemini_api_key',         'Gemini (Google AI)',     'GEMINI_API_KEY',            'סינון וניתוח — מסנן לידים ועיבוד נתונים',  'https://aistudio.google.com/app/apikey'),
+    ('LLM', 'xai_api_key',            'Grok (xAI)',             'XAI_API_KEY',              'מנהל מכירות — תגובות WhatsApp וסגירות',     'https://console.x.ai/team/credits'),
+    ('חיפוש ונתונים', 'google_places_api_key', 'Google Places API', 'GOOGLE_PLACES_API_KEY', 'איסוף לידים — חיפוש עסקים לפי קטגוריה',   'https://console.cloud.google.com/apis/credentials'),
+    ('חיפוש ונתונים', 'serper_api_key',        'Serper.dev',        'SERPER_API_KEY',          'גוגל סרץ\' — חיפוש אינטרנט עבור הסוכנים', 'https://serper.dev/dashboard'),
+    ('חיפוש ונתונים', 'apify_api_token',       'Apify',             'APIFY_API_TOKEN',         'סקרייפינג — חילוץ מידע מאינסטגרם/טיקטוק', 'https://console.apify.com/account/settings/integrations'),
+    ('חיפוש ונתונים', 'facebook_access_token', 'Facebook Graph API','FACEBOOK_ACCESS_TOKEN',   'פייסבוק — גישה לעמודים עסקיים',           'https://developers.facebook.com/tools/accesstoken/'),
+    ('WhatsApp', 'evolution_api_url',  'Evolution URL',          'EVOLUTION_API_URL',        'כתובת שרת ה-WhatsApp העצמאי',              ''),
+    ('WhatsApp', 'evolution_api_key',  'Evolution API Key',      'EVOLUTION_API_KEY',        'מפתח גישה לשרת Evolution',                 ''),
+    ('WhatsApp', 'evolution_instance', 'Evolution Instance',     'EVOLUTION_INSTANCE',       'שם ה-Instance המחובר לסים',                ''),
+    ('תשלומים', 'morning_api_key',      'Morning API Key',        'MORNING_API_KEY',          'תשלומים — יצירת חשבוניות ולינקי תשלום',    'https://app.greeninvoice.co.il/settings/developers/api'),
+    ('תשלומים', 'morning_api_secret',   'Morning API Secret',    'MORNING_API_SECRET',       'חתימת בקשות API מול Morning',               'https://app.greeninvoice.co.il/settings/developers/api'),
+    ('תשלומים', 'morning_webhook_secret','Morning Webhook Secret','MORNING_WEBHOOK_SECRET',  'אימות Webhook של Morning — טריגר דומיין',   'https://app.greeninvoice.co.il/settings/developers/webhooks'),
+    ('תשתית',   'hostinger_api_token',  'Hostinger API Token',   'HOSTINGER_API_TOKEN',      'רישום דומיינים ו-DNS אוטומטי',              'https://hpanel.hostinger.com/profile/api'),
 ]
 
-_ALLOWED_KEYS: dict[str, tuple[str, str, str, str]] = {item[1]: item for item in _CATALOG}
+_ALLOWED_KEYS: dict[str, tuple] = {item[1]: item for item in _CATALOG}
 
 # .env lives at the project backend root (4 levels up from this routes/ dir)
 _ENV_FILE = pathlib.Path(__file__).parents[4] / '.env'
@@ -100,12 +100,14 @@ class UpdateKeyRequest(BaseModel):
 def list_api_keys(_: User = Depends(get_current_admin)):
     """Return all API keys grouped by category (values are masked)."""
     groups_map: dict[str, list[dict]] = {}
-    for cat, field, label, env_var in _CATALOG:
+    for cat, field, label, env_var, role, manage_url in _CATALOG:
         current_val = getattr(settings, field, None)
         groups_map.setdefault(cat, []).append({
             'key':        field,
             'label':      label,
             'env_var':    env_var,
+            'role':       role,
+            'manage_url': manage_url,
             'configured': bool(current_val),
             'masked':     _mask(current_val),
         })

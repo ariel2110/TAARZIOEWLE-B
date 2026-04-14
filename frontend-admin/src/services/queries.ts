@@ -280,7 +280,8 @@ export const getAgentRecentRuns = (agent?: string) =>
 
 // ── API Keys Management ──────────────────────────────────────────────────────
 export type ApiKeyItem = {
-  key: string; label: string; env_var: string; configured: boolean; masked: string;
+  key: string; label: string; env_var: string; role: string; manage_url: string;
+  configured: boolean; masked: string;
 };
 export type ApiKeyGroup = { category: string; keys: ApiKeyItem[] };
 export type ApiKeysResponse = { groups: ApiKeyGroup[] };

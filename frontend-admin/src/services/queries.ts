@@ -1,5 +1,5 @@
 
-import { apiGet, apiPost, apiDelete, devLogin, googleLogin } from './api';
+import { apiGet, apiPost, apiDelete, apiPut, devLogin, googleLogin } from './api';
 export { googleLogin };
 
 // ---- Enrichment ----
@@ -277,4 +277,16 @@ export const getAgentGlobalStats = () => apiGet<AgentGlobalStats>('/admin/analyt
 export const getAgentStatus = () => apiGet<{ agents: AgentStatusItem[]; usd_to_ils: number }>('/admin/analytics/agent-status');
 export const getAgentRecentRuns = (agent?: string) =>
   apiGet<AgentRunLog[]>(`/admin/analytics/agent-recent-runs${agent ? `?agent_name=${agent}` : ''}`);
+
+// ── API Keys Management ──────────────────────────────────────────────────────
+export type ApiKeyItem = {
+  key: string; label: string; env_var: string; configured: boolean; masked: string;
+};
+export type ApiKeyGroup = { category: string; keys: ApiKeyItem[] };
+export type ApiKeysResponse = { groups: ApiKeyGroup[] };
+export type ApiKeyUpdateResult = { key: string; configured: boolean; masked: string };
+
+export const getApiKeys = () => apiGet<ApiKeysResponse>('/admin/api-keys');
+export const updateApiKey = (keyName: string, value: string | null) =>
+  apiPut<ApiKeyUpdateResult>(`/admin/api-keys/${keyName}`, { value });
 

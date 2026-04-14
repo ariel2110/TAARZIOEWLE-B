@@ -60,6 +60,16 @@ export async function apiDelete<T>(path: string): Promise<T> {
   return res.json();
 }
 
+export async function apiPut<T>(path: string, payload: unknown): Promise<T> {
+  let res = await fetch(`${BASE_URL}${path}`, { method: 'PUT', headers: headers(), body: JSON.stringify(payload) });
+  if (res.status === 401) {
+    await handleResponse(res, path);
+    res = await fetch(`${BASE_URL}${path}`, { method: 'PUT', headers: headers(), body: JSON.stringify(payload) });
+  }
+  if (!res.ok) throw new Error(`PUT ${path} failed: ${res.status}`);
+  return res.json();
+}
+
 export async function googleLogin(idToken: string) {
   const res = await fetch(`${BASE_URL}/auth/google/verify`, {
     method: 'POST',

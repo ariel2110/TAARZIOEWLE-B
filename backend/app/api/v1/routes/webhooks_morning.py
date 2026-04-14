@@ -77,24 +77,9 @@ async def morning_webhook(request: Request):
         parsed['transaction_id'][:12],
     )
 
-    if parsed['status'] != 'SUCCESS':
-        return JSONResponse({'ok': True, 'detail': f'non-success event ({parsed["status"]}) ignored'})
-
-    # ── 3. Detect tier and route ──────────────────────────────────────────
-    tier = _morning.detect_tier(parsed['amount'])
-
-    if tier == 'auto':
-        return await _route_auto_payment(parsed)
-
-    if tier in ('starter', 'growth', 'pro'):
-        return await _route_pro_payment(parsed, tier)
-
-    # Unknown amount — log and return 200 so Morning doesn't retry forever
-    logger.warning(
-        '[MorningWebhook] Unknown amount=%s — no route matched. txn=%s',
-        parsed['amount'], parsed['transaction_id'][:12],
-    )
-    return JSONResponse({'ok': True, 'detail': f'unknown amount {parsed["amount"]}'})
+    # ── 3. Dispatch by event type ─────────────────────────────────────────
+    from app.api.v1.payments.morning_handler import handle_morning_event
+    return JSONResponse(handle_morning_event(body, parsed))
 
 
 # ── Auto-tier (39 NIS): full pipeline ─────────────────────────────────────────

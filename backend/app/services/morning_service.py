@@ -236,6 +236,21 @@ class MorningService:
             or body.get('client_phone')
             or ''
         )
+        email = (
+            client_block.get('email')
+            or body.get('clientEmail')
+            or body.get('email')
+            or txn.get('email')
+            or ''
+        )
+        product_name = (
+            body.get('productName')
+            or body.get('product_name')
+            or txn.get('productName')
+            or txn.get('name')
+            or txn.get('description')
+            or ''
+        )
 
         return {
             'type': event_type,
@@ -245,6 +260,8 @@ class MorningService:
             'status': str(status).upper(),
             'client_name': client_name,
             'client_phone': client_phone,
+            'email': email,
+            'product_name': product_name,
         }
 
     # ── Helpers ───────────────────────────────────────────────────────────────

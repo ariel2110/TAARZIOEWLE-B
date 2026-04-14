@@ -1,0 +1,375 @@
+"""Central Morning event dispatcher
+=====================================
+Maps Morning ``eventType`` strings to dedicated handler functions.
+
+Usage (from webhooks_morning.py):
+
+    from app.api.v1.payments.morning_handler import handle_morning_event
+    return JSONResponse(handle_morning_event(body, parsed))
+
+Adding a new event
+------------------
+1. Write a handler:  ``def handle_my_event(ctx: dict) -> dict``
+2. Register it:      ``EVENT_HANDLERS['new-event/type'] = handle_my_event``
+
+Context dict (``ctx``) keys
+----------------------------
+event_type    str    Morning eventType string
+status        str    'SUCCESS' | 'FAILED' | 'UNKNOWN' | ...
+amount        int    amount in NIS (0 if not present)
+transaction_id str   Morning transaction/document ID
+external_id   str    externalId / custom field (= our intake token for auto-tier)
+client_name   str    customer display name
+client_phone  str    customer phone (raw Morning format)
+email         str    customer email
+product_name  str    product / plan name from Morning
+tier          str    'auto' | 'starter' | 'growth' | 'pro' | 'unknown'
+raw           dict   full raw webhook body
+"""
+from __future__ import annotations
+
+import logging
+import threading
+from typing import Callable
+
+from app.core.config import settings
+from app.services.morning_service import MorningService, PLAN_LABELS
+
+logger = logging.getLogger(__name__)
+_morning = MorningService()
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Context extraction
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def _extract_context(body: dict, parsed: dict) -> dict:
+    """Build a rich, flat context dict from raw + parsed webhook data."""
+    return {
+        'event_type':     parsed.get('type', 'unknown'),
+        'status':         parsed.get('status', 'UNKNOWN'),
+        'amount':         parsed.get('amount', 0),
+        'transaction_id': parsed.get('transaction_id', ''),
+        'external_id':    parsed.get('external_id') or '',
+        'client_name':    parsed.get('client_name') or 'לקוח חדש',
+        'client_phone':   parsed.get('client_phone') or '',
+        'email':          parsed.get('email') or '',
+        'product_name':   parsed.get('product_name') or '',
+        'tier':           _morning.detect_tier(parsed.get('amount', 0)),
+        'raw':            body,
+    }
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Event handlers
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def handle_order_paid(ctx: dict) -> dict:
+    """
+    ``sale-pages/order-paid`` — a payment was completed on a Morning sales page.
+
+    • status != SUCCESS → ignore (Morning may send failed events too)
+    • tier == 'auto'    → full automated deployment pipeline
+    • tier in ('starter','growth','pro') → create pro_lead + admin WhatsApp alert
+    """
+    if ctx['status'] != 'SUCCESS':
+        logger.info(
+            '[MorningHandler][order-paid] Ignoring non-success status=%s txn=%s',
+            ctx['status'], ctx['transaction_id'][:12],
+        )
+        return {'ok': True, 'detail': f'non-success status: {ctx["status"]}'}
+
+    tier = ctx['tier']
+
+    if tier == 'auto':
+        return _order_paid_auto(ctx)
+
+    if tier in ('starter', 'growth', 'pro'):
+        return _order_paid_pro(ctx, tier)
+
+    logger.warning(
+        '[MorningHandler][order-paid] Unknown tier for amount=%s txn=%s',
+        ctx['amount'], ctx['transaction_id'][:12],
+    )
+    return {'ok': True, 'detail': f'unknown amount {ctx["amount"]}'}
+
+
+def handle_page_contacted(ctx: dict) -> dict:
+    """
+    ``sale-pages/page-contacted`` — someone filled the Morning sales-page contact form.
+    They are *interested* but have NOT yet paid.
+    Sends an admin WhatsApp "New Lead" alert.
+    """
+    name    = ctx['client_name']
+    phone   = ctx['client_phone']
+    email   = ctx['email']
+    product = ctx['product_name'] or 'לא ידוע'
+
+    logger.info('[MorningHandler][page-contacted] Lead: %s phone=%s', name[:30], phone[:8])
+
+    owner = settings.whatsapp_owner_phone
+    if owner:
+        msg = (
+            f"🔔 *ליד חדש — SiteNest*\n\n"
+            f"👤 שם: *{name}*\n"
+            f"📞 טלפון: {phone or 'לא זמין'}\n"
+            f"📧 אימייל: {email or 'לא זמין'}\n"
+            f"📦 מוצר: {product}\n\n"
+            f"💡 מתעניין אך *טרם שילם* — צור קשר בהקדם!"
+        )
+        threading.Thread(
+            target=_send_wa,
+            args=(owner, msg, 'page-contacted'),
+            daemon=True,
+        ).start()
+
+    return {'ok': True, 'detail': 'lead alert queued'}
+
+
+def handle_payment_received(ctx: dict) -> dict:
+    """
+    ``payment/received`` — any payment received event (not tied to a sales page).
+    Logs the revenue and sends the admin a WhatsApp "passive income" toast.
+    """
+    amount  = ctx['amount']
+    name    = ctx['client_name']
+    txn_id  = ctx['transaction_id']
+    product = ctx['product_name'] or 'לא ידוע'
+
+    logger.info(
+        '[MorningHandler][payment/received] amount=%s NIS from %s txn=%s',
+        amount, name[:30], txn_id[:12],
+    )
+
+    owner = settings.whatsapp_owner_phone
+    if owner:
+        msg = (
+            f"💰 *הכנסה פסיבית — SiteNest*\n\n"
+            f"💵 סכום: *{amount:,} ₪*\n"
+            f"👤 לקוח: {name}\n"
+            f"📦 מוצר: {product}\n"
+            f"💳 עסקה: `{txn_id[:16]}...`\n\n"
+            f"כסף נכנס ✅"
+        )
+        threading.Thread(
+            target=_send_wa,
+            args=(owner, msg, 'payment/received'),
+            daemon=True,
+        ).start()
+
+    return {'ok': True, 'detail': 'revenue logged'}
+
+
+def handle_file_infected(ctx: dict) -> dict:
+    """
+    ``file/infected`` — Morning detected a security threat in an uploaded file.
+    Sends an *urgent* admin WhatsApp security alert immediately (blocking send
+    so the alert isn't silently dropped if the process exits quickly).
+    """
+    name    = ctx['client_name']
+    phone   = ctx['client_phone']
+    email   = ctx['email']
+    txn_id  = ctx['transaction_id']
+    product = ctx['product_name'] or 'לא ידוע'
+
+    logger.error(
+        '[MorningHandler][file/infected] SECURITY ALERT — infected file detected '
+        'client=%s txn=%s',
+        name[:30], txn_id[:12],
+    )
+
+    owner = settings.whatsapp_owner_phone
+    if owner:
+        msg = (
+            f"🚨 *התראת אבטחה — Morning זיהה קובץ נגוע!*\n\n"
+            f"👤 לקוח: *{name}*\n"
+            f"📞 טלפון: {phone or 'לא זמין'}\n"
+            f"📧 אימייל: {email or 'לא זמין'}\n"
+            f"📦 מוצר: {product}\n"
+            f"💳 עסקה: `{txn_id[:16] or 'N/A'}...`\n\n"
+            f"⚠️ *נדרשת פעולה מיידית!*\n"
+            f"בדוק את לוח הבקרה של Morning ועצור את העסקה במידת הצורך."
+        )
+        # Blocking send — security alerts must not be dropped
+        _send_wa(owner, msg, 'file/infected')
+
+    return {'ok': True, 'detail': 'security alert sent'}
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Handler registry  ← add new events here
+# ═══════════════════════════════════════════════════════════════════════════════
+
+EVENT_HANDLERS: dict[str, Callable[[dict], dict]] = {
+    'sale-pages/order-paid':     handle_order_paid,
+    'sale-pages/page-contacted': handle_page_contacted,
+    'payment/received':          handle_payment_received,
+    'file/infected':             handle_file_infected,
+}
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Main dispatcher
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def handle_morning_event(body: dict, parsed: dict) -> dict:
+    """
+    Central Morning event dispatcher.
+
+    Called by the ``POST /webhooks/morning`` endpoint after signature
+    verification and payload parsing.  Routes to the appropriate handler
+    based on ``eventType``.
+
+    Unknown events with ``SUCCESS`` status fall back to the
+    ``handle_order_paid`` handler for backward-compatibility.
+    All other unknown events are acknowledged (200) and logged.
+    """
+    ctx        = _extract_context(body, parsed)
+    event_type = ctx['event_type']
+
+    handler = EVENT_HANDLERS.get(event_type)
+    if handler:
+        logger.info('[MorningHandler] Dispatching event=%s status=%s', event_type, ctx['status'])
+        return handler(ctx)
+
+    # Fallback: unknown event type
+    if ctx['status'] == 'SUCCESS':
+        logger.info(
+            '[MorningHandler] Unknown event_type=%s with SUCCESS status — '
+            'falling back to order_paid handler', event_type,
+        )
+        return handle_order_paid(ctx)
+
+    logger.info('[MorningHandler] Unhandled event=%s status=%s — ack only', event_type, ctx['status'])
+    return {'ok': True, 'detail': f'unhandled event: {event_type}'}
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Auto-tier helpers (called from handle_order_paid)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def _order_paid_auto(ctx: dict) -> dict:
+    """39 NIS automated pipeline: mark intake as paid and queue Celery task."""
+    import secrets as _secrets
+    import threading as _threading
+
+    external_id = ctx['external_id']
+    if not external_id:
+        logger.warning('[MorningHandler][auto] No externalId — cannot correlate to intake')
+        return {'ok': True, 'detail': 'no external_id'}
+
+    from app.db.session import SessionLocal
+    from app.models.public_intake import PublicIntake
+
+    db = SessionLocal()
+    try:
+        intake = db.query(PublicIntake).filter(PublicIntake.token == external_id).first()
+        if not intake:
+            logger.warning('[MorningHandler][auto] Intake not found: token=%s', external_id[:8])
+            return {'ok': True, 'detail': 'intake not found'}
+
+        if intake.payment_status == 'paid':
+            return {'ok': True, 'detail': 'already processed'}
+
+        intake.payment_status    = 'paid'
+        intake.payment_reference = ctx['transaction_id']
+        intake.plan_tier         = 'auto'
+        db.commit()
+        logger.info('[MorningHandler][auto] Intake %s marked as paid', external_id[:8])
+
+        domain        = intake.desired_domain or ''
+        html_content  = intake.generated_html or ''
+        phone         = intake.phone or ''
+        business_name = intake.business_name or ''
+        token         = intake.token
+    finally:
+        db.close()
+
+    try:
+        from app.tasks import finalize_deployment_task
+        finalize_deployment_task.delay(token)
+        logger.info('[MorningHandler][auto] finalize_deployment_task queued for token=%s', token[:8])
+    except Exception as celery_exc:
+        logger.warning(
+            '[MorningHandler][auto] Celery unavailable (%s) — falling back to thread', celery_exc
+        )
+        # Import here to avoid circular imports at module load time
+        from app.api.v1.routes.webhooks_morning import _activate_site_and_notify
+        _threading.Thread(
+            target=_activate_site_and_notify,
+            args=(token, domain, html_content, phone, business_name),
+            daemon=True,
+        ).start()
+
+    return {'ok': True}
+
+
+def _order_paid_pro(ctx: dict, tier: str) -> dict:
+    """299 / 699 / 1299 NIS manual onboarding: create pro_lead + notify admin."""
+    import secrets as _secrets
+
+    transaction_id = ctx['transaction_id']
+    client_name    = ctx['client_name']
+    client_phone   = ctx['client_phone']
+    amount         = ctx['amount']
+
+    from app.db.session import SessionLocal
+    from app.models.public_intake import PublicIntake
+
+    db = SessionLocal()
+    token = ''
+    try:
+        existing = (
+            db.query(PublicIntake)
+            .filter(PublicIntake.payment_reference == transaction_id)
+            .first()
+        )
+        if existing:
+            logger.info(
+                '[MorningHandler][%s] Transaction already recorded: txn=%s',
+                tier, transaction_id[:12],
+            )
+            return {'ok': True, 'detail': 'already processed'}
+
+        token = _secrets.token_urlsafe(32)
+        intake = PublicIntake(
+            token=token,
+            business_name=client_name,
+            phone=client_phone,
+            status='pro_lead',
+            payment_status='paid',
+            payment_reference=transaction_id,
+            plan_tier=tier,
+        )
+        db.add(intake)
+        db.commit()
+        logger.info(
+            '[MorningHandler][%s] Pro lead created: token=%s client=%s',
+            tier, token[:8], client_name[:30],
+        )
+    finally:
+        db.close()
+
+    # Notifications run outside DB session
+    from app.api.v1.routes.webhooks_morning import _handle_pro_notifications
+    threading.Thread(
+        target=_handle_pro_notifications,
+        args=(tier, client_name, client_phone, transaction_id, amount, token),
+        daemon=True,
+    ).start()
+
+    return {'ok': True}
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Shared utility
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def _send_wa(phone: str, message: str, label: str) -> None:
+    """Fire-and-forget WhatsApp send with error logging."""
+    try:
+        from app.services.communications.evolution_whatsapp_service import EvolutionWhatsAppService
+        EvolutionWhatsAppService().send_text(phone, message)
+        logger.info('[MorningHandler][%s] WhatsApp alert sent', label)
+    except Exception as exc:
+        logger.warning('[MorningHandler][%s] WhatsApp send failed: %s', label, exc)

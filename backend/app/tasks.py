@@ -744,3 +744,208 @@ def _build_recovery_message(client_name: str) -> str:
         f"היי {first_name}, ראיתי שהתחלת לבנות אתר אבל לא סיימת. "
         f"יש משהו שאני יכול לעזור? 😊"
     )
+
+
+# ── Facebook Long-Lived Token Auto-Refresh ────────────────────────────────────
+
+_FB_API_VERSION = 'v19.0'
+_FB_OAUTH_URL = f'https://graph.facebook.com/{_FB_API_VERSION}/oauth/access_token'
+_ENV_FILE_PATH = None  # lazily resolved
+
+
+def _env_file_path() -> 'pathlib.Path':
+    """Return absolute path to backend/.env (same location used by admin_api_keys.py)."""
+    import pathlib
+    global _ENV_FILE_PATH
+    if _ENV_FILE_PATH is None:
+        _ENV_FILE_PATH = pathlib.Path(__file__).parents[2] / '.env'
+    return _ENV_FILE_PATH
+
+
+def _update_env_token(new_token: str) -> None:
+    """
+    Replace FACEBOOK_ACCESS_TOKEN in the .env file.
+    Adds the key if it doesn't exist yet.
+    The full token value is NEVER written to any log.
+    """
+    import pathlib
+    env_path: pathlib.Path = _env_file_path()
+    text = env_path.read_text(encoding='utf-8')
+    import re
+    pattern = re.compile(r'^FACEBOOK_ACCESS_TOKEN=.*$', re.MULTILINE)
+    if pattern.search(text):
+        new_text = pattern.sub(f'FACEBOOK_ACCESS_TOKEN={new_token}', text)
+    else:
+        new_text = text.rstrip('\n') + f'\nFACEBOOK_ACCESS_TOKEN={new_token}\n'
+    env_path.write_text(new_text, encoding='utf-8')
+
+
+def _send_owner_whatsapp(message: str) -> None:
+    """Send a WhatsApp message to the owner (silent on failure)."""
+    try:
+        from app.core.config import settings
+        from app.services.communications.evolution_whatsapp_service import EvolutionWhatsAppService
+
+        phone = getattr(settings, 'whatsapp_owner_phone', '')
+        if not phone:
+            logger.warning('[fb_token_refresh] whatsapp_owner_phone not set — cannot notify owner')
+            return
+        EvolutionWhatsAppService().send_text(str(phone), message)
+    except Exception as exc:
+        logger.error('[fb_token_refresh] Failed to send owner WhatsApp notification: %s', exc)
+
+
+@celery_app.task(
+    bind=True,
+    name='app.tasks.facebook_token_refresh_task',
+    max_retries=2,
+    default_retry_delay=60 * 10,  # retry after 10 minutes on transient errors
+)
+def facebook_token_refresh_task(self: Task) -> dict:
+    """
+    Refresh the Facebook long-lived access token via Meta Graph API.
+
+    Flow:
+      1. Read app_id, app_secret and current token from settings.
+      2. POST to /oauth/access_token with grant_type=fb_exchange_token.
+      3. Write the new token back to the .env file.
+      4. On any failure, send a WhatsApp alert to the owner.
+
+    Scheduled every 50 days via Celery Beat — safe before the 60-day expiry.
+    """
+    from app.core.config import settings
+
+    logger.info('[fb_token_refresh] Starting Facebook long-lived token refresh')
+
+    app_id = getattr(settings, 'facebook_app_id', None)
+    app_secret = getattr(settings, 'facebook_app_secret', None)
+    current_token = getattr(settings, 'facebook_access_token', None)
+
+    if not app_id or not app_secret:
+        msg = (
+            '⚠️ SiteNest — רענון טוקן פייסבוק נכשל!\n'
+            'חסרים FACEBOOK_APP_ID או FACEBOOK_APP_SECRET ב-.env\n'
+            'נא להוסיף אותם ולהפעיל מחדש.'
+        )
+        logger.error('[fb_token_refresh] FACEBOOK_APP_ID / FACEBOOK_APP_SECRET not configured')
+        _send_owner_whatsapp(msg)
+        return {'status': 'error', 'reason': 'missing_credentials'}
+
+    if not current_token:
+        msg = (
+            '⚠️ SiteNest — רענון טוקן פייסבוק נכשל!\n'
+            'אין FACEBOOK_ACCESS_TOKEN ב-.env להחלפה.\n'
+            'נא להגדיר טוקן בפעם הראשונה ידנית.'
+        )
+        logger.error('[fb_token_refresh] FACEBOOK_ACCESS_TOKEN is empty — cannot refresh')
+        _send_owner_whatsapp(msg)
+        return {'status': 'error', 'reason': 'no_existing_token'}
+
+    import httpx
+
+    try:
+        resp = httpx.get(
+            _FB_OAUTH_URL,
+            params={
+                'grant_type': 'fb_exchange_token',
+                'client_id': app_id,
+                'client_secret': app_secret,
+                'fb_exchange_token': current_token,
+            },
+            timeout=15,
+        )
+    except httpx.RequestError as exc:
+        logger.error('[fb_token_refresh] Network error calling Meta API: %s', type(exc).__name__)
+        msg = (
+            '🔴 SiteNest — רענון טוקן פייסבוק נכשל! (שגיאת רשת)\n'
+            f'סוג שגיאה: {type(exc).__name__}\n'
+            'הטוקן הנוכחי עדיין פעיל — נסיון חידוש יתבצע שוב בקרוב.'
+        )
+        _send_owner_whatsapp(msg)
+        raise self.retry(exc=exc)
+
+    if resp.status_code == 401:
+        logger.error('[fb_token_refresh] Meta API returned 401 — current token may be expired')
+        msg = (
+            '🔴 SiteNest — רענון טוקן פייסבוק נכשל!\n'
+            'שגיאה 401: הטוקן הנוכחי פג תוקף.\n'
+            'נדרש חידוש ידני ב: https://developers.facebook.com/tools/accesstoken/'
+        )
+        _send_owner_whatsapp(msg)
+        return {'status': 'error', 'reason': 'token_expired_401'}
+
+    if not resp.is_success:
+        logger.error('[fb_token_refresh] Meta API returned HTTP %d', resp.status_code)
+        msg = (
+            f'🔴 SiteNest — רענון טוקן פייסבוק נכשל! (HTTP {resp.status_code})\n'
+            'נדרש בדיקה ידנית ב: https://developers.facebook.com/tools/accesstoken/'
+        )
+        _send_owner_whatsapp(msg)
+        return {'status': 'error', 'reason': f'http_{resp.status_code}'}
+
+    data = resp.json()
+
+    if 'error' in data:
+        err = data['error']
+        code = err.get('code')
+        # OAuthException code 190 → token is invalid/expired
+        if code == 190:
+            logger.error('[fb_token_refresh] OAuthException code 190 — token invalid/expired')
+            msg = (
+                '🔴 SiteNest — רענון טוקן פייסבוק נכשל! (OAuthException)\n'
+                'הטוקן לא תקין או פג תוקף.\n'
+                'נדרש חידוש ידני ב: https://developers.facebook.com/tools/accesstoken/'
+            )
+        else:
+            logger.error(
+                '[fb_token_refresh] Meta API error code=%s type=%s', code, err.get('type')
+            )
+            msg = (
+                f'🔴 SiteNest — רענון טוקן פייסבוק נכשל! (קוד שגיאה {code})\n'
+                f'{err.get("message", "")}\n'
+                'נדרש בדיקה ידנית.'
+            )
+        _send_owner_whatsapp(msg)
+        return {'status': 'error', 'reason': 'api_error', 'code': code}
+
+    new_token = data.get('access_token')
+    if not new_token:
+        logger.error('[fb_token_refresh] Meta API response missing access_token field')
+        _send_owner_whatsapp(
+            '🔴 SiteNest — רענון טוקן פייסבוק נכשל!\n'
+            'התגובה מ-Meta חסרה את השדה access_token.\n'
+            'נא לבדוק ידנית.'
+        )
+        return {'status': 'error', 'reason': 'missing_access_token_field'}
+
+    # Write new token to .env — token value never logged
+    try:
+        _update_env_token(new_token)
+        logger.info(
+            '[fb_token_refresh] Token refreshed successfully. '
+            'New expiry: ~%s days',
+            data.get('expires_in', 'unknown'),
+        )
+    except Exception as exc:
+        logger.error('[fb_token_refresh] Failed to write new token to .env: %s', exc)
+        _send_owner_whatsapp(
+            '⚠️ SiteNest — טוקן פייסבוק חודש בהצלחה מול Meta, '
+            'אבל השמירה לקובץ .env נכשלה!\n'
+            f'שגיאה: {exc}\n'
+            'נא לעדכן ידנית.'
+        )
+        return {'status': 'error', 'reason': 'env_write_failed'}
+
+    # Success notification
+    expires_days = round(data.get('expires_in', 0) / 86400)
+    _send_owner_whatsapp(
+        f'✅ SiteNest — טוקן פייסבוק חודש בהצלחה!\n'
+        f'תוקף חדש: ~{expires_days} ימים.\n'
+        f'הרענון הבא יתבצע אוטומטית בעוד 50 יום.'
+    )
+
+    return {
+        'status': 'ok',
+        'expires_in': data.get('expires_in'),
+        'token_type': data.get('token_type'),
+    }

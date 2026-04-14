@@ -301,4 +301,8 @@ export type FacebookStats = {
 };
 
 export const getFacebookStats = () => apiGet<FacebookStats>('/admin/social/facebook-stats');
+export const triggerFacebookTokenRefresh = () =>
+  apiPost<{ triggered: boolean; task_id: string | null; detail: string | null }>(
+    '/admin/social/facebook-refresh-token', {}
+  );
 

@@ -96,3 +96,36 @@ def facebook_stats(_: User = Depends(get_current_admin)) -> FacebookStatsRespons
         followers=data.get('followers_count'),
         fan_count=data.get('fan_count'),
     )
+
+
+# ---------------------------------------------------------------------------
+# Manual token refresh trigger
+# ---------------------------------------------------------------------------
+
+class TokenRefreshResponse(BaseModel):
+    triggered: bool
+    task_id: str | None = None
+    detail: str | None = None
+
+
+@router.post('/facebook-refresh-token', response_model=TokenRefreshResponse)
+def facebook_refresh_token(_: User = Depends(get_current_admin)) -> TokenRefreshResponse:
+    """
+    Manually trigger a Facebook long-lived token refresh.
+    The task runs asynchronously — check Celery logs for result.
+    Requires FACEBOOK_APP_ID and FACEBOOK_APP_SECRET to be set in .env.
+    """
+    from app.tasks import facebook_token_refresh_task
+
+    app_id = settings.facebook_app_id
+    app_secret = settings.facebook_app_secret
+
+    if not app_id or not app_secret:
+        return TokenRefreshResponse(
+            triggered=False,
+            detail='חסרים FACEBOOK_APP_ID ו/או FACEBOOK_APP_SECRET ב-.env',
+        )
+
+    result = facebook_token_refresh_task.apply_async()
+    logger.info('Manual Facebook token refresh triggered, task_id=%s', result.id)
+    return TokenRefreshResponse(triggered=True, task_id=result.id)

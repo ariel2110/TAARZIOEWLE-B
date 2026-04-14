@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import os
 
+from celery.schedules import crontab
 from celery import Celery
 
 _BROKER = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0')
@@ -58,6 +59,14 @@ celery_app.conf.update(
         'ceo-digest-every-6h': {
             'task': 'app.tasks.ceo_digest_task',
             'schedule': 60 * 60 * 6,    # every 6 hours
+            'options': {'queue': 'sitenest'},
+        },
+        'facebook-token-refresh-every-50-days': {
+            # Runs at 09:00 every 50 days — safely before the 60-day token expiry.
+            # day_of_week='*', day_of_month='*/50' is not directly expressible in
+            # crontab, so we use a timedelta of 50 days (4_320_000 seconds).
+            'task': 'app.tasks.facebook_token_refresh_task',
+            'schedule': 60 * 60 * 24 * 50,   # every 50 days in seconds
             'options': {'queue': 'sitenest'},
         },
     },

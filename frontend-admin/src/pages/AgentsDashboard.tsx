@@ -4,7 +4,7 @@ import {
     AgentGlobalStats, AgentStatusItem, AgentRunLog,
     ApiKeyGroup, ApiKeyItem, FacebookStats,
     getAgentGlobalStats, getAgentStatus, getAgentRecentRuns,
-    getApiKeys, updateApiKey, getFacebookStats,
+    getApiKeys, updateApiKey, getFacebookStats, triggerFacebookTokenRefresh,
 } from '../services/queries';
 
 // ─── Stat box ───────────────────────────────────────────────────────────────
@@ -169,6 +169,8 @@ function RecentRunsTable({ runs }: { runs: AgentRunLog[] }) {
 function FacebookStatsCard() {
     const [stats, setStats] = useState<FacebookStats | null>(null);
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+    const [refreshMsg, setRefreshMsg] = useState<string | null>(null);
 
     useEffect(() => {
         getFacebookStats()
@@ -177,11 +179,29 @@ function FacebookStatsCard() {
             .finally(() => setLoading(false));
     }, []);
 
+    const handleRefresh = async () => {
+        setRefreshing(true);
+        setRefreshMsg(null);
+        try {
+            const res = await triggerFacebookTokenRefresh();
+            if (res.triggered) {
+                setRefreshMsg('✅ רענון הופעל — תקבל הודעת WhatsApp בסיום');
+            } else {
+                setRefreshMsg(`❌ ${res.detail || 'שגיאה בהפעלת רענון'}`);
+            }
+        } catch {
+            setRefreshMsg('❌ שגיאת רשת');
+        } finally {
+            setRefreshing(false);
+            setTimeout(() => setRefreshMsg(null), 6000);
+        }
+    };
+
     const statusMap: Record<FacebookStats['status'], { label: string; color: string; bg: string; icon: string }> = {
-        active:        { label: 'פעיל',          color: '#166534', bg: '#dcfce7', icon: '✅' },
-        no_token:      { label: 'לא מוגדר',      color: '#92400e', bg: '#fef3c7', icon: '⚠️' },
-        token_expired: { label: 'טוקן פג תוקף',  color: '#991b1b', bg: '#fee2e2', icon: '🔴' },
-        error:         { label: 'שגיאה',          color: '#991b1b', bg: '#fee2e2', icon: '❌' },
+        active: { label: 'פעיל', color: '#166534', bg: '#dcfce7', icon: '✅' },
+        no_token: { label: 'לא מוגדר', color: '#92400e', bg: '#fef3c7', icon: '⚠️' },
+        token_expired: { label: 'טוקן פג תוקף', color: '#991b1b', bg: '#fee2e2', icon: '🔴' },
+        error: { label: 'שגיאה', color: '#991b1b', bg: '#fee2e2', icon: '❌' },
     };
 
     const s = stats ? statusMap[stats.status] : null;
@@ -259,6 +279,34 @@ function FacebookStatsCard() {
             {!loading && stats?.status === 'error' && (
                 <div style={{ fontSize: 13, color: '#991b1b' }}>{stats.detail}</div>
             )}
+
+            {/* Manual refresh button */}
+            <div style={{ marginTop: 14, borderTop: '1px solid #f3f4f6', paddingTop: 12 }}>
+                <button
+                    onClick={handleRefresh}
+                    disabled={refreshing}
+                    style={{
+                        background: refreshing ? '#e5e7eb' : '#1877f2',
+                        color: refreshing ? '#6b7280' : 'white',
+                        border: 'none', borderRadius: 8,
+                        padding: '7px 16px', fontSize: 12, fontWeight: 700,
+                        cursor: refreshing ? 'not-allowed' : 'pointer',
+                    }}
+                >
+                    {refreshing ? '⏳ מחדש...' : '🔄 חדש טוקן עכשיו'}
+                </button>
+                <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 4 }}>
+                    רענון אוטומטי כל 50 יום
+                </div>
+                {refreshMsg && (
+                    <div style={{
+                        marginTop: 6, fontSize: 12, fontWeight: 600,
+                        color: refreshMsg.startsWith('✅') ? '#065f46' : '#991b1b',
+                    }}>
+                        {refreshMsg}
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

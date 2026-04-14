@@ -48,6 +48,8 @@ class Settings(BaseSettings):
     serper_api_key: str | None = Field(default=None)           # https://serper.dev — 2,500 free queries/mo
     apify_api_token: str | None = Field(default=None)          # https://apify.com — social media scraping (IG/TikTok media)
     facebook_access_token: str | None = Field(default=None)    # Facebook Graph API token (optional)
+    facebook_app_id: str | None = Field(default=None)           # Facebook App ID — required for token refresh
+    facebook_app_secret: str | None = Field(default=None)       # Facebook App Secret — required for token refresh
 
     # Evolution API (self-hosted WhatsApp gateway)
     evolution_api_url: str | None = Field(default=None)

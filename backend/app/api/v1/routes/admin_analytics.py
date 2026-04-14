@@ -206,7 +206,7 @@ def agent_status(
         'gemini':  bool(getattr(settings, 'gemini_api_key', None)),
         'grok':    bool(getattr(settings, 'xai_api_key', None)),
         'serper':  bool(getattr(settings, 'serper_api_key', None)),
-        'apify':   bool(getattr(settings, 'apify_api_key', None)),
+        'apify':   bool(getattr(settings, 'apify_api_token', None)),
     }
 
     agents = []

@@ -5,122 +5,186 @@ type Tab = 'workflow' | 'pricing' | 'faq';
 
 /* ─── Content ────────────────────────────────────────────────── */
 
-const WORKFLOW_STEPS = [
+const WORKFLOW_STEPS_OUTBOUND = [
     {
         phase: 'שלב 1 — איסוף לידים',
         icon: '🔍',
         color: '#3b82f6',
         steps: [
-            { who: 'מנהל', action: 'כנס ל"איסוף נתונים" → הכנס עיר + קטגוריה עסקית (למשל: "תל אביב, ספרות")' },
-            { who: 'מערכת', action: 'Google Places API מחפש עסקים ומחזיר רשימה עם פרטים, ביקורות ומיקום' },
+            { who: 'מנהל', action: 'כנס ל"איסוף נתונים" → הכנס עיר + קטגוריה (למשל: "תל אביב, ספרות")' },
+            { who: 'מערכת', action: 'Google Places API + Serper מחפשים עסקים ומחזירים רשימה עם ביקורות, טלפון ומיקום' },
             { who: 'מנהל', action: 'בחר עסקים רלוונטיים → לחץ "ייבא לרשימת לידים"' },
         ],
     },
     {
-        phase: 'שלב 2 — ניהול לידים',
-        icon: '🎯',
+        phase: 'שלב 2 — כישור ובניית דמו',
+        icon: '🤖',
         color: '#8b5cf6',
         steps: [
-            { who: 'מנהל', action: 'כנס ל"לידים" → ראה את כל העסקים שייובאו' },
-            { who: 'מנהל', action: 'סנן לפי עיר / קטגוריה / סטטוס → לחץ "כשר ליד" כדי להעביר לעסקים' },
-            { who: 'מערכת', action: 'הליד הופך לעסק פעיל בעמוד "עסקים"' },
+            { who: 'מנהל', action: 'כנס ל"לידים" → לחץ "כשר" → העסק עובר לעמוד "עסקים"' },
+            { who: 'מנהל', action: 'בעמוד "עסקים" לחץ "בנה אתר" → הצינור מופעל' },
+            { who: 'AI Pipeline', action: 'Grok כותב תוכן שיווקי → Claude בונה HTML → אתר עולה ב-sitenest.site' },
+            { who: 'מנהל', action: 'כנס ל"אתרי דמו" → אשר ושלח קישור ל-WhatsApp של הלקוח' },
         ],
     },
     {
-        phase: 'שלב 3 — בניית אתר דמו',
-        icon: '🤖',
-        color: '#10b981',
-        steps: [
-            { who: 'מנהל', action: 'כנס ל"אתרי דמו" → לחץ "צור דמו" → בחר עסק מהרשימה' },
-            { who: 'AI Pipeline', action: 'GPT-4o כותב תוכן שיווקי עשיר + Gemini קובע עיצוב + Claude בונה HTML מלא' },
-            { who: 'מערכת', action: 'האתר עולה בפחות מ-3 דקות בכתובת https://[שם-עסק].sitenest.site' },
-            { who: 'מנהל', action: 'שלח לעסק קישור + הודעת WhatsApp אוטומטית שנוצרת ע"י AI' },
-        ],
-    },
-    {
-        phase: 'שלב 4 — Magic Portal (לקוחות מזדמנים)',
-        icon: '✨',
-        color: '#f59e0b',
-        steps: [
-            { who: 'לקוח', action: 'נכנס ל-sitenest.site → מזין שם עסק + עיר' },
-            { who: 'מערכת', action: 'מריץ את צינור ה-AI המלא אוטומטית ובונה אתר ייחודי' },
-            { who: 'לקוח', action: 'מקבל קישור מיידי לאתרו — https://[שם-עסק].sitenest.site' },
-            { who: 'מנהל', action: 'האתר מופיע אוטומטית ב"אתרי דמו" ב-Admin Panel' },
-        ],
-    },
-    {
-        phase: 'שלב 5 — אישור ותשלום',
+        phase: 'שלב 3 — תשלום (לידים יוצאים)',
         icon: '💳',
         color: '#ef4444',
         steps: [
-            { who: 'מנהל', action: 'לקוח רוצה להמשיך? כנס ל"תשלומים" → שלח קישור תשלום' },
-            { who: 'לקוח', action: 'משלם → האתר עובר ממצב דמו לאתר פעיל' },
-            { who: 'מנהל', action: 'אשר הפעלה ב"אישורים" → הלקוח מקבל גישה לפורטל לקוח' },
+            { who: 'מנהל', action: 'לקוח מעוניין? כנס ל"תשלומים" → שלח קישור Morning המתאים לתוכנית' },
+            { who: 'לקוח', action: 'משלם ב-Morning → מערכת מקבלת Webhook ומשדרגת סטטוס' },
+            { who: 'מערכת', action: 'Starter/Growth/Pro → ♻ הודעת WhatsApp נשלחת לך אוטומטית עם משימות לטיפול' },
         ],
     },
 ];
 
-const PLANS = [
+const WORKFLOW_STEPS_INBOUND = [
+    {
+        phase: 'שלב 1 — הגשת טופס (sitenest.site)',
+        icon: '📋',
+        color: '#10b981',
+        steps: [
+            { who: 'לקוח', action: 'נכנס ל-sitenest.site → מזין שם עסק, טלפון, תיאור, קישורי סושיאל' },
+            { who: 'מערכת', action: 'שומרת בקשה + מריצה את צינור ה-AI בברקע (עד 3 דקות)' },
+            { who: 'לקוח', action: 'מקבל token — יכול לעקוב אחרי הסטטוס בזמן אמת' },
+        ],
+    },
+    {
+        phase: 'שלב 2 — AI בונה + מנהל מאשר',
+        icon: '🤖',
+        color: '#8b5cf6',
+        steps: [
+            { who: 'AI Pipeline', action: 'Grok + Claude + Gemini בונים HTML מלא + הודעת שיווק ב-WhatsApp' },
+            { who: 'מנהל', action: 'מקבל WhatsApp עם הודעה מוצעת + קישור לאישור/עריכה/דחייה' },
+            { who: 'מנהל', action: 'אחרי אישור — ההודעה נשלחת לעסק עם קישור לתצוגה מקדימה' },
+        ],
+    },
+    {
+        phase: 'שלב 3 — בחירת דומיין',
+        icon: '🌐',
+        color: '#f59e0b',
+        steps: [
+            { who: 'לקוח', action: 'רואה דמו ומחליט לקנות → בוחר שם לדומיין (xxx.sitenest.site)' },
+            { who: 'מערכת', action: 'מאמתת שהדומיין חוקי ולא בשימוש (Hostinger API)' },
+        ],
+    },
+    {
+        phase: '💳 שלב 4 — תשלום (כאן הלקוח משלם!)',
+        icon: '💳',
+        color: '#ef4444',
+        steps: [
+            { who: 'לקוח', action: 'לוחץ "לתשלום" → מועבר לדף Morning עם 39 ₪/חודש' },
+            { who: 'לקוח', action: '✅ משלם בכרטיס אשראי — Morning שולח Webhook בזמן אמת' },
+            { who: 'מערכת', action: 'מזהה תשלום → מפעילה את finalize_deployment_task בסלרי' },
+        ],
+    },
+    {
+        phase: 'שלב 5 — הפעלה אוטומטית מלאה',
+        icon: '🚀',
+        color: '#06b6d4',
+        steps: [
+            { who: 'מערכת', action: 'רוכשת דומיין דרך Hostinger API + מגדירה DNS + מפרסת HTML' },
+            { who: 'מערכת', action: 'יוצרת nginx vhost + מנפיקה SSL דרך Certbot — אתר פעיל' },
+            { who: 'לקוח', action: 'מקבל WhatsApp: "🎉 האתר שלך כבר באוויר! https://[דומיין].sitenest.site"' },
+        ],
+    },
+];
+
+const CUSTOMER_PLANS = [
+    {
+        name: 'Auto',
+        icon: '⚡',
+        price: '₪39',
+        period: '/חודש',
+        color: '#10b981',
+        tag: 'הכי מהיר',
+        features: [
+            'אתר אחד — מופעל אוטומטית',
+            'דומיין xxx.sitenest.site',
+            'SSL + אחסון מנוהל',
+            'AI בנייה מלאה (ללא מגע ידיים)',
+            'הפעלה תוך ~5 דקות מהתשלום',
+        ],
+        paid_flow: 'אוטומטי לחלוטין — Webhook מפעיל Celery task, Hostinger קונה דומיין, nginx עולה, לקוח מקבל WhatsApp.',
+        admin_actions: [],
+        recommended: false,
+    },
     {
         name: 'Starter',
         icon: '🌱',
         price: '₪299',
         period: '/חודש',
-        annual: '₪249/חודש בתשלום שנתי',
         color: '#3b82f6',
+        tag: 'הכי פופולרי',
         features: [
-            '5 אתרי לקוחות פעילים',
-            '20 דמו חודשיים',
-            'SSL + subdomain ייחודי',
-            'AI בנייה אוטומטית',
-            'ניהול דרך WhatsApp',
-            'תמיכה במייל',
+            'אתר אחד מקצועי',
+            'דומיין בחירתך (xxx.sitenest.site)',
+            'SSL + אחסון מנוהל',
+            '2 תיקונים לחודש',
+            'תמיכה בוואטסאפ',
+            'עדכון תכנים פעם בחודש',
         ],
-        notIncluded: ['CEO Agent', 'API Access', 'White-label'],
-        cta: 'התחל ב-Starter',
-        recommended: false,
+        paid_flow: 'Morning שולח Webhook → נוצר רשומת pro_lead → מגיעה אליך הודעת WhatsApp עם פרטי הלקוח.',
+        admin_actions: [
+            '📞 צור קשר עם הלקוח תוך שעה',
+            '🌐 הגדר לו תת-דומיין ב-sitenest.site',
+            '🤖 הפעל את צינור ה-AI ב"עסקים" → "בנה אתר"',
+            '✅ אשר את האתר ושלח קישור פעיל',
+            '📅 תזמן 2 תיקונים לחודש בלוח השנה',
+        ],
+        recommended: true,
     },
     {
         name: 'Growth',
         icon: '🚀',
         price: '₪699',
         period: '/חודש',
-        annual: '₪579/חודש בתשלום שנתי',
         color: '#8b5cf6',
+        tag: 'מאיצים',
         features: [
-            '25 אתרי לקוחות פעילים',
-            'דמו ללא הגבלה',
-            'SSL + subdomain ייחודי',
-            'AI בנייה אוטומטית',
-            'CEO Agent (Grok AI)',
-            'ניתוח לידים מתקדם',
-            'Targeting & Campaigns',
-            'תמיכה מועדפת',
+            'כל מה שב-Starter',
+            'דומיין עצמאי (xxx.co.il / .com)',
+            'רכישת דומיין + DNS מלא',
+            '5 תיקונים לחודש',
+            'דוח ביצועים חודשי',
+            'AI Chat-Bot בסיסי לאתר',
         ],
-        notIncluded: ['API Access', 'White-label'],
-        cta: 'שדרג ל-Growth',
-        recommended: true,
+        paid_flow: 'Morning שולח Webhook → נוצר pro_lead → הודעת WhatsApp עם צ\'ק-ליסט Growth.',
+        admin_actions: [
+            '📞 צור קשר תוך 2 שעות — לקוח Premium',
+            '🌐 עזור ללקוח לבחור דומיין עצמאי (.co.il / .com)',
+            '🔧 רכוש דומיין ב-Hostinger + הגדר DNS A record',
+            '🤖 הפעל צינור AI + deploy לנתיב ייחודי',
+            '🔐 הנפק SSL עם Certbot --nginx',
+            '📊 הכן דוח ביצועים ראשוני לאחר שבוע',
+        ],
+        recommended: false,
     },
     {
-        name: 'Agency',
-        icon: '🏢',
-        price: '₪1,799',
+        name: 'Pro',
+        icon: '🏆',
+        price: '₪1,299',
         period: '/חודש',
-        annual: '₪1,499/חודש בתשלום שנתי',
         color: '#f59e0b',
+        tag: 'VIP',
         features: [
-            'לקוחות ללא הגבלה',
-            'דמו ללא הגבלה',
-            'SSL + subdomain ייחודי',
-            'AI בנייה אוטומטית',
-            'CEO Agent (Grok AI)',
-            'API Access מלא',
-            'White-label (לוגו שלך)',
-            'מנהל חשבון ייעודי',
-            'SLA 99.9%',
+            'כל מה שב-Growth',
+            'מנהל חשבון אישי',
+            'קמפיין Google/Facebook ראשוני',
+            'SEO מורחב',
+            'CRM + ניתוח לידים',
+            'SLA תגובה תוך שעה',
         ],
-        notIncluded: [],
-        cta: 'צור קשר ל-Agency',
+        paid_flow: 'Morning שולח Webhook → נוצר pro_lead → הודעת WhatsApp VIP ← ⚡ גם הלקוח מקבל ברכה אישית ממך אוטומטית.',
+        admin_actions: [
+            '⚠️ עדיפות עליונה — טפל תוך 30 דקות',
+            '📞 לקוח קיבל ברכה אישית ממך (אוטומטית) — צלצל אליו',
+            '📋 בנה אסטרטגיה דיגיטלית תוך 24 שעות',
+            '🌐 הגדר דומיין + DNS + SSL + deploy',
+            '📣 תכנן קמפיין Google/Facebook ראשוני',
+            '🤝 תאם שיחת Kickoff — הצג תוכנית פעולה מלאה',
+        ],
         recommended: false,
     },
 ];
@@ -128,15 +192,23 @@ const PLANS = [
 const FAQ_ITEMS = [
     {
         q: 'כמה זמן לוקח לבנות אתר?',
-        a: 'בין 1–3 דקות. צינור ה-AI (GPT-4o → Gemini → Claude) פועל במקביל ומחזיר אתר HTML מלא.',
+        a: 'בין 1–3 דקות. צינור ה-AI (Grok → Claude → Gemini) פועל במקביל ומחזיר אתר HTML מלא.',
+    },
+    {
+        q: 'מתי הלקוח משלם בתהליך ה-Auto (39 ₪)?',
+        a: 'שלב 4 מתוך 5: אחרי שבחר דומיין וצפה בדמו. הוא מועבר לדף Morning ומשלם שם. מיד אחרי אישור התשלום מופעל Celery task שרוכש דומיין, מגדיר DNS, מפרסם nginx+SSL ושולח לו WhatsApp עם הקישור.',
+    },
+    {
+        q: 'מה קורה כשמישהו לוחץ "בחר תוכנית Starter" (299 ₪)?',
+        a: 'הוא מועבר לדף תשלום קבוע של Morning. אחרי תשלום, Webhook מגיע למערכת → נוצר רשומת pro_lead → אתה מקבל WhatsApp עם רשימת משימות: צור קשר, הגדר subdomain, הפעל צינור AI ידנית. אין הפעלה אוטומטית — הכל ידני.',
+    },
+    {
+        q: 'מה ההבדל בין Auto (39 ₪) ל-Starter (299 ₪)?',
+        a: 'Auto = הכל אוטומטי, דומיין xxx.sitenest.site, ללא תמיכה אישית. Starter = אתה מלווה את הלקוח ידנית, הוא מקבל 2 תיקונים לחודש + תמיכה ב-WhatsApp + עדכון תכנים חודשי.',
     },
     {
         q: 'האם הלקוח מקבל כתובת מותאמת אישית?',
-        a: 'כן. כל אתר מקבל כתובת https://[שם-עסק].sitenest.site עם SSL מלא. בפלאן Agency ניתן להשתמש בדומיין מותאם אישית.',
-    },
-    {
-        q: 'מה ההבדל בין דמו לאתר פעיל?',
-        a: 'דמו הוא אתר הדגמה שנשלח ללקוח ב-WhatsApp בחינם. אחרי תשלום הלקוח, האתר הופך לפעיל עם גישה לפורטל לקוח ועריכה עצמאית.',
+        a: 'Auto ו-Starter: xxx.sitenest.site (subdomain חינמי). Growth ו-Pro: דומיין עצמאי (.co.il / .com) שנרכש דרך Hostinger API.',
     },
     {
         q: 'מה זה CEO Agent?',
@@ -144,7 +216,7 @@ const FAQ_ITEMS = [
     },
     {
         q: 'איך מקבלים לידים חדשים?',
-        a: 'דרך "איסוף נתונים": הכנס עיר + קטגוריה → המערכת מחפשת ב-Google Places ומחזירה עסקים עם ביקורות, טלפונים ופרטי קשר.',
+        a: 'דרך "איסוף נתונים": הכנס עיר + קטגוריה → Google Places + Serper מחפשים ומחזירים עסקים עם ביקורות, טלפונים ופרטי קשר. Apify מוסיף נתוני אינסטגרם ו-TikTok.',
     },
     {
         q: 'האם ניתן לערוך את האתר אחרי הבנייה?',
@@ -284,12 +356,16 @@ export function HelpPanel() {
                         {/* ── WORKFLOW TAB ── */}
                         {tab === 'workflow' && (
                             <div>
-                                <p style={{ fontSize: 14, color: 'var(--text-muted, #6b7280)', marginBottom: 20, lineHeight: 1.7 }}>
-                                    הצינור המלא מלסיוע ראשוני ועד אתר פעיל — 5 שלבים:
-                                </p>
-                                {WORKFLOW_STEPS.map((phase, pi) => (
+                                {/* Track A: Outbound */}
+                                <div style={{
+                                    background: '#eff6ff', borderRadius: 12, padding: '12px 16px', marginBottom: 20,
+                                    borderRight: '4px solid #3b82f6',
+                                }}>
+                                    <div style={{ fontWeight: 700, fontSize: 14, color: '#1d4ed8', marginBottom: 4 }}>📤 מסלול A — יוצא (ממוכן חיצוני)</div>
+                                    <div style={{ fontSize: 13, color: '#1e40af' }}>אתה מוצא לידים → בונה דמו → שולח WhatsApp → לקוח משלם</div>
+                                </div>
+                                {WORKFLOW_STEPS_OUTBOUND.map((phase, pi) => (
                                     <div key={pi} style={{ marginBottom: 20 }}>
-                                        {/* Phase header */}
                                         <div style={{
                                             display: 'flex', alignItems: 'center', gap: 10,
                                             padding: '10px 14px',
@@ -301,8 +377,6 @@ export function HelpPanel() {
                                             <span style={{ fontSize: 20 }}>{phase.icon}</span>
                                             <span style={{ fontWeight: 700, fontSize: 15, color: phase.color }}>{phase.phase}</span>
                                         </div>
-
-                                        {/* Steps */}
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingRight: 8 }}>
                                             {phase.steps.map((step, si) => (
                                                 <div key={si} style={{
@@ -313,45 +387,67 @@ export function HelpPanel() {
                                                     border: '1px solid var(--border, #e5e7eb)',
                                                 }}>
                                                     <div style={{
-                                                        minWidth: 70,
-                                                        padding: '2px 8px',
-                                                        borderRadius: 20,
-                                                        fontSize: 11,
-                                                        fontWeight: 700,
-                                                        textAlign: 'center',
-                                                        background: step.who === 'מנהל' ? '#dbeafe' :
-                                                            step.who === 'מערכת' ? '#dcfce7' :
-                                                                step.who === 'AI Pipeline' ? '#ede9fe' :
-                                                                    step.who === 'לקוח' ? '#fef3c7' : '#f3f4f6',
-                                                        color: step.who === 'מנהל' ? '#1d4ed8' :
-                                                            step.who === 'מערכת' ? '#15803d' :
-                                                                step.who === 'AI Pipeline' ? '#7c3aed' :
-                                                                    step.who === 'לקוח' ? '#92400e' : '#374151',
-                                                    }}>
-                                                        {step.who}
-                                                    </div>
-                                                    <div style={{ fontSize: 13.5, lineHeight: 1.6, color: 'var(--text, #111)' }}>
-                                                        {step.action}
-                                                    </div>
+                                                        minWidth: 70, padding: '2px 8px', borderRadius: 20,
+                                                        fontSize: 11, fontWeight: 700, textAlign: 'center',
+                                                        background: step.who === 'מנהל' ? '#dbeafe' : step.who === 'מערכת' ? '#dcfce7' : step.who === 'AI Pipeline' ? '#ede9fe' : step.who === 'לקוח' ? '#fef3c7' : '#f3f4f6',
+                                                        color: step.who === 'מנהל' ? '#1d4ed8' : step.who === 'מערכת' ? '#15803d' : step.who === 'AI Pipeline' ? '#7c3aed' : step.who === 'לקוח' ? '#92400e' : '#374151',
+                                                    }}>{step.who}</div>
+                                                    <div style={{ fontSize: 13.5, lineHeight: 1.6, color: 'var(--text, #111)' }}>{step.action}</div>
                                                 </div>
                                             ))}
                                         </div>
                                     </div>
                                 ))}
 
-                                {/* Who badge legend */}
+                                {/* Track B: Inbound */}
+                                <div style={{
+                                    background: '#f0fdf4', borderRadius: 12, padding: '12px 16px', marginBottom: 20, marginTop: 8,
+                                    borderRight: '4px solid #10b981',
+                                }}>
+                                    <div style={{ fontWeight: 700, fontSize: 14, color: '#065f46', marginBottom: 4 }}>📥 מסלול B — נכנס (לקוח מזדמן · Auto 39 ₪)</div>
+                                    <div style={{ fontSize: 13, color: '#047857' }}>לקוח נכנס ל-sitenest.site → ממלא טופס → משלם ← הכל אוטומטי</div>
+                                </div>
+                                {WORKFLOW_STEPS_INBOUND.map((phase, pi) => (
+                                    <div key={pi} style={{ marginBottom: 20 }}>
+                                        <div style={{
+                                            display: 'flex', alignItems: 'center', gap: 10,
+                                            padding: '10px 14px',
+                                            background: phase.color + '18',
+                                            borderRight: `4px solid ${phase.color}`,
+                                            borderRadius: '0 10px 10px 0',
+                                            marginBottom: 10,
+                                        }}>
+                                            <span style={{ fontSize: 20 }}>{phase.icon}</span>
+                                            <span style={{ fontWeight: 700, fontSize: 15, color: phase.color }}>{phase.phase}</span>
+                                        </div>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingRight: 8 }}>
+                                            {phase.steps.map((step, si) => (
+                                                <div key={si} style={{
+                                                    display: 'flex', gap: 12, alignItems: 'flex-start',
+                                                    padding: '10px 14px',
+                                                    background: 'var(--surface, #f9fafb)',
+                                                    borderRadius: 10,
+                                                    border: '1px solid var(--border, #e5e7eb)',
+                                                }}>
+                                                    <div style={{
+                                                        minWidth: 70, padding: '2px 8px', borderRadius: 20,
+                                                        fontSize: 11, fontWeight: 700, textAlign: 'center',
+                                                        background: step.who === 'מנהל' ? '#dbeafe' : step.who === 'מערכת' ? '#dcfce7' : step.who === 'AI Pipeline' ? '#ede9fe' : step.who === 'לקוח' ? '#fef3c7' : '#f3f4f6',
+                                                        color: step.who === 'מנהל' ? '#1d4ed8' : step.who === 'מערכת' ? '#15803d' : step.who === 'AI Pipeline' ? '#7c3aed' : step.who === 'לקוח' ? '#92400e' : '#374151',
+                                                    }}>{step.who}</div>
+                                                    <div style={{ fontSize: 13.5, lineHeight: 1.6, color: 'var(--text, #111)' }}>{step.action}</div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+
+                                {/* Legend */}
                                 <div style={{ marginTop: 16, padding: 14, background: 'var(--surface, #f9fafb)', borderRadius: 10, border: '1px solid var(--border, #e5e7eb)' }}>
                                     <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted, #6b7280)', marginBottom: 8 }}>מקרא תפקידים</div>
                                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                                        {[
-                                            { who: 'מנהל', color: '#dbeafe', text: '#1d4ed8' },
-                                            { who: 'מערכת', color: '#dcfce7', text: '#15803d' },
-                                            { who: 'AI Pipeline', color: '#ede9fe', text: '#7c3aed' },
-                                            { who: 'לקוח', color: '#fef3c7', text: '#92400e' },
-                                        ].map(b => (
-                                            <span key={b.who} style={{ padding: '3px 10px', borderRadius: 20, fontSize: 12, fontWeight: 700, background: b.color, color: b.text }}>
-                                                {b.who}
-                                            </span>
+                                        {[{ who: 'מנהל', color: '#dbeafe', text: '#1d4ed8' }, { who: 'מערכת', color: '#dcfce7', text: '#15803d' }, { who: 'AI Pipeline', color: '#ede9fe', text: '#7c3aed' }, { who: 'לקוח', color: '#fef3c7', text: '#92400e' }].map(b => (
+                                            <span key={b.who} style={{ padding: '3px 10px', borderRadius: 20, fontSize: 12, fontWeight: 700, background: b.color, color: b.text }}>{b.who}</span>
                                         ))}
                                     </div>
                                 </div>
@@ -361,12 +457,12 @@ export function HelpPanel() {
                         {/* ── PRICING TAB ── */}
                         {tab === 'pricing' && (
                             <div>
-                                <p style={{ fontSize: 14, color: 'var(--text-muted, #6b7280)', marginBottom: 20 }}>
-                                    בחר מסלול שמתאים לגודל הפעילות שלך:
+                                <p style={{ fontSize: 14, color: 'var(--text-muted, #6b7280)', marginBottom: 8, lineHeight: 1.7 }}>
+                                    תוכניות ללקוחות עסקיים — מה הלקוח מקבל ומה אתה צריך לעשות:
                                 </p>
 
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                                    {PLANS.map((plan, pi) => (
+                                    {CUSTOMER_PLANS.map((plan, pi) => (
                                         <div key={pi} style={{
                                             border: plan.recommended ? `2px solid ${plan.color}` : '1px solid var(--border, #e5e7eb)',
                                             borderRadius: 14,
@@ -375,67 +471,59 @@ export function HelpPanel() {
                                         }}>
                                             {plan.recommended && (
                                                 <div style={{ background: plan.color, color: '#fff', textAlign: 'center', padding: '5px 0', fontSize: 12, fontWeight: 700 }}>
-                                                    ⭐ המומלץ ביותר
+                                                    ⭐ הנמכר ביותר
                                                 </div>
                                             )}
                                             <div style={{ padding: '16px 20px' }}>
-                                                {/* Plan name + price */}
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                                                {/* Header */}
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
                                                     <div>
-                                                        <div style={{ fontSize: 18, fontWeight: 700 }}>{plan.icon} {plan.name}</div>
-                                                        <div style={{ fontSize: 12, color: 'var(--text-muted, #6b7280)', marginTop: 3 }}>{plan.annual}</div>
+                                                        <div style={{ fontSize: 17, fontWeight: 700 }}>{plan.icon} {plan.name}</div>
+                                                        <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 20, background: plan.color + '20', color: plan.color, fontWeight: 600 }}>{plan.tag}</span>
                                                     </div>
                                                     <div style={{ textAlign: 'left' }}>
-                                                        <span style={{ fontSize: 26, fontWeight: 800, color: plan.color }}>{plan.price}</span>
+                                                        <span style={{ fontSize: 24, fontWeight: 800, color: plan.color }}>{plan.price}</span>
                                                         <span style={{ fontSize: 13, color: 'var(--text-muted, #6b7280)' }}>{plan.period}</span>
                                                     </div>
                                                 </div>
 
                                                 {/* Features */}
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 14 }}>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 12 }}>
                                                     {plan.features.map((f, fi) => (
                                                         <div key={fi} style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                            <span style={{ color: plan.color, fontWeight: 700 }}>✓</span>
-                                                            {f}
-                                                        </div>
-                                                    ))}
-                                                    {plan.notIncluded.map((f, fi) => (
-                                                        <div key={fi} style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, opacity: 0.4 }}>
-                                                            <span>✗</span> {f}
+                                                            <span style={{ color: plan.color, fontWeight: 700 }}>✓</span> {f}
                                                         </div>
                                                     ))}
                                                 </div>
 
-                                                {/* CTA */}
-                                                <button style={{
-                                                    width: '100%',
-                                                    padding: '11px 0',
-                                                    borderRadius: 10,
-                                                    border: 'none',
-                                                    cursor: 'pointer',
-                                                    fontSize: 14,
-                                                    fontWeight: 700,
-                                                    background: plan.recommended ? plan.color : 'transparent',
-                                                    color: plan.recommended ? '#fff' : plan.color,
-                                                    border: plan.recommended ? 'none' : `2px solid ${plan.color}`,
-                                                    transition: 'opacity 0.15s',
-                                                }}
-                                                    onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
-                                                    onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
-                                                >
-                                                    {plan.cta}
-                                                </button>
+                                                {/* Payment flow */}
+                                                <div style={{ background: '#f0f9ff', borderRadius: 8, padding: '8px 12px', marginBottom: 10, fontSize: 12, color: '#0369a1', borderRight: `3px solid ${plan.color}` }}>
+                                                    <span style={{ fontWeight: 700 }}>⚡ מה קורה אחרי תשלום: </span>{plan.paid_flow}
+                                                </div>
+
+                                                {/* Admin checklist */}
+                                                {plan.admin_actions.length > 0 && (
+                                                    <div style={{ background: '#fefce8', borderRadius: 8, padding: '8px 12px', fontSize: 12 }}>
+                                                        <div style={{ fontWeight: 700, color: '#92400e', marginBottom: 6 }}>📋 משימות לך (מנהל):</div>
+                                                        {plan.admin_actions.map((a, ai) => (
+                                                            <div key={ai} style={{ color: '#78350f', marginBottom: 3 }}>{a}</div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                                {plan.admin_actions.length === 0 && (
+                                                    <div style={{ background: '#f0fdf4', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: '#166534' }}>
+                                                        ✅ <strong>אין פעולה ידנית נדרשת</strong> — הכל מופעל אוטומטית
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     ))}
                                 </div>
 
-                                {/* Upgrade benefits */}
-                                <div style={{ marginTop: 20, padding: 14, background: '#ede9fe', borderRadius: 12 }}>
-                                    <div style={{ fontSize: 13, fontWeight: 700, color: '#7c3aed', marginBottom: 6 }}>💡 יתרונות תשלום שנתי</div>
-                                    <div style={{ fontSize: 13, color: '#4c1d95', lineHeight: 1.7 }}>
-                                        חסוך עד 17% בתשלום שנתי מראש. ביטול בכל עת. חידוש אוטומטי ב-30 יום לפני תאריך פקיעה.
-                                    </div>
+                                <div style={{ marginTop: 16, padding: 12, background: '#ede9fe', borderRadius: 10, fontSize: 12, color: '#4c1d95' }}>
+                                    <strong>💳 קישורי Morning לכל תוכנית:</strong><br />
+                                    Auto 39₪: mrng.to/Afe6Dg21q0 · Starter 299₪: mrng.to/sHDNNsGZwX<br />
+                                    Growth 699₪: mrng.to/nTNb7uWesR · Pro 1299₪: mrng.to/SDxruL9Hg0
                                 </div>
                             </div>
                         )}

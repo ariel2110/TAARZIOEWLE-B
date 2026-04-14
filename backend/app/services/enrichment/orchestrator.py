@@ -5,14 +5,52 @@ ready for site generation.
 """
 from __future__ import annotations
 
+import json
 import logging
 from app.services.enrichment.places_service import PlacesService
 from app.services.enrichment.social_service import SocialEnrichmentService
+from app.services.enrichment.cross_reference_validator import validator as cross_ref_validator, CrossReferenceResult
 
 logger = logging.getLogger(__name__)
 
 places_svc  = PlacesService()
 social_svc  = SocialEnrichmentService()
+
+
+def _apply_cross_reference(enriched: dict) -> dict:
+    """
+    Run the Zero-Hallucination cross-reference validator on an enriched business dict.
+    Adds cross_ref_score, cross_ref_status, cross_ref_agents to the dict.
+    Never raises — any failure leaves existing values intact.
+    """
+    try:
+        anchor = cross_ref_validator.build_anchor(
+            name=enriched.get('name'),
+            phone=enriched.get('phone'),
+            website=enriched.get('website'),
+            address=enriched.get('address'),
+            lat=enriched.get('lat'),
+            lng=enriched.get('lng'),
+        )
+        challengers = cross_ref_validator.build_social_challengers(
+            facebook_url=enriched.get('facebook_url'),
+            instagram_url=enriched.get('instagram_url'),
+            serper_url=enriched.get('website_url'),
+            anchor_name=enriched.get('name'),
+        )
+        if not challengers:
+            enriched['cross_ref_score'] = 0
+            enriched['cross_ref_status'] = 'pending'
+            enriched['cross_ref_agents'] = json.dumps({'google_places': True})
+            return enriched
+
+        result: CrossReferenceResult = cross_ref_validator.validate(anchor, challengers)
+        enriched['cross_ref_score'] = result.score
+        enriched['cross_ref_status'] = result.status
+        enriched['cross_ref_agents'] = json.dumps(result.agent_statuses)
+    except Exception as exc:
+        logger.warning('[CrossRef] orchestrator error: %s', exc)
+    return enriched
 
 
 class EnrichmentOrchestrator:
@@ -48,6 +86,7 @@ class EnrichmentOrchestrator:
                 enriched.update({"facebook_url": "", "instagram_url": "", "social_confidence": "unknown", "social_sources": []})
 
             enriched["completeness_score"] = self._completeness(enriched)
+            _apply_cross_reference(enriched)
             results.append(enriched)
 
         # Sort by completeness (most data-rich first)
@@ -69,6 +108,7 @@ class EnrichmentOrchestrator:
                 "social_confidence": social.get("confidence", "low"),
             })
         detail["completeness_score"] = self._completeness(detail)
+        _apply_cross_reference(detail)
         return detail
 
     # ------------------------------------------------------------------

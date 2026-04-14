@@ -19,7 +19,7 @@ PLACES_DETAILS_URL     = "https://maps.googleapis.com/maps/api/place/details/jso
 DETAIL_FIELDS = (
     "name,formatted_address,formatted_phone_number,international_phone_number,"
     "website,rating,user_ratings_total,opening_hours,business_status,"
-    "url,vicinity,types,reviews,place_id"
+    "url,vicinity,types,reviews,place_id,geometry"
 )
 
 # Each entry: label (Hebrew display), queries (Hebrew search phrases)
@@ -158,6 +158,7 @@ class PlacesService:
     def _normalize(self, raw: dict) -> dict:
         reviews = raw.get("reviews") or []
         top_review = reviews[0].get("text", "") if reviews else ""
+        geo = (raw.get("geometry") or {}).get("location", {})
         return {
             "name":            raw.get("name", ""),
             "address":         raw.get("formatted_address") or raw.get("vicinity", ""),
@@ -171,6 +172,8 @@ class PlacesService:
             "top_review":      top_review,
             "opening_hours":   (raw.get("opening_hours") or {}).get("weekday_text", []),
             "place_id":        raw.get("place_id", ""),
+            "lat":             geo.get("lat"),
+            "lng":             geo.get("lng"),
         }
 
     def _apply_filters(

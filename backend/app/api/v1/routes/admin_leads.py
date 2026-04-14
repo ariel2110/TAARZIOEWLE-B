@@ -234,3 +234,47 @@ def convert_to_business(lead_id: int, db: Session = Depends(get_db), _: User = D
     if not item:
         raise HTTPException(status_code=404, detail='Lead not found')
     return item
+
+
+@router.post('/{lead_id}/cross-validate')
+def cross_validate_lead(lead_id: int, db: Session = Depends(get_db), _: User = Depends(get_current_admin)):
+    """
+    Trigger Zero-Hallucination Cross-Reference validation for a single lead.
+    Compares data across Google Places, Facebook and Instagram to detect
+    data contamination and hallucinations.  Scores 0-100:
+      >85  → verified, 50-85 → manual_review, <50 → mismatch
+    """
+    import json
+    from app.services.enrichment.cross_reference_validator import validator as cr
+
+    lead = db.query(LeadRecord).filter(LeadRecord.id == lead_id).first()
+    if not lead:
+        raise HTTPException(status_code=404, detail='Lead not found')
+
+    anchor = cr.build_anchor(
+        name=lead.imported_name,
+        phone=lead.phone,
+        website=lead.website_url,
+        address=lead.address,
+        lat=lead.lat,
+        lng=lead.lng,
+    )
+    challengers = cr.build_social_challengers(
+        facebook_url=lead.facebook_url,
+        instagram_url=lead.instagram_url,
+        anchor_name=lead.imported_name,
+    )
+    result = cr.validate(anchor, challengers)
+
+    lead.cross_ref_score = result.score
+    lead.cross_ref_status = result.status
+    lead.cross_ref_agents = json.dumps(result.agent_statuses)
+    db.commit()
+    db.refresh(lead)
+
+    return {
+        'id': lead.id,
+        'cross_ref_score': result.score,
+        'cross_ref_status': result.status,
+        'cross_ref_agents': result.agent_statuses,
+    }

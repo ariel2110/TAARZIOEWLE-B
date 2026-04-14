@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button, Card, SectionTitle, Input, Select, Tooltip } from '../components/ui';
-import { Lead, getLeads, createLead, qualifyLead, convertLeadToBusiness, importLeadsCSV, autoQualifyLeads } from '../services/queries';
+import { Lead, getLeads, createLead, qualifyLead, convertLeadToBusiness, importLeadsCSV, autoQualifyLeads, triggerCrossValidate } from '../services/queries';
 
 const STATUSES = ['imported', 'qualified', 'converted', 'rejected'];
 const emptyForm = { imported_name: '', city: '', category: '', phone: '', website_url: '', score: '0', status: 'imported' };
@@ -13,6 +13,7 @@ export default function LeadsPage() {
   const [form, setForm] = useState(emptyForm);
   const [msg, setMsg] = useState('');
   const [saving, setSaving] = useState(false);
+  const [crossValidating, setCrossValidating] = useState<number | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const load = () => getLeads(0, 500).then(setItems).catch(console.error);
@@ -51,6 +52,17 @@ export default function LeadsPage() {
   const action = async (fn: () => Promise<unknown>, successMsg: string) => {
     try { await fn(); setMsg(successMsg); load(); }
     catch (e: any) { setMsg('פעולה נכשלה: ' + (e?.message || '')); }
+  };
+
+  const handleCrossValidate = async (leadId: number) => {
+    setCrossValidating(leadId);
+    try {
+      const result = await triggerCrossValidate(leadId);
+      const statusLabel: Record<string, string> = { verified: '✅ מאומת', manual_review: '⚠️ לבדיקה', mismatch: '❌ אי-התאמה', pending: '⏳ ממתין' };
+      setMsg(`כיול הושלם — ${statusLabel[result.cross_ref_status] ?? result.cross_ref_status} (${result.cross_ref_score}/100)`);
+      load();
+    } catch (e: any) { setMsg('כיול נכשל: ' + (e?.message || '')); }
+    finally { setCrossValidating(null); }
   };
 
   return (
@@ -115,6 +127,7 @@ export default function LeadsPage() {
                 <div style={{ marginTop: 2 }}>
                   <span style={{ background: scoreColor(l.score), color: '#fff', borderRadius: 6, padding: '2px 8px', fontSize: 12 }}>ציון: {l.score}</span>
                   <span style={{ background: '#e5e7eb', borderRadius: 6, padding: '2px 8px', fontSize: 12, marginLeft: 6 }}>{l.status}</span>
+                  <CrossRefBadge score={l.cross_ref_score} status={l.cross_ref_status} agents={l.cross_ref_agents} />
                 </div>
               </div>
               <div style={{ fontSize: 12, color: '#9ca3af' }}>#{l.id}</div>
@@ -125,6 +138,15 @@ export default function LeadsPage() {
               </Tooltip>
               <Tooltip text="המר ליד לעסק פעיל במערכת">
                 <Button onClick={() => action(() => convertLeadToBusiness(l.id), 'הומר לעסק!')} style={{ background: '#111827', color: '#fff' }}>🏢 המר לעסק</Button>
+              </Tooltip>
+              <Tooltip text="בדוק אמינות נתונים חוצה-סוכנים (Google / Facebook / Instagram)">
+                <Button
+                  onClick={() => handleCrossValidate(l.id)}
+                  disabled={crossValidating === l.id}
+                  style={{ background: '#0891b2', color: '#fff' }}
+                >
+                  {crossValidating === l.id ? '⏳...' : '🔍 כייל'}
+                </Button>
               </Tooltip>
             </div>
           </div>
@@ -138,4 +160,35 @@ function scoreColor(s: number) {
   if (s >= 70) return '#059669';
   if (s >= 40) return '#d97706';
   return '#9ca3af';
+}
+
+// ── Data Integrity Badge ──────────────────────────────────────────────────────
+function CrossRefBadge({ score, status, agents }: { score?: number; status?: string; agents?: string | null }) {
+  if (!status || status === 'pending') return null;
+
+  const color = status === 'verified' ? '#059669' : status === 'manual_review' ? '#d97706' : '#dc2626';
+  const label = status === 'verified' ? '✅' : status === 'manual_review' ? '⚠️' : '❌';
+
+  let agentIcons: React.ReactNode = null;
+  if (agents) {
+    try {
+      const parsed: Record<string, boolean> = JSON.parse(agents);
+      const iconMap: Record<string, string> = { google_places: 'G', facebook: 'FB', instagram: 'IG' };
+      agentIcons = (
+        <span style={{ marginLeft: 4, fontSize: 11 }}>
+          {Object.entries(parsed).map(([key, ok]) => (
+            <span key={key} title={key} style={{ marginRight: 2, opacity: ok ? 1 : 0.4 }}>
+              {iconMap[key] ?? key}:{ok ? '✓' : '✗'}
+            </span>
+          ))}
+        </span>
+      );
+    } catch { /* ignore malformed JSON */ }
+  }
+
+  return (
+    <span style={{ background: color, color: '#fff', borderRadius: 6, padding: '2px 8px', fontSize: 12, marginLeft: 6 }}>
+      {label} {score}/100{agentIcons}
+    </span>
+  );
 }

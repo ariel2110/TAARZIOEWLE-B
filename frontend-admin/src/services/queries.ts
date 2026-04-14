@@ -82,7 +82,7 @@ export type Digest = {
   generated_at?: string;
 };
 export type Business = { id: number; name: string; city?: string; category?: string; status: string; phone?: string | null; address?: string | null; campaign_id?: number | null; targeting_profile_id?: number | null };
-export type Lead = { id: number; imported_name: string; city?: string; category?: string; phone?: string | null; score: number; status: string; website_url?: string | null; campaign_id?: number | null; targeting_profile_id?: number | null };
+export type Lead = { id: number; imported_name: string; city?: string; category?: string; phone?: string | null; score: number; status: string; website_url?: string | null; campaign_id?: number | null; targeting_profile_id?: number | null; cross_ref_score?: number; cross_ref_status?: string; cross_ref_agents?: string | null };
 export type Approval = { id: number; title: string; status: string; approval_type: string; summary?: string | null };
 export type ApprovalDetail = Approval & { rationale?: string | null; evidence_json?: Record<string, unknown> | null; before_json?: Record<string, unknown> | null; after_json?: Record<string, unknown> | null; confidence_score?: number | null; payload_json?: Record<string, unknown> | null };
 export type Profile = { id: number; name: string; city?: string; radius_km?: number };
@@ -106,6 +106,7 @@ export const getDigest = () => apiGet<Digest>('/admin/ceo/daily-digest');
 export const getHealth = () => apiGet<Health>('/admin/ceo/health');
 export const getBusinesses = (skip = 0, limit = 100) => apiGet<Business[]>(`/admin/businesses?skip=${skip}&limit=${limit}`);
 export const getLeads = (skip = 0, limit = 100) => apiGet<Lead[]>(`/admin/leads?skip=${skip}&limit=${limit}`);
+export const triggerCrossValidate = (leadId: number) => apiPost<{ cross_ref_score: number; cross_ref_status: string; cross_ref_agents: Record<string, boolean> }>(`/admin/leads/${leadId}/cross-validate`, {});
 export const getApprovals = () => apiGet<Approval[]>('/admin/approvals');
 export const getApprovalDetail = (id: number) => apiGet<ApprovalDetail>(`/admin/approvals/${id}`);
 export const approve = (id: number) => apiPost(`/admin/approvals/${id}/approve`, {});

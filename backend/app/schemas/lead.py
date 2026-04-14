@@ -19,6 +19,9 @@ class LeadCreate(BaseModel):
 
 class LeadRead(LeadCreate):
     id: int
+    cross_ref_score: int = 0
+    cross_ref_status: str = 'pending'
+    cross_ref_agents: str | None = None
 
     class Config:
         from_attributes = True

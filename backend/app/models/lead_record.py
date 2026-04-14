@@ -24,6 +24,10 @@ class LeadRecord(Base, TimestampMixin):
     targeting_profile_id: Mapped[int | None] = mapped_column(ForeignKey('targeting_profiles.id', ondelete='SET NULL'), nullable=True, index=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    # ── GPS coordinates (from Google Places geometry) ──────────────────────
+    lat: Mapped[float | None] = mapped_column(Float, nullable=True)
+    lng: Mapped[float | None] = mapped_column(Float, nullable=True)
+
     # ── Social & Digital Asset Discovery ───────────────────────────────────
     facebook_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     instagram_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
@@ -34,6 +38,11 @@ class LeadRecord(Base, TimestampMixin):
     social_verified: Mapped[bool] = mapped_column(default=False, index=True)
     social_confidence: Mapped[int] = mapped_column(Integer, default=0)              # 0–100
     digital_gap_label: Mapped[str | None] = mapped_column(String(50), nullable=True) # 'super_hot' | 'hot' | None
+
+    # ── Cross-Reference Validation (Zero-Hallucination Engine) ────────────
+    cross_ref_score: Mapped[int] = mapped_column(Integer, default=0, index=True)    # 0-100
+    cross_ref_status: Mapped[str] = mapped_column(String(20), default='pending', index=True)  # verified|manual_review|mismatch|pending
+    cross_ref_agents: Mapped[str | None] = mapped_column(Text, nullable=True)       # JSON: {"google_places":true,"facebook":true,...}
 
     # Relationships
     businesses: Mapped[list['Business']] = relationship('Business', foreign_keys='Business.lead_id', back_populates=None, lazy='select', viewonly=True)

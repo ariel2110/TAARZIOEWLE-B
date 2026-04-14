@@ -77,6 +77,11 @@ class IntakeStatusResponse(BaseModel):
     created_at: str | None
     ai_status: str | None
     generated_preview_url: str | None
+    # Payment & domain activation
+    desired_domain: str | None
+    payment_status: str
+    payment_link: str | None
+    site_live_url: str | None
 
 
 # ── Helper ──────────────────────────────────────────────────────────────────
@@ -112,6 +117,10 @@ def _build_status_response(intake: PublicIntake) -> IntakeStatusResponse:
         created_at=intake.created_at.isoformat() if intake.created_at else None,
         ai_status=intake.ai_status,
         generated_preview_url=intake.generated_preview_url,
+        desired_domain=intake.desired_domain,
+        payment_status=intake.payment_status or 'unpaid',
+        payment_link=intake.payment_link,
+        site_live_url=intake.site_live_url,
     )
 
 
@@ -415,6 +424,74 @@ def request_correction(
     db.commit()
     db.refresh(intake)
     return _build_status_response(intake)
+
+
+# ── POST /public/intake/{token}/set-domain ────────────────────────────────
+class SetDomainRequest(BaseModel):
+    domain: str
+
+
+@router.post('/intake/{token}/set-domain', response_model=IntakeStatusResponse)
+def set_intake_domain(
+    token: str,
+    body: SetDomainRequest,
+    db: Session = Depends(get_db),
+) -> IntakeStatusResponse:
+    """Store the desired domain the lead wants to register.
+
+    Validates that the domain uses only .co.il or .com TLD and has
+    reasonable syntax BEFORE the user pays — so they know immediately
+    if their choice is invalid.
+    """
+    from app.services.hostinger_service import HostingerService
+
+    intake = db.query(PublicIntake).filter(PublicIntake.token == token).first()
+    if not intake:
+        raise HTTPException(status_code=404, detail='Submission not found')
+    if intake.payment_status == 'paid':
+        raise HTTPException(status_code=400, detail='Payment already completed — cannot change domain')
+
+    valid, error = HostingerService().validate_domain(body.domain.strip().lower())
+    if not valid:
+        raise HTTPException(status_code=422, detail=error)
+
+    intake.desired_domain = body.domain.strip().lower()
+    db.commit()
+    db.refresh(intake)
+    return _build_status_response(intake)
+
+
+# ── POST /public/intake/{token}/checkout ────────────────────────────────────
+@router.post('/intake/{token}/checkout')
+def create_checkout(
+    token: str,
+    db: Session = Depends(get_db),
+) -> dict:
+    """Create a Morning payment link for 39 NIS/month subscription.
+
+    Requires that the lead has already set their desired_domain via
+    POST /set-domain.  Returns {payment_url: "..."}.
+    """
+    from app.services.morning_service import MorningService
+
+    intake = db.query(PublicIntake).filter(PublicIntake.token == token).first()
+    if not intake:
+        raise HTTPException(status_code=404, detail='Submission not found')
+    if intake.payment_status == 'paid':
+        return {'payment_url': intake.site_live_url or settings.morning_success_url}
+    if not intake.desired_domain:
+        raise HTTPException(status_code=400, detail='יש לבחור שם דומיין לפני שממשיכים לתשלום')
+
+    payment_url = MorningService().create_payment_link(
+        intake_token=intake.token,
+        business_name=intake.business_name,
+        phone=intake.phone,
+        domain=intake.desired_domain,
+    )
+    intake.payment_link = payment_url
+    intake.payment_status = 'pending'
+    db.commit()
+    return {'payment_url': payment_url}
 
 
 # ── DELETE /public/intake/{token} ───────────────────────────────────────────

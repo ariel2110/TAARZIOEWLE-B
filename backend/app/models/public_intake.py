@@ -35,3 +35,11 @@ class PublicIntake(Base, TimestampMixin):
     whatsapp_pending_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     whatsapp_status: Mapped[str] = mapped_column(String(20), default='none')
     # 'none' | 'pending' | 'sent' | 'rejected'
+
+    # Payment & domain activation
+    desired_domain: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    payment_status: Mapped[str] = mapped_column(String(20), default='unpaid')
+    # 'unpaid' | 'pending' | 'paid' | 'failed'
+    payment_reference: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
+    payment_link: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    site_live_url: Mapped[str | None] = mapped_column(String(255), nullable=True)

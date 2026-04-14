@@ -19,6 +19,12 @@ interface IntakeStatus {
     corrections_remaining: number;
     admin_note: string | null;
     created_at: string | null;
+    ai_status: string | null;
+    generated_preview_url: string | null;
+    desired_domain: string | null;
+    payment_status: string;
+    payment_link: string | null;
+    site_live_url: string | null;
 }
 
 interface Props {
@@ -45,6 +51,11 @@ export default function SubmissionStatus({ token, onBack }: Props) {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [deleteSubmitting, setDeleteSubmitting] = useState(false);
     const [actionSuccess, setActionSuccess] = useState('');
+    // Checkout state
+    const [domainInput, setDomainInput] = useState('');
+    const [domainError, setDomainError] = useState('');
+    const [checkoutLoading, setCheckoutLoading] = useState(false);
+    const [checkoutError, setCheckoutError] = useState('');
 
     useEffect(() => {
         if (!token) {
@@ -147,6 +158,51 @@ export default function SubmissionStatus({ token, onBack }: Props) {
     const statusInfo = STATUS_LABELS[data.status] || { label: data.status, color: '#6b7280', icon: '❓' };
     const isCancelled = data.status === 'cancelled';
     const canCorrect = !isCancelled && data.corrections_remaining > 0;
+    const showCheckout = data.ai_status === 'done' && data.payment_status === 'unpaid' && !isCancelled;
+    const isPaid = data.payment_status === 'paid';
+
+    function validateDomainInput(d: string): string {
+        if (!d.trim()) return 'נא להזין שם דומיין';
+        const lower = d.trim().toLowerCase();
+        if (!lower.match(/^[a-z0-9][a-z0-9-]{0,61}[a-z0-9]?(\.(co\.il|com))$/)) {
+            return 'דומיין חייב להסתיים ב-.co.il או .com בלבד (לדוגמה: mybusiness.co.il)';
+        }
+        return '';
+    }
+
+    async function handleCheckout() {
+        const err = validateDomainInput(domainInput);
+        if (err) { setDomainError(err); return; }
+        setDomainError('');
+        setCheckoutLoading(true);
+        setCheckoutError('');
+        try {
+            // Step 1: register desired domain
+            const domainRes = await fetch(`${API}/public/intake/${token}/set-domain`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ domain: domainInput.trim().toLowerCase() }),
+            });
+            if (!domainRes.ok) {
+                const d = await domainRes.json().catch(() => ({}));
+                throw new Error(d.detail || 'שגיאה בשמירת הדומיין');
+            }
+            // Step 2: create checkout link
+            const checkoutRes = await fetch(`${API}/public/intake/${token}/checkout`, {
+                method: 'POST',
+            });
+            if (!checkoutRes.ok) {
+                const d = await checkoutRes.json().catch(() => ({}));
+                throw new Error(d.detail || 'שגיאה ביצירת קישור תשלום');
+            }
+            const { payment_url } = await checkoutRes.json();
+            // Redirect to Morning checkout
+            window.location.href = payment_url;
+        } catch (e: unknown) {
+            setCheckoutError(e instanceof Error ? e.message : 'שגיאה — נסה שוב');
+            setCheckoutLoading(false);
+        }
+    }
 
     return (
         <div className="ss-root">
@@ -179,6 +235,75 @@ export default function SubmissionStatus({ token, onBack }: Props) {
                 {actionSuccess && (
                     <div className="ss-action-success">
                         {actionSuccess}
+                    </div>
+                )}
+
+                {/* ── Live site banner ── */}
+                {isPaid && data.site_live_url && (
+                    <div className="ss-live-banner">
+                        <span className="ss-live-pulse" />
+                        <div>
+                            <strong>🎉 האתר שלך באוויר!</strong>
+                            <a
+                                className="ss-live-url"
+                                href={data.site_live_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                {data.site_live_url} ↗
+                            </a>
+                        </div>
+                    </div>
+                )}
+
+                {/* ── Checkout section ── */}
+                {showCheckout && (
+                    <div className="ss-checkout-card">
+                        <div className="ss-checkout-header">
+                            <span className="ss-checkout-icon">🚀</span>
+                            <div>
+                                <h2 className="ss-checkout-title">האתר שלך מוכן — הפעל עכשיו!</h2>
+                                <p className="ss-checkout-sub">בחר דומיין ותפעיל את האתר שלך בדקות ספורות</p>
+                            </div>
+                        </div>
+
+                        <div className="ss-checkout-features">
+                            <div className="ss-checkout-feature">🌐 <span>דומיין .co.il / .com</span></div>
+                            <div className="ss-checkout-feature">🤖 <span>אתר AI מותאם אישית</span></div>
+                            <div className="ss-checkout-feature">☁️ <span>אחסון + SSL + תחזוקה</span></div>
+                        </div>
+
+                        <div className="ss-checkout-price">
+                            <span className="ss-price-amount">39 ₪</span>
+                            <span className="ss-price-period">/חודש</span>
+                        </div>
+
+                        <div className="ss-domain-field">
+                            <label className="if-label">שם הדומיין הרצוי</label>
+                            <input
+                                className={`if-input ss-domain-input ${domainError ? 'ss-input-error' : ''}`}
+                                type="text"
+                                placeholder="לדוגמה: mybusiness.co.il"
+                                value={domainInput}
+                                onChange={e => { setDomainInput(e.target.value); setDomainError(''); }}
+                                dir="ltr"
+                                disabled={checkoutLoading}
+                            />
+                            {domainError && <p className="if-error-msg">{domainError}</p>}
+                            <p className="ss-domain-hint">ניתן לרשום דומיינים המסתיימים ב-.co.il או .com בלבד</p>
+                        </div>
+
+                        {checkoutError && <p className="if-error-msg ss-checkout-err">{checkoutError}</p>}
+
+                        <button
+                            className="ss-activate-btn"
+                            onClick={handleCheckout}
+                            disabled={checkoutLoading}
+                        >
+                            {checkoutLoading ? '⏳ מעבד...' : '💳 הפעל עכשיו — 39 ₪/חודש →'}
+                        </button>
+
+                        <p className="ss-checkout-footer">תשלום מאובטח דרך Morning · ניתן לבטל בכל עת</p>
                     </div>
                 )}
 
@@ -356,8 +481,9 @@ export default function SubmissionStatus({ token, onBack }: Props) {
                     <div className="ss-timeline">
                         {[
                             { done: true, label: 'הבקשה התקבלה' },
-                            { done: ['in_review', 'revision_requested', 'done'].includes(data.status), label: 'ה-AI בונה את האתר' },
-                            { done: ['done'].includes(data.status), label: 'אישור סופי ופרסום' },
+                            { done: ['in_review', 'revision_requested', 'done'].includes(data.status), label: 'ה-AI בנה את האתר' },
+                            { done: data.payment_status === 'paid' || data.payment_status === 'pending', label: 'בחירת דומיין ותשלום' },
+                            { done: !!data.site_live_url, label: 'האתר באוויר! 🎉' },
                         ].map((item, i) => (
                             <div key={i} className={`ss-timeline-item ${item.done ? 'done' : ''}`}>
                                 <span className="ss-timeline-dot">{item.done ? '✓' : '○'}</span>

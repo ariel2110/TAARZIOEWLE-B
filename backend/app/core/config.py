@@ -50,10 +50,25 @@ class Settings(BaseSettings):
     facebook_access_token: str | None = Field(default=None)    # Facebook Graph API token (optional)
 
     # Evolution API (self-hosted WhatsApp gateway)
-    evolution_api_url: str | None = Field(default=None)        # e.g. http://localhost:8080
-    evolution_api_key: str | None = Field(default=None)        # Evolution API auth key
-    evolution_instance: str | None = Field(default=None)       # Evolution API instance name
-    whatsapp_owner_phone: str = Field(default='')              # Admin phone for approval notifications
+    evolution_api_url: str | None = Field(default=None)
+    evolution_api_key: str | None = Field(default=None)
+    evolution_instance: str | None = Field(default=None)
+    whatsapp_owner_phone: str = Field(default='')
+
+    # Morning — Israeli payment processor (https://morning.co.il)
+    morning_api_key: str | None = Field(default=None)
+    morning_api_secret: str | None = Field(default=None)
+    morning_plan_id: str | None = Field(default=None)          # recurring plan ID (optional)
+    morning_webhook_secret: str | None = Field(default=None)   # HMAC key for webhook verification
+    morning_fixed_payment_url: str = Field(default='https://mrng.to/Afe6Dg21q0')  # fallback fixed 39 NIS link
+    morning_success_url: str = Field(default='https://sitenest.site/success')
+    morning_cancel_url: str = Field(default='https://sitenest.site')
+
+    # Hostinger — domain registration & DNS
+    hostinger_api_token: str | None = Field(default=None)
+
+    # Server infrastructure
+    server_public_ip: str = Field(default='76.13.42.13')
 
     # VIP intake — Google Sign-In bypass for rate limiting
     google_vip_token_expire_minutes: int = Field(default=60)   # VIP token lifetime in minutes

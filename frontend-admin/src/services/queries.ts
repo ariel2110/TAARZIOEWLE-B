@@ -291,3 +291,14 @@ export const getApiKeys = () => apiGet<ApiKeysResponse>('/admin/api-keys');
 export const updateApiKey = (keyName: string, value: string | null) =>
   apiPut<ApiKeyUpdateResult>(`/admin/api-keys/${keyName}`, { value });
 
+// ── Facebook Social Stats ────────────────────────────────────────────────────
+export type FacebookStats = {
+  status: 'active' | 'no_token' | 'token_expired' | 'error';
+  page_name: string | null;
+  followers: number | null;
+  fan_count: number | null;
+  detail: string | null;
+};
+
+export const getFacebookStats = () => apiGet<FacebookStats>('/admin/social/facebook-stats');
+

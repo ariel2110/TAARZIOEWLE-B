@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import { SectionTitle } from '../components/ui';
 import {
     AgentGlobalStats, AgentStatusItem, AgentRunLog,
-    ApiKeyGroup, ApiKeyItem,
+    ApiKeyGroup, ApiKeyItem, FacebookStats,
     getAgentGlobalStats, getAgentStatus, getAgentRecentRuns,
-    getApiKeys, updateApiKey,
+    getApiKeys, updateApiKey, getFacebookStats,
 } from '../services/queries';
 
 // ─── Stat box ───────────────────────────────────────────────────────────────
@@ -160,6 +160,105 @@ function RecentRunsTable({ runs }: { runs: AgentRunLog[] }) {
                     ))}
                 </tbody>
             </table>
+        </div>
+    );
+}
+
+// ─── Facebook Stats Card ─────────────────────────────────────────────────────
+
+function FacebookStatsCard() {
+    const [stats, setStats] = useState<FacebookStats | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        getFacebookStats()
+            .then(setStats)
+            .catch(() => setStats({ status: 'error', page_name: null, followers: null, fan_count: null, detail: 'שגיאת רשת' }))
+            .finally(() => setLoading(false));
+    }, []);
+
+    const statusMap: Record<FacebookStats['status'], { label: string; color: string; bg: string; icon: string }> = {
+        active:        { label: 'פעיל',          color: '#166534', bg: '#dcfce7', icon: '✅' },
+        no_token:      { label: 'לא מוגדר',      color: '#92400e', bg: '#fef3c7', icon: '⚠️' },
+        token_expired: { label: 'טוקן פג תוקף',  color: '#991b1b', bg: '#fee2e2', icon: '🔴' },
+        error:         { label: 'שגיאה',          color: '#991b1b', bg: '#fee2e2', icon: '❌' },
+    };
+
+    const s = stats ? statusMap[stats.status] : null;
+
+    return (
+        <div style={{
+            background: 'white',
+            border: `2px solid ${s ? s.color : '#e5e7eb'}`,
+            borderRadius: 14,
+            padding: '18px 22px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+            flex: '1 1 260px',
+            minWidth: 240,
+            maxWidth: 380,
+        }}>
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                <span style={{ fontSize: 24 }}>📘</span>
+                <div>
+                    <div style={{ fontWeight: 700, fontSize: 15 }}>Facebook Page</div>
+                    <div style={{ fontSize: 11, color: '#9ca3af' }}>Graph API v19.0</div>
+                </div>
+                {s && (
+                    <span style={{
+                        marginRight: 'auto',
+                        fontSize: 11, padding: '3px 10px', borderRadius: 20,
+                        background: s.bg, color: s.color, fontWeight: 700,
+                    }}>
+                        {s.icon} {s.label}
+                    </span>
+                )}
+            </div>
+
+            {loading && <div style={{ color: '#9ca3af', fontSize: 13 }}>⏳ טוען...</div>}
+
+            {!loading && stats?.status === 'active' && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 18px' }}>
+                    <div>
+                        <div style={{ fontSize: 10, color: '#9ca3af', marginBottom: 2 }}>שם העמוד</div>
+                        <div style={{ fontWeight: 700, fontSize: 15, color: '#1877f2', wordBreak: 'break-word' }}>
+                            {stats.page_name ?? '—'}
+                        </div>
+                    </div>
+                    <div>
+                        <div style={{ fontSize: 10, color: '#9ca3af', marginBottom: 2 }}>עוקבים</div>
+                        <div style={{ fontWeight: 700, fontSize: 20, color: '#1f2937' }}>
+                            {stats.followers != null ? stats.followers.toLocaleString('he-IL') : '—'}
+                        </div>
+                    </div>
+                    {stats.fan_count != null && stats.fan_count !== stats.followers && (
+                        <div>
+                            <div style={{ fontSize: 10, color: '#9ca3af', marginBottom: 2 }}>לייקים לעמוד</div>
+                            <div style={{ fontWeight: 700, fontSize: 15, color: '#1f2937' }}>
+                                {stats.fan_count.toLocaleString('he-IL')}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {!loading && stats?.status === 'token_expired' && (
+                <div style={{ background: '#fee2e2', borderRadius: 8, padding: '10px 12px', fontSize: 13, color: '#991b1b', fontWeight: 600 }}>
+                    🔴 הטוקן פג תוקף — יש לחדש אותו ב-
+                    <a href="https://developers.facebook.com/tools/accesstoken/" target="_blank" rel="noopener noreferrer"
+                        style={{ color: '#1877f2', marginRight: 4 }}>Facebook Developers</a>
+                </div>
+            )}
+
+            {!loading && stats?.status === 'no_token' && (
+                <div style={{ fontSize: 13, color: '#92400e' }}>
+                    הגדר FACEBOOK_ACCESS_TOKEN בקטע מפתחות API למטה.
+                </div>
+            )}
+
+            {!loading && stats?.status === 'error' && (
+                <div style={{ fontSize: 13, color: '#991b1b' }}>{stats.detail}</div>
+            )}
         </div>
     );
 }
@@ -507,6 +606,12 @@ export default function AgentsDashboard() {
                     </select>
                 </div>
                 <RecentRunsTable runs={runs} />
+            </div>
+
+            {/* ── Social Integrations ── */}
+            <SectionTitle>🌐 אינטגרציות רשתות חברתיות</SectionTitle>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, marginBottom: 32 }}>
+                <FacebookStatsCard />
             </div>
 
             {/* ── API Keys Management ── */}

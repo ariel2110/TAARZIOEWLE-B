@@ -34,6 +34,7 @@ from app.api.v1.routes.admin_tasks import router as admin_tasks_router
 from app.api.v1.routes.admin_whatsapp import router as admin_whatsapp_router
 from app.api.v1.routes.webhooks_morning import router as webhooks_morning_router
 from app.api.v1.routes.admin_api_keys import router as admin_api_keys_router
+from app.api.v1.routes.admin_social import router as admin_social_router
 
 api_router = APIRouter()
 api_router.include_router(health_router)
@@ -74,3 +75,4 @@ api_router.include_router(webhooks_morning_router)
 api_router.include_router(internal_whatsapp_router)
 api_router.include_router(admin_whatsapp_router)
 api_router.include_router(admin_api_keys_router)
+api_router.include_router(admin_social_router)

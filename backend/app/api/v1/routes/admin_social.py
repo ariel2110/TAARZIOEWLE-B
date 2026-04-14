@@ -48,54 +48,111 @@ def facebook_stats(_: User = Depends(get_current_admin)) -> FacebookStatsRespons
     if not token:
         return FacebookStatsResponse(status='no_token', detail='FACEBOOK_ACCESS_TOKEN לא מוגדר ב-.env')
 
-    fields = 'name,followers_count,fan_count'
-    url = f'{_FB_BASE}/me'
+    page_fields = 'name,fan_count,followers_count'
 
-    try:
-        resp = httpx.get(
-            url,
-            params={'fields': fields, 'access_token': token},
-            timeout=10,
-        )
-    except httpx.RequestError as exc:
-        logger.error('Facebook Graph API request failed: %s', type(exc).__name__)
+    def _resolve_followers(data: dict) -> int | None:
+        """Return followers_count if present, fall back to fan_count, else None."""
+        fc = data.get('followers_count')
+        if fc is not None:
+            return fc
+        return data.get('fan_count')
+
+    def _safe_get(url: str, params: dict) -> tuple[int, dict]:
+        """GET request returning (http_status, json_body). Never raises."""
+        try:
+            r = httpx.get(url, params=params, timeout=10)
+            try:
+                body = r.json()
+            except Exception:
+                body = {}
+            return r.status_code, body
+        except httpx.RequestError as exc:
+            logger.error('Facebook Graph API request failed: %s', type(exc).__name__)
+            return 0, {}
+
+    def _is_token_expired(body: dict) -> bool:
+        return body.get('error', {}).get('code') == 190
+
+    def _fb_error_detail(body: dict) -> str:
+        return body.get('error', {}).get('message', 'שגיאה לא ידועה')
+
+    # ── Step 1: try /me/accounts — works for both User & Page tokens ──────────
+    status_code, accounts_data = _safe_get(
+        f'{_FB_BASE}/me/accounts',
+        {'access_token': token, 'fields': f'id,access_token,{page_fields}'},
+    )
+
+    if status_code == 0:
         return FacebookStatsResponse(status='error', detail='שגיאת רשת — לא ניתן להגיע ל-Graph API')
 
-    if resp.status_code == 401:
-        logger.warning('Facebook token returned 401 — token may be expired or invalid')
+    if _is_token_expired(accounts_data):
+        logger.warning('Facebook token OAuthException (code 190) on /me/accounts')
         return FacebookStatsResponse(
             status='token_expired',
             detail='הטוקן פג תוקף — נדרש חידוש ב-Facebook Developers',
         )
 
-    if not resp.is_success:
-        logger.error('Facebook Graph API returned HTTP %d', resp.status_code)
-        return FacebookStatsResponse(
-            status='error',
-            detail=f'Facebook API שגיאה {resp.status_code}',
+    pages = accounts_data.get('data', [])
+    if pages:
+        # Use the first managed Page
+        page = pages[0]
+        page_id = page.get('id')
+        page_token = page.get('access_token', token)
+
+        # /me/accounts may already include followers_count/fan_count
+        if page.get('followers_count') is not None or page.get('fan_count') is not None:
+            return FacebookStatsResponse(
+                status='active',
+                page_name=page.get('name'),
+                followers=_resolve_followers(page),
+                fan_count=page.get('fan_count'),
+            )
+
+        # Otherwise fetch page details explicitly with the page token
+        p_status, p_data = _safe_get(
+            f'{_FB_BASE}/{page_id}',
+            {'fields': page_fields, 'access_token': page_token},
         )
-
-    data = resp.json()
-
-    if 'error' in data:
-        err = data['error']
-        code = err.get('code')
-        # Error code 190 = OAuthException (token invalid/expired)
-        if code == 190:
-            logger.warning('Facebook token OAuthException (code 190) — token may be expired')
+        if p_status == 200 and 'name' in p_data:
+            return FacebookStatsResponse(
+                status='active',
+                page_name=p_data.get('name'),
+                followers=_resolve_followers(p_data),
+                fan_count=p_data.get('fan_count'),
+            )
+        if _is_token_expired(p_data):
             return FacebookStatsResponse(
                 status='token_expired',
                 detail='הטוקן פג תוקף — נדרש חידוש ב-Facebook Developers',
             )
-        logger.error('Facebook Graph API error: code=%s type=%s', code, err.get('type'))
-        return FacebookStatsResponse(status='error', detail=err.get('message', 'שגיאה לא ידועה'))
 
-    return FacebookStatsResponse(
-        status='active',
-        page_name=data.get('name'),
-        followers=data.get('followers_count'),
-        fan_count=data.get('fan_count'),
+    # ── Step 2: no managed pages — try /me directly (Page token case) ─────────
+    me_status, me_data = _safe_get(
+        f'{_FB_BASE}/me',
+        {'fields': page_fields, 'access_token': token},
     )
+
+    if me_status == 0:
+        return FacebookStatsResponse(status='error', detail='שגיאת רשת — לא ניתן להגיע ל-Graph API')
+
+    if _is_token_expired(me_data):
+        logger.warning('Facebook token OAuthException (code 190) on /me')
+        return FacebookStatsResponse(
+            status='token_expired',
+            detail='הטוקן פג תוקף — נדרש חידוש ב-Facebook Developers',
+        )
+
+    if me_status == 200 and 'name' in me_data:
+        return FacebookStatsResponse(
+            status='active',
+            page_name=me_data.get('name'),
+            followers=_resolve_followers(me_data),
+            fan_count=me_data.get('fan_count'),
+        )
+
+    err_detail = _fb_error_detail(me_data) if 'error' in me_data else f'Facebook API שגיאה {me_status}'
+    logger.error('Facebook Graph API final error: %s', err_detail)
+    return FacebookStatsResponse(status='error', detail=err_detail)
 
 
 # ---------------------------------------------------------------------------

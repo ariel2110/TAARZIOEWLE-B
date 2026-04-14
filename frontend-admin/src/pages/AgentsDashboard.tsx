@@ -264,9 +264,21 @@ function FacebookStatsCard() {
 
             {!loading && stats?.status === 'token_expired' && (
                 <div style={{ background: '#fee2e2', borderRadius: 8, padding: '10px 12px', fontSize: 13, color: '#991b1b', fontWeight: 600 }}>
-                    🔴 הטוקן פג תוקף — יש לחדש אותו ב-
-                    <a href="https://developers.facebook.com/tools/accesstoken/" target="_blank" rel="noopener noreferrer"
-                        style={{ color: '#1877f2', marginRight: 4 }}>Facebook Developers</a>
+                    🔴 הטוקן פג תוקף — יש לחדש אותו:
+                    <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 5 }}>
+                        <a href="https://developers.facebook.com/tools/debug/accesstoken" target="_blank" rel="noopener noreferrer"
+                            style={{ color: '#1877f2', fontWeight: 600, fontSize: 12 }}>
+                            🔍 Access Token Debugger — הארכת טוקן ל-60 יום
+                        </a>
+                        <a href="https://developers.facebook.com/tools/explorer" target="_blank" rel="noopener noreferrer"
+                            style={{ color: '#1877f2', fontWeight: 600, fontSize: 12 }}>
+                            🛠 Graph API Explorer — הפקת טוקן חדש
+                        </a>
+                        <a href="https://developers.facebook.com/apps" target="_blank" rel="noopener noreferrer"
+                            style={{ color: '#1877f2', fontWeight: 600, fontSize: 12 }}>
+                            ⚙️ My Apps — App ID ו-App Secret
+                        </a>
+                    </div>
                 </div>
             )}
 

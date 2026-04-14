@@ -1,134 +1,170 @@
-# LocalBiz AutoSite Platform — v20
+# SiteNest Platform — v28
 
-Version: v20
+> **פלטפורמת SaaS ישראלית** לבניית אתרי עסקים קטנים אוטומטית, עם AI, WhatsApp, ותשלומים.
 
+---
 
-v7 focuses on **real infrastructure foundations**.
+## 🏗️ ארכיטקטורה כללית
 
-What is stronger in v7:
-- PostgreSQL-first config with SQLite fallback for quick dev
-- Alembic starter wired more realistically
-- initial real migration file
-- JWT auth skeleton + dev login
-- Docker Compose for Postgres + backend
-- Makefile for common commands
-- clearer local/VPS startup guidance
-
-## Recommended way to start
-1. Read `PROJECT_BLUEPRINT.md`
-2. Read `PHASE_HANDOFF.md`
-3. Read `docs/RELEASE_NOTES_V7.md`
-4. Read `docs/START_IN_VSCODE.md`
-5. Use `prompts/20_v7_infrastructure.md`
-
-## Quick local path
-### Option A — Docker
-```bash
-make up
+```
+┌─────────────────────────────────────────────────────┐
+│  frontend-admin    (React + Vite) — admin.sitenest.site  │
+│  frontend-public   (React + Vite) — sitenest.site        │
+│  frontend-customer (React + Vite) — app.sitenest.site    │
+├─────────────────────────────────────────────────────┤
+│  backend           (FastAPI + SQLAlchemy)            │
+│  └─ port 8765 — Uvicorn (2 workers)                 │
+├─────────────────────────────────────────────────────┤
+│  PostgreSQL        (Docker — port 5433)             │
+│  Redis             (port 6379)                      │
+│  Celery Worker     (Docker — queue: sitenest)       │
+│  Evolution API     (Docker — port 8181, WhatsApp)   │
+└─────────────────────────────────────────────────────┘
 ```
 
-### Option B — local backend
+---
+
+## 🚀 הפעלה מהירה (VPS / Production)
+
 ```bash
+# 1. שירות backend
+systemctl start sitenest-backend
+
+# 2. PostgreSQL + Celery + Evolution (Docker Compose)
+docker compose up -d
+
+# 3. בדיקת בריאות
+curl https://api.sitenest.site/health
+```
+
+---
+
+## 💻 הפעלה מקומית (פיתוח)
+
+```bash
+# Backend
 cd backend
-python -m venv .venv
-source .venv/bin/activate
+python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env
+cp .env.example .env   # מלא את המשתנים
 alembic upgrade head
-python -m app.db.seed_cli
-uvicorn app.main:app --reload
-```
+uvicorn app.main:app --reload --port 8765
 
-## Dev auth
-Use either:
-- `POST /api/v1/auth/dev-login` to get a bearer token
-- or legacy headers for quick development
-
-## Frontend admin
-```bash
+# Frontend Admin
 cd frontend-admin
-npm install
-npm run dev
+npm install && npm run dev   # http://localhost:5173
+
+# Frontend Public
+cd frontend-public
+npm install && npm run dev   # http://localhost:5174
 ```
 
-## V8 Highlights
-- queue APIs and routed admin UI
-- approval actions with activity logs
-- targeting console starter
-- CEO Console starter
+---
 
+## 🔑 משתני סביבה חיוניים (`.env`)
 
-## v10
-Use prompts/23_v10_actions_campaigns.md to continue from the current package.
+| משתנה | תיאור |
+|-------|-------|
+| `USE_POSTGRES` | `true` ב-production |
+| `POSTGRES_HOST/PORT/DB/USER/PASSWORD` | PostgreSQL credentials |
+| `JWT_SECRET_KEY` | מפתח חתימת JWT |
+| `ADMIN_DEV_TOKEN` | טוקן פיתוח (לא זמין ב-production) |
+| `OPENAI_API_KEY` | GPT-4o — כתיבת תוכן |
+| `ANTHROPIC_API_KEY` | Claude — ארכיטקטורת אתר |
+| `GEMINI_API_KEY` | Gemini — סינון לידים |
+| `XAI_API_KEY` | Grok — ניהול מכירות WhatsApp |
+| `EVOLUTION_API_URL/KEY/INSTANCE` | WhatsApp gateway |
+| `MORNING_API_KEY/SECRET` | תשלומים (Morning/GreenInvoice) |
+| `FACEBOOK_ACCESS_TOKEN` | טוקן עמוד פייסבוק (long-lived) |
+| `FACEBOOK_APP_ID/SECRET` | לרענון אוטומטי כל 50 יום |
+| `GOOGLE_PLACES_API_KEY` | Google Places — לידים |
+| `HOSTINGER_API_TOKEN` | רכישת דומיינים אוטומטית |
 
+---
 
-## V11 customer access
-- Admin can create customer accounts linked to a business and site
-- Customer login is phone-based with a unique temporary password
-- First login requires password change
-- Customer portal remains intentionally limited and privacy-first
+## 📋 נתיבי API עיקריים
 
+### Public (ללא auth)
+| Method | Path | תיאור |
+|--------|------|-------|
+| POST | `/api/v1/public/build-instant` | יצירת ליד + site scope |
+| GET | `/api/v1/public/places-autocomplete` | חיפוש עסקים |
+| POST | `/api/v1/public/request-magic-link` | שליחת magic link |
+| POST | `/api/v1/public/consume-magic-link` | מימוש magic link |
 
-## V12 highlights
-- customer portal depth
-- customer edit submissions
-- change requests
-- support messages
-- customer timeline
-- admin customer ops visibility
+### Admin (JWT required)
+| Method | Path | תיאור |
+|--------|------|-------|
+| GET | `/api/v1/admin/analytics/*` | CEO Analytics Dashboard |
+| GET | `/api/v1/admin/social/facebook-stats` | סטטיסטיקת פייסבוק |
+| POST | `/api/v1/admin/social/facebook-refresh-token` | רענון טוקן ידני |
+| GET/POST | `/api/v1/admin/api-keys` | ניהול מפתחות API |
+| GET | `/api/v1/internal/whatsapp-qr` | QR לחיבור WhatsApp |
+| POST | `/api/v1/internal/approve-message/{token}` | אישור הודעת WhatsApp |
 
+### Webhooks
+| Method | Path | תיאור |
+|--------|------|-------|
+| POST | `/api/v1/webhooks/morning` | תשלום מאושר ← Morning |
+| POST | `/api/v1/webhooks/whatsapp` | עדכוני delivery ← WhatsApp |
 
-## V13 focus
-- Public landing page and intake preview
-- Admin identity set to Ariel / ar.2110@gmail.com
-- Customer and admin entry points
-- Demo limit concept: up to 2 demo sites per month
+---
 
+## 🤖 Celery Tasks
 
-## Public entry app
-A new `frontend-public` starter is included for the homepage/public entry flow.
+| Task | תזמון | תיאור |
+|------|-------|-------|
+| `followup_task` | כל 24 שעות | מעקב לידים וחידוש |
+| `ceo_digest_task` | כל 6 שעות | דוח CEO |
+| `facebook_token_refresh_task` | כל 50 יום | רענון טוקן פייסבוק אוטומטי |
 
+---
 
-## V15 quick note
-This version improves the public homepage and onboarding experience, including a richer readiness check and demo-availability preview by customer phone.
+## 🔒 אבטחה
 
+- **Auth**: JWT Bearer tokens (httponly, exp: 720 min)
+- **Admin routes**: `Depends(get_current_admin)` על כל route ניהולי
+- **Webhooks**: HMAC-SHA256 signature verification
+- **CORS**: origins מוגדרים, ללא `X-Forwarded-For`
+- **Magic links**: POST בלבד (מניעת browser prefetch)
+- **Secrets**: `.env` לא ב-git, `ADMIN_DEV_TOKEN` מושבת ב-production
 
-## V16
-Public onboarding now connects readiness preview to a real request-demo provisioning flow that can create a lead, business, and customer account with a unique temporary password.
+---
 
+## 📁 מבנה הפרויקט
 
-## v17 note
-This version adds safer public request-demo provisioning with basic deduplication, reuse of existing records where possible, and onboarding state hints for the public-to-customer handoff.
+```
+site-nest-platform/
+├── backend/
+│   ├── app/
+│   │   ├── api/v1/routes/      # FastAPI endpoints
+│   │   ├── core/               # config, security, celery
+│   │   ├── models/             # SQLAlchemy models
+│   │   ├── services/           # business logic
+│   │   └── tasks.py            # Celery tasks
+│   ├── alembic/                # DB migrations
+│   └── .env.example
+├── frontend-admin/             # React admin dashboard
+├── frontend-public/            # React public landing
+├── frontend-customer/          # React customer portal
+├── docs/                       # ספציפיקציות + release notes
+├── docker-compose.yml
+└── Makefile
+```
 
+---
 
-## V18
-- Added demo request persistence, admin visibility, and lightweight provisioning audit trail.
+## 📄 תיעוד נוסף
 
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — ארכיטקטורת מלאה
+- [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) — הוראות deployment
+- [`docs/SECURITY.md`](docs/SECURITY.md) — מדיניות אבטחה
+- [`docs/RELEASE_NOTES_V28.md`](docs/RELEASE_NOTES_V28.md) — שינויים אחרונים
+- [`PROJECT_BLUEPRINT.md`](PROJECT_BLUEPRINT.md) — vision & roadmap
+- [`PHASE_HANDOFF.md`](PHASE_HANDOFF.md) — handoff בין שלבי פיתוח
 
-## V19
-Adds package-aware demo limits, provisioning decision logs, and better public/admin status visibility.
+---
 
+## גרסה נוכחית
 
-## V20
-Adds package metadata from the database, persisted onboarding sessions, public/admin compare views, and magic-link foundation for customer access.
-
-
-## V21 notes
-V21 adds a stronger public/customer access foundation with login challenges, onboarding transition guards, and richer package metadata.
-
-
-## v22 highlight
-This version adds starter hardening for public onboarding and customer access: rate limiting, login delivery abstraction, and package-aware challenge gating.
-
-
-## Current starter version
-This repo snapshot includes v24 security monitoring and abuse scoring foundations.
-
-
-V25 highlights: security alerts, lockout policy summary, richer admin monitoring.
-
-
-V26 highlights: workflow guards and approval apply flow.
-
-
-V27 highlights: package field permissions and customer billing visibility starter.
+**v28** | אפריל 2026 | commit `HEAD` | branch `main`

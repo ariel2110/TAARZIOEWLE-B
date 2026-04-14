@@ -30,7 +30,7 @@ _CATALOG: list[tuple[str, str, str, str, str, str]] = [
     ('חיפוש ונתונים', 'google_places_api_key', 'Google Places API', 'GOOGLE_PLACES_API_KEY', 'איסוף לידים — חיפוש עסקים לפי קטגוריה',   'https://console.cloud.google.com/apis/credentials'),
     ('חיפוש ונתונים', 'serper_api_key',        'Serper.dev',        'SERPER_API_KEY',          'גוגל סרץ\' — חיפוש אינטרנט עבור הסוכנים', 'https://serper.dev/dashboard'),
     ('חיפוש ונתונים', 'apify_api_token',       'Apify',             'APIFY_API_TOKEN',         'סקרייפינג — חילוץ מידע מאינסטגרם/טיקטוק', 'https://console.apify.com/account/settings/integrations'),
-    ('חיפוש ונתונים', 'facebook_access_token', 'Facebook Graph API','FACEBOOK_ACCESS_TOKEN',   'פייסבוק — גישה לעמודים עסקיים',           'https://developers.facebook.com/tools/accesstoken/'),
+    ('חיפוש ונתונים', 'facebook_access_token', 'Facebook Graph API','FACEBOOK_ACCESS_TOKEN',   'פייסבוק — גישה לעמודים עסקיים',           'https://developers.facebook.com/tools/debug/accesstoken'),
     ('WhatsApp', 'evolution_api_url',  'Evolution URL',          'EVOLUTION_API_URL',        'כתובת שרת ה-WhatsApp העצמאי',              ''),
     ('WhatsApp', 'evolution_api_key',  'Evolution API Key',      'EVOLUTION_API_KEY',        'מפתח גישה לשרת Evolution',                 ''),
     ('WhatsApp', 'evolution_instance', 'Evolution Instance',     'EVOLUTION_INSTANCE',       'שם ה-Instance המחובר לסים',                ''),

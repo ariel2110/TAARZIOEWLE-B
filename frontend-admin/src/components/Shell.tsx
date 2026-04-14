@@ -46,6 +46,7 @@ const NAV_GROUPS: NavGroup[] = [
       { to: '/feedback', icon: '💬', label: 'פידבק', tip: 'רישום פידבק פנימי — שיפורים, תובנות וניתוח AI' },
       { to: '/security', icon: '🛡️', label: 'אבטחה', tip: 'ניטור כניסות חשודות, חסימות ורשימת חשד' },
       { to: '/whatsapp', icon: '📱', label: 'WhatsApp', tip: 'חיבור/ניתוק WhatsApp, QR, ואישור הודעות' },
+      { to: '/agents', icon: '📡', label: 'סוכני AI', tip: 'מעקב עלויות API בזמן אמת — Claude, GPT, Gemini, Grok' },
     ],
   },
 ];

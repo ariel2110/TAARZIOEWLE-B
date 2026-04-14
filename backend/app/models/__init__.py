@@ -33,3 +33,6 @@ from app.models.security_alert import SecurityAlert
 
 from app.models.package_field_permission import PackageFieldPermission
 from app.models.enriched_biz_cache import EnrichedBizCache
+
+from app.models.agent_usage_log import AgentUsageLog
+from app.models.system_daily_analytics import SystemDailyAnalytics

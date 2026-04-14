@@ -241,3 +241,40 @@ export const triggerGenerateSite = (businessId: number) => apiPost<TaskTriggered
 export const triggerBatchGenerate = (businessIds: number[]) => apiPost<TaskTriggered>('/admin/tasks/batch-generate', { business_ids: businessIds });
 export const triggerRegenerateWithNote = (businessId: number, note: string) => apiPost<TaskTriggered>(`/admin/tasks/regenerate-with-note/${businessId}`, { note });
 export const getTaskStatus = (taskId: string) => apiGet<TaskStatus>(`/admin/tasks/${taskId}/status`);
+
+// ─── CEO Agent Analytics ────────────────────────────────────────────────────
+
+export type AgentBreakdownItem = {
+  agent: string; label: string; emoji: string; color: string;
+  cost_ils: number; tokens_in: number; tokens_out: number; calls: number;
+};
+export type AgentGlobalStats = {
+  period: string;
+  total_revenue_ils: number;
+  total_api_cost_ils: number;
+  net_profit_ils: number;
+  margin_pct: number;
+  sites_built: number;
+  agent_breakdown: AgentBreakdownItem[];
+};
+export type AgentStatusItem = {
+  agent: string; label: string; emoji: string; color: string;
+  configured: boolean; model: string;
+  pricing_input_per_1m: number | string; pricing_output_per_1m: number | string;
+  cost_ils_all_time: number; calls_all_time: number;
+  cost_ils_this_month: number; calls_this_month: number;
+  avg_input_tokens: number; avg_output_tokens: number;
+  projected_cost_per_call_ils: number;
+};
+export type AgentRunLog = {
+  id: number; created_at: string; agent_name: string; model_name: string | null;
+  task_type: string | null; stage: string | null; business_id: number | null;
+  draft_site_id: number | null; input_tokens: number; output_tokens: number;
+  cost_ils: number; cost_usd: number;
+};
+
+export const getAgentGlobalStats = () => apiGet<AgentGlobalStats>('/admin/analytics/agent-global-stats');
+export const getAgentStatus = () => apiGet<{ agents: AgentStatusItem[]; usd_to_ils: number }>('/admin/analytics/agent-status');
+export const getAgentRecentRuns = (agent?: string) =>
+  apiGet<AgentRunLog[]>(`/admin/analytics/agent-recent-runs${agent ? `?agent_name=${agent}` : ''}`);
+

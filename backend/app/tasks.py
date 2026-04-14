@@ -4,10 +4,12 @@ tasks.py — Celery background tasks for SiteNest.
 All heavy AI operations and scheduled maintenance that would block the API
 server (or should run periodically) live here:
 
-  - generate_site_task   → 4-agent AI pipeline for one business
-  - batch_generate_task  → fan-out site generation for N businesses
-  - followup_task        → scan sent outreach, mark followup_due / stale
-  - ceo_digest_task      → regenerate the CEO brain daily digest
+  - generate_site_task              → 4-agent AI pipeline for one business
+  - batch_generate_task             → fan-out site generation for N businesses
+  - followup_task                   → scan sent outreach, mark followup_due / stale
+  - ceo_digest_task                 → regenerate the CEO brain daily digest
+  - log_usage_task                  → async LLM cost tracking (fire-and-forget)
+  - send_abandonment_recovery_task  → WhatsApp re-engagement 10 min after lead contact
 """
 from __future__ import annotations
 
@@ -571,6 +573,48 @@ def finalize_deployment_task(self: Task, token: str) -> dict:
             raise self.retry(exc=exc)
         except self.MaxRetriesExceededError:
             return {'status': 'error', 'message': str(exc), 'token': token[:8]}
+
+
+# ── Task: async LLM cost tracking (fire-and-forget) ──────────────────────────
+
+@celery_app.task(
+    base=_BaseTask,
+    bind=False,
+    name='app.tasks.log_usage_task',
+    max_retries=2,
+    default_retry_delay=10,
+    ignore_result=True,
+)
+def log_usage_task(
+    *,
+    agent_name:       str,
+    model_name:       str | None     = None,
+    input_tokens:     int            = 0,
+    output_tokens:    int            = 0,
+    additional_units: int            = 0,
+    business_id:      int | None     = None,
+    draft_site_id:    int | None     = None,
+    intake_token:     str | None     = None,
+    stage:            str | None     = None,
+    task_type:        str | None     = None,
+) -> None:
+    """
+    Write one AgentUsageLog row + update today's SystemDailyAnalytics.
+    Called via cost_tracker.track_usage() — never from request threads directly.
+    """
+    from app.services.cost_tracker import _write_usage_sync
+    _write_usage_sync(
+        agent_name=agent_name,
+        model_name=model_name,
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        additional_units=additional_units,
+        business_id=business_id,
+        draft_site_id=draft_site_id,
+        intake_token=intake_token,
+        stage=stage,
+        task_type=task_type,
+    )
 
 
 # ── Task: Abandonment-recovery WhatsApp (10 min after page-contacted) ─────────

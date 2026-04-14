@@ -16,7 +16,8 @@ from app.models.draft_site import DraftSite
 from app.models.business import Business
 from app.models.lead_record import LeadRecord
 from app.models.enriched_biz_cache import EnrichedBizCache
-from app.services.public.site_domain_service import build_demo_public_url, normalize_dns_label, build_draft_subdomain
+from app.services.public.site_domain_service import build_demo_public_url, normalize_dns_label
+from app.utils.string_utils import generate_secure_slug
 
 router = APIRouter(prefix='/admin/demos', tags=['admin-demos'])
 
@@ -126,8 +127,15 @@ def _upsert_demo_for_draft(db: Session, draft: DraftSite) -> DemoSite | None:
     if not biz:
         return None
 
-    slug = build_draft_subdomain(draft.id, biz.name)
-    row = db.execute(select(DemoSite).where(DemoSite.slug == slug)).scalar_one_or_none()
+    # Find existing demo by business name — preserves the current slug so any
+    # already-sent WhatsApp links remain valid.  New demos receive a secure slug
+    # that cannot be enumerated by guessing sequential IDs.
+    row = db.execute(
+        select(DemoSite)
+        .where(DemoSite.business_name == biz.name)
+        .order_by(DemoSite.id.desc())
+    ).scalar_one_or_none()
+    slug = row.slug if row else generate_secure_slug(biz.name)
 
     lead = db.query(LeadRecord).filter(LeadRecord.id == biz.lead_id).first() if biz.lead_id else None
     cache = db.query(EnrichedBizCache).filter(EnrichedBizCache.name == biz.name).order_by(EnrichedBizCache.id.desc()).first()

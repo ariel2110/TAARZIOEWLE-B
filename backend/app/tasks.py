@@ -354,14 +354,23 @@ def inbound_build_task(self: Task, business_id: int) -> dict:
                 'label': '🎉 האתר מוכן!',
             })
 
-            from app.services.public.site_domain_service import build_draft_public_url, build_draft_subdomain
+            from app.services.public.site_domain_service import build_draft_public_url
             from app.models.demo_site import DemoSite
+            from app.utils.string_utils import generate_secure_slug
+            from sqlalchemy import select as _select
             public_url = build_draft_public_url(result_draft.id, business.name)
 
             # Keep /admin/demos in sync with inbound-created draft sites.
+            # Slug is looked up by business name so re-runs preserve the existing
+            # URL instead of regenerating it.  New demos get a cryptographically
+            # random suffix so the URL cannot be guessed by incrementing an ID.
             try:
-                demo_slug = build_draft_subdomain(result_draft.id, business.name)
-                demo = db.query(DemoSite).filter(DemoSite.slug == demo_slug).first()
+                demo = db.execute(
+                    _select(DemoSite)
+                    .where(DemoSite.business_name == business.name)
+                    .order_by(DemoSite.id.desc())
+                ).scalar_one_or_none()
+                demo_slug = demo.slug if demo else generate_secure_slug(business.name)
                 demo_values = {
                     'slug': demo_slug,
                     'business_name': business.name,

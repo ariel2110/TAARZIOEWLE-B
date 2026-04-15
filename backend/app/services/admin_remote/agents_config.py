@@ -41,6 +41,10 @@ Lead scoring: מבוסס Google Maps rating, reviews, digital gap (social presen
 • search_business_data(name,city) — חיפוש OSINT על עסק ברשת (Serper)
 • check_domain_availability(domain) — בדיקת זמינות דומיין (Hostinger)
 • get_hot_leads(limit)            — רשימת הלידים החמים ביותר
+• fetch_facebook_data(page_id_or_url) — נתוני פייסבוק חיים: עוקבים, פוסטים, רמת פעילות
+• run_apify_scraper(target_url,platform) — גרידת תוכן Instagram/TikTok עמוקה
+• get_google_places_details(name,city)  — Google Places: טלפון, שעות, ביקורות (מקור האמת)
+• crawl_existing_website(url)     — ניתוח האתר הקיים של העסק לפני בניית אתר חדש
 """
 
 # ─────────────────────────────────────────────────────────────────────────────

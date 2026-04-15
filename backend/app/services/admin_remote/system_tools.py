@@ -251,6 +251,339 @@ def get_hot_leads(db: Session, limit: int = 10) -> dict[str, Any]:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# 6. fetch_facebook_data
+# ─────────────────────────────────────────────────────────────────────────────
+
+def fetch_facebook_data(page_id_or_url: str) -> dict[str, Any]:
+    """Fetch live Facebook page stats via Meta Graph API: followers, posts, last activity."""
+    try:
+        import httpx
+        import datetime as dt
+        from app.core.config import settings
+
+        token = settings.facebook_access_token or ""
+        if not token:
+            return {"ok": False, "data": None, "error": "FACEBOOK_ACCESS_TOKEN not configured"}
+
+        # Normalise: extract page handle/ID from URL if needed
+        page_id = page_id_or_url.strip()
+        if "facebook.com/" in page_id:
+            page_id = page_id.rstrip("/").split("facebook.com/")[-1].split("?")[0].split("/")[0]
+
+        fields = "name,about,fan_count,website,link,overall_star_rating,rating_count,posts.limit(5){message,created_time}"
+        resp = httpx.get(
+            f"https://graph.facebook.com/v19.0/{page_id}",
+            params={"fields": fields, "access_token": token},
+            timeout=12,
+        )
+        raw = resp.json()
+
+        if "error" in raw:
+            return {"ok": False, "data": None, "error": raw["error"].get("message", "Graph API error")}
+
+        # Last post activity
+        posts_raw = (raw.get("posts") or {}).get("data", [])
+        last_post_date = None
+        days_since_last_post = None
+        if posts_raw:
+            last_post_date = posts_raw[0].get("created_time", "")[:10]
+            try:
+                delta = dt.date.today() - dt.date.fromisoformat(last_post_date)
+                days_since_last_post = delta.days
+            except Exception:
+                pass
+
+        activity_level = "unknown"
+        if days_since_last_post is not None:
+            if days_since_last_post <= 7:
+                activity_level = "active"
+            elif days_since_last_post <= 30:
+                activity_level = "moderate"
+            elif days_since_last_post <= 180:
+                activity_level = "dormant"
+            else:
+                activity_level = "dead"
+
+        return {
+            "ok": True,
+            "data": {
+                "name": raw.get("name"),
+                "about": raw.get("about"),
+                "followers": raw.get("fan_count"),
+                "website": raw.get("website"),
+                "link": raw.get("link"),
+                "rating": raw.get("overall_star_rating"),
+                "rating_count": raw.get("rating_count"),
+                "last_post_date": last_post_date,
+                "days_since_last_post": days_since_last_post,
+                "activity_level": activity_level,
+                "recent_posts": [
+                    {"text": p.get("message", "")[:200], "date": p.get("created_time", "")[:10]}
+                    for p in posts_raw[:3]
+                ],
+            },
+        }
+    except Exception as exc:
+        logger.exception("[system_tools] fetch_facebook_data failed")
+        return {"ok": False, "data": None, "error": str(exc)}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 7. run_apify_scraper
+# ─────────────────────────────────────────────────────────────────────────────
+
+def run_apify_scraper(target_url: str, platform: str = "instagram") -> dict[str, Any]:
+    """
+    Trigger an Apify actor to scrape Instagram or TikTok profile content.
+    platform: 'instagram' | 'tiktok'
+    Returns bio, followers, media URLs (images/covers), last post date.
+    """
+    try:
+        from app.core.config import settings
+
+        token = settings.apify_api_token or ""
+        if not token:
+            return {"ok": False, "data": None, "error": "APIFY_API_TOKEN not configured"}
+
+        try:
+            from apify_client import ApifyClient
+        except ImportError:
+            return {"ok": False, "data": None, "error": "apify-client package not installed"}
+
+        client = ApifyClient(token)
+        platform = platform.lower().strip()
+
+        # Extract username from URL
+        username = target_url.rstrip("/").split("/")[-1].lstrip("@").split("?")[0]
+        if not username:
+            return {"ok": False, "data": None, "error": "Could not extract username from URL"}
+
+        if platform == "instagram":
+            run = client.actor("apify/instagram-scraper").call(
+                run_input={
+                    "usernames": [username],
+                    "resultsType": "posts",
+                    "resultsLimit": 6,
+                    "addParentData": True,
+                },
+                timeout_secs=60,
+                memory_mbytes=256,
+            )
+            items = list(client.dataset(run["defaultDatasetId"]).iterate_items())
+            media_urls = []
+            for item in items[:6]:
+                url = item.get("displayUrl") or item.get("videoUrl")
+                if url:
+                    media_urls.append(url)
+
+            # Profile data is in the first item's owner field
+            profile_data = {}
+            if items:
+                owner = items[0].get("ownerUsername") or username
+                followers = items[0].get("likesCount")  # fallback
+                profile_data = {
+                    "username": owner,
+                    "followers": items[0].get("followersCount"),
+                    "bio": items[0].get("biography", ""),
+                    "post_count": items[0].get("postsCount"),
+                }
+
+            return {
+                "ok": True,
+                "data": {
+                    "platform": "instagram",
+                    "username": username,
+                    "profile": profile_data,
+                    "media_urls": media_urls[:6],
+                    "posts_scraped": len(items),
+                },
+            }
+
+        elif platform == "tiktok":
+            run = client.actor("clockworks/free-tiktok-scraper").call(
+                run_input={
+                    "profiles": [f"@{username}"],
+                    "resultsPerPage": 5,
+                    "shouldDownloadVideos": False,
+                    "shouldDownloadCovers": True,
+                },
+                timeout_secs=90,
+                memory_mbytes=256,
+            )
+            items = list(client.dataset(run["defaultDatasetId"]).iterate_items())
+            covers = []
+            for item in items[:5]:
+                cover = (item.get("videoMeta") or {}).get("coverUrl") or item.get("webVideoUrl")
+                if cover:
+                    covers.append(cover)
+
+            author_meta = items[0].get("authorMeta", {}) if items else {}
+            return {
+                "ok": True,
+                "data": {
+                    "platform": "tiktok",
+                    "username": username,
+                    "profile": {
+                        "username": author_meta.get("name", username),
+                        "followers": author_meta.get("fans"),
+                        "bio": author_meta.get("signature", ""),
+                        "verified": author_meta.get("verified", False),
+                    },
+                    "media_urls": covers,
+                    "posts_scraped": len(items),
+                },
+            }
+        else:
+            return {"ok": False, "data": None, "error": f"Unsupported platform: {platform}. Use 'instagram' or 'tiktok'"}
+
+    except Exception as exc:
+        logger.exception("[system_tools] run_apify_scraper failed")
+        return {"ok": False, "data": None, "error": str(exc)}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 8. get_google_places_details
+# ─────────────────────────────────────────────────────────────────────────────
+
+def get_google_places_details(business_name: str, city: str = "") -> dict[str, Any]:
+    """
+    Official Google Places lookup — the 'single source of truth' for NAP
+    (Name, Address, Phone), rating, reviews, hours and website.
+    """
+    try:
+        from app.services.enrichment.places_service import PlacesService
+
+        svc = PlacesService()
+        if not svc.api_key:
+            return {"ok": False, "data": None, "error": "GOOGLE_PLACES_API_KEY not configured"}
+
+        results = svc.search_businesses(city=city or "ישראל", category=business_name, limit=3)
+        if not results:
+            return {"ok": True, "data": {"found": False, "results": []}}
+
+        top = results[0]
+        return {
+            "ok": True,
+            "data": {
+                "found": True,
+                "top_match": {
+                    "name": top.get("name"),
+                    "address": top.get("address"),
+                    "phone": top.get("phone"),
+                    "website": top.get("website"),
+                    "rating": top.get("rating"),
+                    "reviews_count": top.get("reviews_count"),
+                    "status": top.get("status"),
+                    "google_maps_url": top.get("google_maps_url"),
+                    "opening_hours": top.get("opening_hours", []),
+                    "top_review": top.get("top_review"),
+                    "place_id": top.get("place_id"),
+                    "has_website": bool(top.get("website")),
+                },
+                "other_matches": [
+                    {"name": r.get("name"), "address": r.get("address"), "rating": r.get("rating")}
+                    for r in results[1:3]
+                ],
+            },
+        }
+    except Exception as exc:
+        logger.exception("[system_tools] get_google_places_details failed")
+        return {"ok": False, "data": None, "error": str(exc)}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 9. crawl_existing_website
+# ─────────────────────────────────────────────────────────────────────────────
+
+def crawl_existing_website(url: str) -> dict[str, Any]:
+    """
+    Fetch and analyse a business website to understand their existing services,
+    copy quality, mobile readiness, and contact info — so we can build a better one.
+    """
+    try:
+        import httpx
+        import re
+
+        if not url.startswith("http"):
+            url = "https://" + url
+
+        resp = httpx.get(
+            url,
+            timeout=12,
+            follow_redirects=True,
+            headers={
+                "User-Agent": (
+                    "Mozilla/5.0 (Linux; Android 11; Pixel 5) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/120.0.0.0 Mobile Safari/537.36"
+                )
+            },
+        )
+        html = resp.text
+        final_url = str(resp.url)
+
+        # Title
+        title_m = re.search(r"<title[^>]*>(.*?)</title>", html, re.IGNORECASE | re.DOTALL)
+        page_title = title_m.group(1).strip()[:120] if title_m else ""
+
+        # Meta description
+        meta_m = re.search(r'<meta[^>]+name=["\']description["\'][^>]+content=["\']([^"\']{0,300})', html, re.IGNORECASE)
+        if not meta_m:
+            meta_m = re.search(r'<meta[^>]+content=["\']([^"\']{0,300})[^>]+name=["\']description["\']', html, re.IGNORECASE)
+        meta_desc = meta_m.group(1).strip() if meta_m else ""
+
+        # Headings (h1 + h2)
+        h1s = re.findall(r"<h1[^>]*>(.*?)</h1>", html, re.IGNORECASE | re.DOTALL)
+        h2s = re.findall(r"<h2[^>]*>(.*?)</h2>", html, re.IGNORECASE | re.DOTALL)
+        clean_tag = re.compile(r"<[^>]+>")
+        headings = [clean_tag.sub("", h).strip()[:100] for h in (h1s[:2] + h2s[:4]) if h.strip()]
+
+        # Contact info
+        phone_m = re.search(r"(?:0[235789]\d[-\s]?\d{3}[-\s]?\d{4}|0[235789]\d{7,8})", html)
+        phone = phone_m.group(0) if phone_m else ""
+        email_m = re.search(r"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}", html)
+        email = email_m.group(0) if email_m else ""
+
+        # Mobile friendliness signals
+        has_viewport = bool(re.search(r'name=["\']viewport["\']', html, re.IGNORECASE))
+        is_wordpress = "wp-content" in html or "WordPress" in html
+        uses_elementor = "elementor" in html.lower()
+
+        # Approx word count of visible text (very rough)
+        stripped = clean_tag.sub(" ", html)
+        word_count = len(stripped.split())
+
+        # Social links found on site
+        fb_m = re.search(r'https?://(?:www\.)?facebook\.com/([A-Za-z0-9_.]+)', html)
+        ig_m = re.search(r'https?://(?:www\.)?instagram\.com/([A-Za-z0-9_.]+)', html)
+
+        return {
+            "ok": True,
+            "data": {
+                "url": final_url,
+                "page_title": page_title,
+                "meta_description": meta_desc,
+                "headings": headings,
+                "phone_found": phone,
+                "email_found": email,
+                "has_mobile_viewport": has_viewport,
+                "is_wordpress": is_wordpress,
+                "uses_elementor": uses_elementor,
+                "approx_word_count": word_count,
+                "facebook_link": fb_m.group(0) if fb_m else None,
+                "instagram_link": ig_m.group(0) if ig_m else None,
+                "assessment": (
+                    "אין מטא-תג viewport — האתר כנראה לא מותאם לנייד" if not has_viewport
+                    else "יש viewport — ייתכן שמותאם לנייד"
+                ),
+            },
+        }
+    except Exception as exc:
+        logger.exception("[system_tools] crawl_existing_website failed")
+        return {"ok": False, "data": None, "error": str(exc)}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Tool dispatcher — called by the router with function name + args
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -260,6 +593,10 @@ TOOL_NAMES = {
     "search_business_data",
     "check_domain_availability",
     "get_hot_leads",
+    "fetch_facebook_data",
+    "run_apify_scraper",
+    "get_google_places_details",
+    "crawl_existing_website",
 }
 
 
@@ -279,6 +616,14 @@ def dispatch_tool(tool_name: str, args: dict, db: Session | None = None) -> dict
             return check_domain_availability(args.get("domain", ""))
         elif tool_name == "get_hot_leads":
             return get_hot_leads(db, int(args.get("limit", 10)))
+        elif tool_name == "fetch_facebook_data":
+            return fetch_facebook_data(args.get("page_id_or_url", ""))
+        elif tool_name == "run_apify_scraper":
+            return run_apify_scraper(args.get("target_url", ""), args.get("platform", "instagram"))
+        elif tool_name == "get_google_places_details":
+            return get_google_places_details(args.get("business_name", ""), args.get("city", ""))
+        elif tool_name == "crawl_existing_website":
+            return crawl_existing_website(args.get("url", ""))
     except Exception as exc:
         logger.exception("[system_tools] dispatch_tool(%s) failed", tool_name)
         return {"ok": False, "data": None, "error": str(exc)}
@@ -382,6 +727,99 @@ TOOLS_SCHEMA: list[dict] = [
                     }
                 },
                 "required": [],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "fetch_facebook_data",
+            "description": (
+                "שלוף נתונים חיים מדף פייסבוק של עסק: עוקבים, פוסטים אחרונים, "
+                "רמת פעילות (active/dormant/dead), רייטינג. "
+                "השתמש כשצריך לנתח את הנוכחות הדיגיטלית של לקוח פוטנציאלי בפייסבוק."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "page_id_or_url": {
+                        "type": "string",
+                        "description": "URL של דף הפייסבוק או Page ID, למשל: https://facebook.com/pizza-don-lowe או '123456789'",
+                    }
+                },
+                "required": ["page_id_or_url"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "run_apify_scraper",
+            "description": (
+                "הפעל Apify actor לגריידה עמוקה של אינסטגרם או טיקטוק: "
+                "תמונות, סרטונים, ביו, כמות עוקבים. "
+                "השתמש כשצריך תוכן ויזואלי לאתר או ניתוח מעמיק של הפרזנציה הסושיאל."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "target_url": {
+                        "type": "string",
+                        "description": "URL הפרופיל, למשל: https://instagram.com/pizza_don_lowe",
+                    },
+                    "platform": {
+                        "type": "string",
+                        "enum": ["instagram", "tiktok"],
+                        "description": "הפלטפורמה: 'instagram' או 'tiktok'",
+                    },
+                },
+                "required": ["target_url"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_google_places_details",
+            "description": (
+                "שלוף את הנתונים הרשמיים של עסק מ-Google Places: "
+                "טלפון, כתובת, שעות פתיחה, רייטינג, ביקורות — מקור האמת (NAP). "
+                "השתמש לכל בדיקת נוכחות גוגל של ליד חדש."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "business_name": {
+                        "type": "string",
+                        "description": "שם העסק לחיפוש בגוגל מאפס",
+                    },
+                    "city": {
+                        "type": "string",
+                        "description": "עיר (אופציונלי, מגביר דיוק)",
+                    },
+                },
+                "required": ["business_name"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "crawl_existing_website",
+            "description": (
+                "גרד ונתח את האתר הקיים של עסק: כותרות, תיאור, טלפון, אימייל, "
+                "האם מותאם לנייד, האם WordPress, מה השירותים המוזכרים. "
+                "השתמש לפני בניית אתר חדש — כדי להבין מה לשפר."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "url": {
+                        "type": "string",
+                        "description": "כתובת האתר לגרידה, למשל: https://old-site.co.il",
+                    }
+                },
+                "required": ["url"],
             },
         },
     },

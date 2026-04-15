@@ -33,6 +33,7 @@ const PLANS = [
             'עדכון תכנים פעם בחודש',
         ],
         cta: 'בחר תוכנית →',
+        ctaAction: 'intake' as const,
     },
     {
         name: 'Growth',
@@ -52,6 +53,7 @@ const PLANS = [
             'עדיפות בתמיכה',
         ],
         cta: 'הכי פופולרי ✦',
+        ctaAction: 'intake' as const,
     },
     {
         name: 'Pro',
@@ -71,6 +73,7 @@ const PLANS = [
             'מנהל חשבון אישי',
         ],
         cta: 'צור קשר לפרטים →',
+        ctaAction: 'whatsapp' as const,
     },
 ];
 
@@ -177,14 +180,23 @@ export default function LandingExtra({ onStartIntake }: Props) {
                                         </li>
                                     ))}
                                 </ul>
-                                <a
-                                    className="le-plan-btn"
-                                    href={plan.paymentUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                >
-                                    {plan.cta}
-                                </a>
+                                {plan.ctaAction === 'whatsapp' ? (
+                                    <a
+                                        className="le-plan-btn"
+                                        href={`https://wa.me/972546363350?text=${encodeURIComponent('היי! אני מעוניין בתוכנית ה-Pro של SiteNest. אשמח לשמוע פרטים.')}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        {plan.cta}
+                                    </a>
+                                ) : (
+                                    <button
+                                        className="le-plan-btn"
+                                        onClick={onStartIntake}
+                                    >
+                                        {plan.cta}
+                                    </button>
+                                )}
                             </div>
                         ))}
                     </div>

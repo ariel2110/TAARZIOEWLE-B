@@ -107,6 +107,21 @@ export const getHealth = () => apiGet<Health>('/admin/ceo/health');
 export const getBusinesses = (skip = 0, limit = 100) => apiGet<Business[]>(`/admin/businesses?skip=${skip}&limit=${limit}`);
 export const getLeads = (skip = 0, limit = 100) => apiGet<Lead[]>(`/admin/leads?skip=${skip}&limit=${limit}`);
 export const triggerCrossValidate = (leadId: number) => apiPost<{ cross_ref_score: number; cross_ref_status: string; cross_ref_agents: Record<string, boolean> }>(`/admin/leads/${leadId}/cross-validate`, {});
+export type IntegrityStats = {
+  total_leads: number;
+  status_counts: { verified: number; manual_review: number; mismatch: number; pending: number };
+  average_score: number;
+  agent_pass_rates: Record<string, number>;
+  validation_coverage: number;
+};
+export const getIntegrityStats = () => apiGet<IntegrityStats>('/admin/leads/integrity-stats');
+export const bulkCrossValidate = (params?: { limit?: number; status_filter?: string; skip_already_validated?: boolean }) => {
+  const q = new URLSearchParams();
+  if (params?.limit) q.set('limit', String(params.limit));
+  if (params?.status_filter) q.set('status_filter', params.status_filter);
+  if (params?.skip_already_validated !== undefined) q.set('skip_already_validated', String(params.skip_already_validated));
+  return apiPost<{ validated: number; summary: Record<string, number>; leads: unknown[] }>(`/admin/leads/bulk-cross-validate?${q}`, {});
+};
 export const getApprovals = () => apiGet<Approval[]>('/admin/approvals');
 export const getApprovalDetail = (id: number) => apiGet<ApprovalDetail>(`/admin/approvals/${id}`);
 export const approve = (id: number) => apiPost(`/admin/approvals/${id}/approve`, {});

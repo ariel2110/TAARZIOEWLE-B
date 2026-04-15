@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button, Card, SectionTitle, Input, Select, Tooltip } from '../components/ui';
-import { Lead, getLeads, createLead, qualifyLead, convertLeadToBusiness, importLeadsCSV, autoQualifyLeads, triggerCrossValidate } from '../services/queries';
+import { Lead, IntegrityStats, getLeads, createLead, qualifyLead, convertLeadToBusiness, importLeadsCSV, autoQualifyLeads, triggerCrossValidate, getIntegrityStats, bulkCrossValidate } from '../services/queries';
 
 const STATUSES = ['imported', 'qualified', 'converted', 'rejected'];
 const emptyForm = { imported_name: '', city: '', category: '', phone: '', website_url: '', score: '0', status: 'imported' };
@@ -14,10 +14,13 @@ export default function LeadsPage() {
   const [msg, setMsg] = useState('');
   const [saving, setSaving] = useState(false);
   const [crossValidating, setCrossValidating] = useState<number | null>(null);
+  const [bulkValidating, setBulkValidating] = useState(false);
+  const [integrityStats, setIntegrityStats] = useState<IntegrityStats | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const load = () => getLeads(0, 500).then(setItems).catch(console.error);
-  useEffect(() => { load(); }, []);
+  const loadStats = () => getIntegrityStats().then(setIntegrityStats).catch(() => {});
+  useEffect(() => { load(); loadStats(); }, []);
 
   const filtered = items.filter(l => {
     const q = search.toLowerCase();
@@ -60,9 +63,19 @@ export default function LeadsPage() {
       const result = await triggerCrossValidate(leadId);
       const statusLabel: Record<string, string> = { verified: '✅ מאומת', manual_review: '⚠️ לבדיקה', mismatch: '❌ אי-התאמה', pending: '⏳ ממתין' };
       setMsg(`כיול הושלם — ${statusLabel[result.cross_ref_status] ?? result.cross_ref_status} (${result.cross_ref_score}/100)`);
-      load();
+      load(); loadStats();
     } catch (e: any) { setMsg('כיול נכשל: ' + (e?.message || '')); }
     finally { setCrossValidating(null); }
+  };
+
+  const handleBulkValidate = async () => {
+    setBulkValidating(true);
+    try {
+      const r = await bulkCrossValidate({ limit: 50, skip_already_validated: true });
+      setMsg(`Bulk כיול: ${r.validated} לידים | ✅ ${r.summary.verified ?? 0} מאומת | ⚠️ ${r.summary.manual_review ?? 0} לבדיקה | ❌ ${r.summary.mismatch ?? 0} אי-התאמה`);
+      load(); loadStats();
+    } catch (e: any) { setMsg('Bulk כיול נכשל: ' + (e?.message || '')); }
+    finally { setBulkValidating(false); }
   };
 
   return (
@@ -71,6 +84,11 @@ export default function LeadsPage() {
         <SectionTitle>לידים ({filtered.length})</SectionTitle>
         <div style={{ display: 'flex', gap: 8 }}>
           <input ref={fileRef} type="file" accept=".csv" style={{ display: 'none' }} onChange={handleCSV} />
+          <Tooltip text="אמת נתוני אמינות חוצה-סוכנים לכלל הלידים שטרם אומתו (עד 50)">
+            <Button onClick={handleBulkValidate} disabled={bulkValidating} style={{ background: '#0e7490', color: '#fff' }}>
+              {bulkValidating ? '⏳ מכייל...' : '🔍 Bulk כיול'}
+            </Button>
+          </Tooltip>
           <Tooltip text="כשר אוטומטית לידים עם ציון ≥70 ללא אתר קיים">
             <Button onClick={() => action(() => autoQualifyLeads().then(r => { setMsg(`כושרו אוטומטית ${r.qualified} לידים`); return r; }), '')} style={{ background: '#7c3aed', color: '#fff' }}>⚡ כישור אוטומטי</Button>
           </Tooltip>
@@ -82,6 +100,8 @@ export default function LeadsPage() {
       </div>
 
       {msg && <div style={{ background: '#fef9c3', border: '1px solid #fbbf24', borderRadius: 8, padding: '8px 12px', marginBottom: 12, fontSize: 14 }}>{msg}</div>}
+
+      {integrityStats && <IntegrityStatsPanel stats={integrityStats} />}
 
       {showAdd && (
         <div style={{ background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 16 }}>
@@ -127,7 +147,7 @@ export default function LeadsPage() {
                 <div style={{ marginTop: 2 }}>
                   <span style={{ background: scoreColor(l.score), color: '#fff', borderRadius: 6, padding: '2px 8px', fontSize: 12 }}>ציון: {l.score}</span>
                   <span style={{ background: '#e5e7eb', borderRadius: 6, padding: '2px 8px', fontSize: 12, marginLeft: 6 }}>{l.status}</span>
-                  <CrossRefBadge score={l.cross_ref_score} status={l.cross_ref_status} agents={l.cross_ref_agents} />
+                  <DataIntegrityBadge score={l.cross_ref_score} status={l.cross_ref_status} agents={l.cross_ref_agents} />
                 </div>
               </div>
               <div style={{ fontSize: 12, color: '#9ca3af' }}>#{l.id}</div>
@@ -163,22 +183,30 @@ function scoreColor(s: number) {
 }
 
 // ── Data Integrity Badge ──────────────────────────────────────────────────────
-function CrossRefBadge({ score, status, agents }: { score?: number; status?: string; agents?: string | null }) {
-  if (!status || status === 'pending') return null;
+const AGENT_LABELS: Record<string, string> = { google_places: 'G', facebook: 'FB', instagram: 'IG', serper: 'Srp', tiktok: 'TT' };
+
+function DataIntegrityBadge({ score, status, agents }: { score?: number; status?: string; agents?: string | null }) {
+  if (!status || status === 'pending') {
+    return <span style={{ fontSize: 11, color: '#9ca3af', marginLeft: 6 }}>⏳ טרם אומת</span>;
+  }
 
   const color = status === 'verified' ? '#059669' : status === 'manual_review' ? '#d97706' : '#dc2626';
-  const label = status === 'verified' ? '✅' : status === 'manual_review' ? '⚠️' : '❌';
+  const icon = status === 'verified' ? '✅' : status === 'manual_review' ? '⚠️' : '❌';
+  const label = status === 'verified' ? 'VERIFIED' : status === 'manual_review' ? 'REVIEW' : 'MISMATCH';
 
-  let agentIcons: React.ReactNode = null;
+  let chips: React.ReactNode = null;
   if (agents) {
     try {
       const parsed: Record<string, boolean> = JSON.parse(agents);
-      const iconMap: Record<string, string> = { google_places: 'G', facebook: 'FB', instagram: 'IG' };
-      agentIcons = (
-        <span style={{ marginLeft: 4, fontSize: 11 }}>
-          {Object.entries(parsed).map(([key, ok]) => (
-            <span key={key} title={key} style={{ marginRight: 2, opacity: ok ? 1 : 0.4 }}>
-              {iconMap[key] ?? key}:{ok ? '✓' : '✗'}
+      chips = (
+        <span style={{ display: 'flex', gap: 3, marginTop: 2, flexWrap: 'wrap' }}>
+          {Object.entries(parsed).map(([k, ok]) => (
+            <span key={k} title={k} style={{
+              fontSize: 10, padding: '1px 5px', borderRadius: 4,
+              background: ok ? '#dcfce7' : '#fee2e2',
+              color: ok ? '#166534' : '#991b1b',
+            }}>
+              {AGENT_LABELS[k] ?? k}:{ok ? '✅' : '❌'}
             </span>
           ))}
         </span>
@@ -187,8 +215,41 @@ function CrossRefBadge({ score, status, agents }: { score?: number; status?: str
   }
 
   return (
-    <span style={{ background: color, color: '#fff', borderRadius: 6, padding: '2px 8px', fontSize: 12, marginLeft: 6 }}>
-      {label} {score}/100{agentIcons}
+    <span style={{ display: 'inline-flex', flexDirection: 'column', marginLeft: 6, verticalAlign: 'middle' }}>
+      <span style={{ background: color, color: '#fff', borderRadius: 6, padding: '2px 8px', fontSize: 12, fontWeight: 700 }}>
+        {icon} {score}/100 {label}
+      </span>
+      {chips}
     </span>
+  );
+}
+
+// ── Integrity Stats Panel ─────────────────────────────────────────────────────
+function IntegrityStatsPanel({ stats }: { stats: IntegrityStats }) {
+  const { total_leads, status_counts, average_score, agent_pass_rates, validation_coverage } = stats;
+  return (
+    <div style={{
+      display: 'flex', gap: 12, flexWrap: 'wrap', padding: '10px 14px',
+      background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 10, marginBottom: 14, fontSize: 13,
+    }}>
+      <StatChip label="סה״כ לידים" value={String(total_leads)} color="#0369a1" />
+      <StatChip label="כיסוי אימות" value={`${validation_coverage}%`} color="#0891b2" />
+      <StatChip label="ניקוד ממוצע" value={`${average_score}/100`} color="#0284c7" />
+      <StatChip label="✅ מאומת" value={String(status_counts.verified)} color="#059669" />
+      <StatChip label="⚠️ לבדיקה" value={String(status_counts.manual_review)} color="#d97706" />
+      <StatChip label="❌ אי-התאמה" value={String(status_counts.mismatch)} color="#dc2626" />
+      {Object.entries(agent_pass_rates).map(([agent, rate]) => (
+        <StatChip key={agent} label={`${AGENT_LABELS[agent] ?? agent} pass`} value={`${rate}%`} color="#6366f1" />
+      ))}
+    </div>
+  );
+}
+
+function StatChip({ label, value, color }: { label: string; value: string; color: string }) {
+  return (
+    <div style={{ textAlign: 'center' }}>
+      <div style={{ fontWeight: 700, fontSize: 16, color }}>{value}</div>
+      <div style={{ fontSize: 11, color: '#6b7280' }}>{label}</div>
+    </div>
   );
 }

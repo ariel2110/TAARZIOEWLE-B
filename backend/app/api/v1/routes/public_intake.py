@@ -265,6 +265,44 @@ def _run_intake_pipeline(token: str) -> None:
             except Exception:
                 logger.warning("[IntakePipeline] Failed to parse google_enrichment_json for token=%s", token[:8])
 
+        # ── Cross-Reference gate: validate social URLs against Google anchor ──
+        # Only fires when the customer used Google Places search AND has social links.
+        # On mismatch → silently strip social URLs so Claude builds from Google data only.
+        has_social = any([intake.facebook_url, intake.instagram_url, intake.tiktok_url])
+        if intake.google_place_id and has_social and intake.google_enrichment_json:
+            try:
+                from app.services.enrichment.cross_reference_validator import validator as cr
+                google_anchor = json.loads(intake.google_enrichment_json)
+                anchor = cr.build_anchor(
+                    name=intake.business_name,
+                    phone=enrichment.get('phone') or google_anchor.get('phone'),
+                    website=google_anchor.get('website') or intake.website_url,
+                    address=google_anchor.get('address'),
+                    lat=None,
+                    lng=None,
+                )
+                challengers = cr.build_social_challengers(
+                    facebook_url=intake.facebook_url,
+                    instagram_url=intake.instagram_url,
+                    anchor_name=intake.business_name,
+                )
+                cr_result = cr.validate(anchor, challengers)
+                if cr_result.status == 'mismatch':
+                    enrichment.pop('facebook_url', None)
+                    enrichment.pop('instagram_url', None)
+                    enrichment.pop('tiktok_url', None)
+                    logger.warning(
+                        "[IntakePipeline] Cross-ref MISMATCH for token=%s score=%d — social URLs stripped",
+                        token[:8], cr_result.score,
+                    )
+                elif cr_result.status == 'manual_review':
+                    logger.warning(
+                        "[IntakePipeline] Cross-ref MANUAL_REVIEW for token=%s score=%d",
+                        token[:8], cr_result.score,
+                    )
+            except Exception:
+                logger.exception("[IntakePipeline] Cross-ref gate failed for token=%s — proceeding", token[:8])
+
         result = AutoSitePipelineService().run('\n'.join(lines), enrichment=enrichment)
         if not result or not result.html or len(result.html) < 500:
             intake.ai_status = 'failed'

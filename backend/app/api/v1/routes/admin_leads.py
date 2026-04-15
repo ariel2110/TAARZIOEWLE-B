@@ -212,6 +212,147 @@ def auto_qualify_leads(
     }
 
 
+@router.post('/bulk-cross-validate')
+def bulk_cross_validate(
+    status_filter: str = Query(default=''),
+    limit: int = Query(default=50, ge=1, le=200),
+    skip_already_validated: bool = Query(default=True),
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_admin),
+):
+    """Run cross-reference validation on multiple leads in bulk."""
+    import json as _json
+    from sqlalchemy import or_
+    from app.services.enrichment.cross_reference_validator import validator as cr
+
+    query = db.query(LeadRecord)
+    if status_filter:
+        query = query.filter(LeadRecord.status == status_filter)
+    if skip_already_validated:
+        query = query.filter(
+            or_(LeadRecord.cross_ref_status == None, LeadRecord.cross_ref_status == 'pending')  # noqa: E711
+        )
+    leads = query.order_by(LeadRecord.id.desc()).limit(limit).all()
+
+    summary: dict[str, int] = {'verified': 0, 'manual_review': 0, 'mismatch': 0, 'error': 0}
+    manual_review_names: list[str] = []
+    validated_leads: list[dict] = []
+
+    for lead in leads:
+        try:
+            anchor = cr.build_anchor(
+                name=lead.imported_name,
+                phone=lead.phone,
+                website=lead.website_url,
+                address=lead.address,
+                lat=lead.lat,
+                lng=lead.lng,
+            )
+            challengers = cr.build_social_challengers(
+                facebook_url=lead.facebook_url,
+                instagram_url=lead.instagram_url,
+                anchor_name=lead.imported_name,
+            )
+            result = cr.validate(anchor, challengers)
+            lead.cross_ref_score = result.score
+            lead.cross_ref_status = result.status
+            lead.cross_ref_agents = _json.dumps(result.agent_statuses)
+            summary[result.status] = summary.get(result.status, 0) + 1
+            if result.status == 'manual_review':
+                manual_review_names.append(f'{lead.imported_name} (#{lead.id})')
+            validated_leads.append({
+                'id': lead.id,
+                'name': lead.imported_name,
+                'cross_ref_score': result.score,
+                'cross_ref_status': result.status,
+                'cross_ref_agents': result.agent_statuses,
+            })
+        except Exception:  # noqa: BLE001
+            summary['error'] = summary.get('error', 0) + 1
+
+    if leads:
+        db.commit()
+
+    if manual_review_names:
+        try:
+            from app.services.common.notification_service import NotificationService
+            NotificationService().notify(
+                db,
+                event='cross_ref_bulk_manual_review',
+                entity_type='lead_record',
+                summary=(
+                    f'⚠️ Bulk cross-ref: {len(manual_review_names)} לידים דורשים בדיקה ידנית:\n'
+                    + '\n'.join(manual_review_names[:10])
+                    + (f'\n... ו-{len(manual_review_names) - 10} נוספים' if len(manual_review_names) > 10 else '')
+                ),
+            )
+        except Exception:  # noqa: BLE001
+            pass
+
+    return {
+        'validated': len(validated_leads),
+        'summary': summary,
+        'leads': validated_leads,
+    }
+
+
+@router.get('/integrity-stats')
+def get_integrity_stats(db: Session = Depends(get_db), _: User = Depends(get_current_admin)):
+    """Return aggregate cross-reference integrity statistics for the dashboard."""
+    import json as _json
+    from sqlalchemy import func
+
+    total = db.query(func.count(LeadRecord.id)).scalar() or 0
+
+    status_rows = (
+        db.query(LeadRecord.cross_ref_status, func.count(LeadRecord.id))
+        .group_by(LeadRecord.cross_ref_status)
+        .all()
+    )
+    status_counts: dict[str, int] = {'verified': 0, 'manual_review': 0, 'mismatch': 0, 'pending': 0}
+    for status, count in status_rows:
+        key = status if status in status_counts else 'pending'
+        status_counts[key] += count
+
+    avg_row = db.query(func.avg(LeadRecord.cross_ref_score)).filter(
+        LeadRecord.cross_ref_score != None  # noqa: E711
+    ).scalar()
+    average_score = round(float(avg_row), 1) if avg_row else 0.0
+
+    # Per-agent pass rates: aggregate from stored cross_ref_agents JSON
+    agent_totals: dict[str, int] = {}
+    agent_passes: dict[str, int] = {}
+    agents_rows = db.query(LeadRecord.cross_ref_agents).filter(
+        LeadRecord.cross_ref_agents != None  # noqa: E711
+    ).all()
+    for (agents_json,) in agents_rows:
+        try:
+            agents = _json.loads(agents_json)
+            for agent, passed in agents.items():
+                agent_totals[agent] = agent_totals.get(agent, 0) + 1
+                if passed:
+                    agent_passes[agent] = agent_passes.get(agent, 0) + 1
+        except Exception:  # noqa: BLE001
+            pass
+
+    agent_pass_rates = {
+        agent: round(agent_passes.get(agent, 0) / tot * 100, 1)
+        for agent, tot in agent_totals.items()
+        if tot > 0
+    }
+
+    validated_count = total - status_counts.get('pending', 0)
+    validation_coverage = round(validated_count / total * 100, 1) if total > 0 else 0.0
+
+    return {
+        'total_leads': total,
+        'status_counts': status_counts,
+        'average_score': average_score,
+        'agent_pass_rates': agent_pass_rates,
+        'validation_coverage': validation_coverage,
+    }
+
+
 @router.post('/{lead_id}/qualify', response_model=LeadRead)
 def qualify_lead(lead_id: int, db: Session = Depends(get_db), _: User = Depends(get_current_admin)):
     item = service.qualify(db, lead_id)
@@ -271,6 +412,22 @@ def cross_validate_lead(lead_id: int, db: Session = Depends(get_db), _: User = D
     lead.cross_ref_agents = json.dumps(result.agent_statuses)
     db.commit()
     db.refresh(lead)
+
+    if result.status == 'manual_review':
+        try:
+            from app.services.common.notification_service import NotificationService
+            NotificationService().notify(
+                db,
+                event='cross_ref_manual_review',
+                entity_type='lead_record',
+                entity_id=lead.id,
+                summary=(
+                    f'⚠️ Cross-ref בדיקה ידנית: {lead.imported_name} (#{lead.id}) '
+                    f'ציון: {result.score}/100 | סוכנים: {json.dumps(result.agent_statuses)}'
+                ),
+            )
+        except Exception:  # noqa: BLE001
+            pass
 
     return {
         'id': lead.id,

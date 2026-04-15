@@ -21,6 +21,8 @@ _NOTIFICATION_ACTIONS = {
     'lead_auto_qualified',
     'customer_support_opened',
     'change_request_created',
+    'cross_ref_manual_review',
+    'cross_ref_bulk_manual_review',
 }
 
 

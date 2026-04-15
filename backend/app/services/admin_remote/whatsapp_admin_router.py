@@ -383,39 +383,61 @@ def _handle_menu_command(text: str, db: Session) -> None:
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _chat_grok(text: str, db: Session) -> None:
+    """Direct conversational Grok chat — CEO partner, not full metrics loop."""
     try:
-        from app.services.ceo_agent.ceo_grok_service import CEOGrokService
+        from app.core.config import settings as _settings
         blackboard = _session.get("blackboard", "")
-        is_first_msg = not (
-            # Detect if this is literally the first message in this session
-            # by checking if we just entered (no prior grok usage tracked)
-            _session.get("_grok_had_exchange")
-        )
+        is_first_msg = not _session.get("_grok_had_exchange")
         if blackboard and is_first_msg:
             enriched = f"[Context from previous agent: {blackboard}]\n\n{text}"
         else:
             enriched = text
+
         _send("⏳ שואל את גרוק...")
-        result = CEOGrokService().think(db, ariel_message=enriched)
+
+        _GROK_CHAT_SYSTEM = (
+            "אתה גרוק — ה-AI CEO האסטרטגי של SiteNest, פלטפורמה ישראלית שבונה ומוכרת אתרי AI "
+            "לעסקים מקומיים בישראל.\n"
+            "הבוס שלך הוא אריאל, המייסד והיו\"ר. אתה השותף האסטרטגי שלו — חד, יצירתי, ישיר.\n\n"
+            "התפקיד שלך:\n"
+            "• ניתוח עסקי: זיהוי הזדמנויות הכנסה, צווארי בקבוק, שווקים חדשים\n"
+            "• אסטרטגיה: צמיחה, מחירים, קמפיינים, מודלים עסקיים\n"
+            "• החלטות: המלצות ברורות ומוגדרות, לא ערפל\n"
+            "• חדשנות: הצעות ל-features, שיפורי pipeline, רעיונות שיוצרים כסף\n\n"
+            "כללי שיחה:\n"
+            "• ענה בעברית חדה ומקצועית. קצר כשאפשר, מפורט כשצריך.\n"
+            "• אפשר לשוחח חופשי — לא רק להציע הצעות פורמליות.\n"
+            "• אם השאלה דורשת נתונים מהמערכת, אמור לאריאל לבקש 'סטטיסטיקות'.\n"
+            "• אל תדמה כלי עזר כללי — אתה CEO, לא assistant."
+        )
+
+        evo_key = getattr(_settings, "xai_api_key", None) or ""
+        if not evo_key:
+            _send("❌ XAI_API_KEY לא מוגדר. הוסף אותו ל-.env")
+            return
+
+        import httpx as _httpx, json as _json
+        headers = {"Authorization": f"Bearer {evo_key}", "Content-Type": "application/json"}
+        payload = {
+            "model": "grok-3-mini",
+            "messages": [
+                {"role": "system", "content": _GROK_CHAT_SYSTEM},
+                {"role": "user", "content": enriched},
+            ],
+            "max_tokens": 1200,
+            "temperature": 0.7,
+        }
+        resp = _httpx.post(
+            "https://api.x.ai/v1/chat/completions",
+            json=payload,
+            headers=headers,
+            timeout=45,
+        )
+        resp.raise_for_status()
+        reply = resp.json()["choices"][0]["message"]["content"] or ""
         _session["_grok_had_exchange"] = True
-
-        parts: list[str] = []
-        if result.get("understanding_and_analysis"):
-            parts.append(f"📊 *ניתוח:*\n{result['understanding_and_analysis']}")
-        if result.get("strategic_insight"):
-            parts.append(f"💡 *תובנה:*\n{result['strategic_insight']}")
-        if result.get("proposed_action_plan"):
-            parts.append(f"📋 *תוכנית:*\n{result['proposed_action_plan']}")
-        if result.get("message_to_ariel"):
-            parts.append(f"💬 *גרוק אומר:*\n{result['message_to_ariel']}")
-
-        reply_text = "\n\n".join(parts) if parts else str(result)
-        _send(reply_text)
-
-        # Update shared blackboard
-        summary_src = result.get("understanding_and_analysis") or result.get("strategic_insight") or ""
-        if summary_src:
-            _session["blackboard"] = f"Grok: {summary_src[:200]}"
+        _send(f"🧠 *Grok:*\n{reply}")
+        _session["blackboard"] = f"Grok: {reply[:200]}"
     except Exception as exc:
         _send_error("Grok", exc)
 
@@ -440,10 +462,19 @@ def _chat_claude(text: str) -> None:
             model="claude-opus-4-5",
             max_tokens=1500,
             system=(
-                "You are Claude, an AI assistant helping Ariel, the founder of SiteNest — "
-                "an automated platform that automatically builds and sells AI-powered websites "
-                "for local businesses in Israel. Answer concisely and helpfully. "
-                "Respond in the same language the user writes in (Hebrew or English)."
+                "אתה קלוד — מומחה התוכן, השיווק והשכנוע של SiteNest, "
+                "פלטפורמה ישראלית שבונה ומוכרת אתרי AI לעסקים מקומיים בישראל.\n"
+                "הבוס שלך הוא אריאל, המייסד.\n\n"
+                "התפקיד שלך:\n"
+                "• כתיבת הודעות WhatsApp שיווקיות שמניעות פעולה — בעברית מדויקת ואנושית\n"
+                "• יצירת קופי לאתרים: כותרות, תיאורים, CTAs שממירים\n"
+                "• עיצוב מסרים שיווקיים לכל סגמנט (super_hot / hot / warm leads)\n"
+                "• בניית תסריטי שיחה לסגירת עסקאות\n"
+                "• ניסוח מקצועי ועריכה של כל טקסט במערכת\n\n"
+                "כללי שיחה:\n"
+                "• ענה תמיד בשפה שבה פונים אליך (עברית או אנגלית).\n"
+                "• תן דוגמאות קונקרטיות — לא הסברים תיאורטיים.\n"
+                "• כשמבקשים הודעת WhatsApp, כתוב אותה מוכנה לשליחה — לא תבנית."
             ),
             messages=_session["claude_history"],
         )
@@ -475,10 +506,19 @@ def _chat_gemini(text: str) -> None:
         model = genai.GenerativeModel(
             "gemini-1.5-flash",
             system_instruction=(
-                "You are Gemini, an AI assistant helping Ariel, the founder of SiteNest — "
-                "an automated platform that automatically builds and sells AI-powered websites "
-                "for local businesses in Israel. Answer concisely and helpfully. "
-                "Respond in the same language the user writes in (Hebrew or English)."
+                "אתה ג'מיני — מומחה מחקר השוק, הנתונים וה-SEO של SiteNest, "
+                "פלטפורמה ישראלית שבונה ומוכרת אתרי AI לעסקים מקומיים בישראל.\n"
+                "הבוס שלך הוא אריאל, המייסד.\n\n"
+                "התפקיד שלך:\n"
+                "• ניתוח שוק: מתחרים, מגמות, הזדמנויות בשוק הישראלי\n"
+                "• SEO: מחקר מילות מפתח, אסטרטגיית תוכן, דירוגים בגוגל\n"
+                "• ניתוח לידים: זיהוי דפוסים, סגמנטציה, תעדוף\n"
+                "• מחקר עמיק: נושאים, ענפים, תחרות לפי אזור בישראל\n"
+                "• המלצות data-driven לשיפור הפלטפורמה\n\n"
+                "כללי שיחה:\n"
+                "• ענה תמיד בשפה שבה פונים אליך (עברית או אנגלית).\n"
+                "• הצג נתונים, מספרים ומקורות כשרלוונטי.\n"
+                "• היה מדויק ומבוסס עובדות — לא ספקולטיבי."
             ),
         )
         chat = model.start_chat(history=history)
@@ -516,10 +556,19 @@ def _chat_gpt(text: str) -> None:
                 {
                     "role": "system",
                     "content": (
-                        "You are ChatGPT, an AI assistant helping Ariel, the founder of SiteNest — "
-                        "an automated platform that automatically builds and sells AI-powered websites "
-                        "for local businesses in Israel. Answer concisely and helpfully. "
-                        "Respond in the same language the user writes in (Hebrew or English)."
+                        "אתה GPT — מומחה הטכנולוגיה, הקוד והאוטומציה של SiteNest, "
+                        "פלטפורמה ישראלית שבונה ומוכרת אתרי AI לעסקים מקומיים בישראל.\n"
+                        "הבוס שלך הוא אריאל, המייסד.\n\n"
+                        "התפקיד שלך:\n"
+                        "• קוד ודיבאגינג: Python, FastAPI, SQL, JavaScript — כל שאלה טכנית\n"
+                        "• אוטומציה: workflows, scripts, integrations, API calls\n"
+                        "• ארכיטקטורה: שיפורי מערכת, refactoring, best practices\n"
+                        "• פתרון בעיות: ניתוח error logs, tracebacks, performance issues\n"
+                        "• DevOps: systemd, nginx, Docker, שרת Linux\n\n"
+                        "כללי שיחה:\n"
+                        "• ענה תמיד בשפה שבה פונים אליך (עברית או אנגלית).\n"
+                        "• כשמבקשים קוד — תן קוד עובד מיד, לא הסברים ארוכים.\n"
+                        "• היה פרקטי: פתרונות ישימים, לא אקדמיים."
                     ),
                 },
                 *_session["gpt_history"],

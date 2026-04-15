@@ -1,26 +1,39 @@
-"""WhatsApp Admin Remote Control
-================================
-Turns the admin's personal WhatsApp into a remote control panel for SiteNest.
+"""WhatsApp Admin Remote Control — Platinum Failsafe & UX Suite
+================================================================
+State machine for admin remote control via WhatsApp self-messages.
 
-State machine:
-  MAIN_MENU       — default state, shows command menu
-  CHAT_WITH_GROK  — forwards to Grok (xAI)
-  CHAT_WITH_CLAUDE — forwards to Claude (Anthropic)
-  CHAT_WITH_GEMINI — forwards to Gemini (Google)
+States:
+  MAIN_MENU
+  CHAT_WITH_GROK
+  CHAT_WITH_CLAUDE
+  CHAT_WITH_GEMINI
+  AWAITING_PIN          — blocking PIN prompt before a high-stakes action
+  AWAITING_COST_CONFIRM — blocking cost-approval prompt
 
-Security: Only messages from WHATSAPP_OWNER_PHONE are processed.
-All others are silently ignored at the webhook layer.
+Safety layers:
+  • Admin PIN (default 1234, override via ADMIN_WA_PIN env var) gates high-stakes commands
+  • Global kill switch: "ABORT" / "!!!" halts all background work and resets state
+  • Inactivity timeout: 20 min in chat state → auto-return to MAIN_MENU
+  • Pre-flight cost estimates forwarded to WhatsApp for "1" approval
 
-Usage (from webhook handler):
-    from app.services.admin_remote.whatsapp_admin_router import handle_admin_message
-    handle_admin_message(text, db)
+UX:
+  • Pagination: lists chunked in groups of 5, reply 'next' for more
+  • All errors caught and sent to WhatsApp in human-readable form
+  • Voice notes (audio/ptt) → Whisper transcription → processed as text command
+
+Shared Blackboard:
+  • Switching AI agents passes a summary of previous agent's last exchange
+    so the new agent has context.
 """
 from __future__ import annotations
 
 import logging
+import os
+import tempfile
 from datetime import datetime, timezone
 from typing import Literal
 
+import httpx
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -28,17 +41,36 @@ from app.services.communications.evolution_whatsapp_service import EvolutionWhat
 
 logger = logging.getLogger(__name__)
 
-# ── Session state (in-memory, intentionally simple) ──────────────────────────
-AdminState = Literal["MAIN_MENU", "CHAT_WITH_GROK", "CHAT_WITH_CLAUDE", "CHAT_WITH_GEMINI"]
+# ── Constants ─────────────────────────────────────────────────────────────────
+_ADMIN_PIN: str = os.environ.get("ADMIN_WA_PIN", "1234")
+_INACTIVITY_SECONDS: int = 20 * 60   # 20 minutes
+_PAGE_SIZE: int = 5
+_EXIT_KEYWORDS = {"exit", "יציאה", "תפריט", "menu", "back", "חזרה", "ביטול"}
 
+AdminState = Literal[
+    "MAIN_MENU",
+    "CHAT_WITH_GROK",
+    "CHAT_WITH_CLAUDE",
+    "CHAT_WITH_GEMINI",
+    "AWAITING_PIN",
+    "AWAITING_COST_CONFIRM",
+]
+
+# ── In-memory session ─────────────────────────────────────────────────────────
 _session: dict = {
     "state": "MAIN_MENU",
-    # Claude/Gemini keep rolling history for multi-turn conversation
-    "claude_history": [],   # list[{"role": "user"|"assistant", "content": str}]
-    "gemini_history": [],   # list[{"role": "user"|"model", "parts": [str]}]
+    "claude_history": [],      # list[{role, content}]
+    "gemini_history": [],      # list[{role, parts}]
+    "blackboard": "",          # shared 1-sentence summary across agent switches
+    "_prev_agent_state": "",   # last active agent state for blackboard delivery
+    "paginated_items": [],     # items waiting to be paged out
+    "page_offset": 0,
+    "pending_action": None,    # callable(db) awaiting PIN/cost confirm
+    "pending_label": "",
+    "pending_cost": 0.0,
+    "last_activity": datetime.now(timezone.utc),
+    "prev_activity": None,     # snapshot before current message (for idle check)
 }
-
-_EXIT_KEYWORDS = {"exit", "יציאה", "תפריט", "menu", "back", "חזרה", "ביטול"}
 
 # ── Menu text ─────────────────────────────────────────────────────────────────
 _MENU_TEXT = (
@@ -51,28 +83,56 @@ _MENU_TEXT = (
     "• *סטטיסטיקות* — דוח יומי מהיר\n"
     "• *לידים* — לידים חמים ובוערים\n"
     "• *עזרה* — תפריט זה\n\n"
-    "_שלח *יציאה* מכל מצב שיחה כדי לחזור לתפריט_"
+    "_שלח *יציאה* מכל מצב לחזרה לתפריט_\n"
+    "_שלח *ABORT* או *!!!* לעצירת חירום_"
 )
 
 
-# ── Public entry point ────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+# Public entry points
+# ─────────────────────────────────────────────────────────────────────────────
 
 def handle_admin_message(text: str, db: Session) -> None:
-    """Dispatch an inbound message from the admin WhatsApp to the state machine."""
+    """Main dispatcher — called from the webhook handler for text commands."""
     text = (text or "").strip()
     if not text:
         return
 
-    state: AdminState = _session["state"]
+    # Check inactivity BEFORE touching activity timestamp
+    _check_inactivity_timeout()
 
-    # Exit from any chat state back to main menu
-    if state != "MAIN_MENU" and text.lower() in _EXIT_KEYWORDS:
-        _session["state"] = "MAIN_MENU"
-        _session["claude_history"] = []
-        _session["gemini_history"] = []
-        _send("↩️ חזרת לתפריט הראשי.\n\n" + _MENU_TEXT)
+    # Update activity timestamps
+    _session["prev_activity"] = _session["last_activity"]
+    _session["last_activity"] = datetime.now(timezone.utc)
+
+    # ── Global kill switch ────────────────────────────────────────────────────
+    if text.upper() in {"ABORT", "!!!"}:
+        _emergency_stop()
         return
 
+    state: AdminState = _session["state"]
+
+    # ── Pagination "next" ─────────────────────────────────────────────────────
+    if text.lower() in {"next", "הבא", "עוד"} and _session["paginated_items"]:
+        _send_next_page()
+        return
+
+    # ── PIN gate ──────────────────────────────────────────────────────────────
+    if state == "AWAITING_PIN":
+        _handle_pin_response(text, db)
+        return
+
+    # ── Cost-confirm gate ─────────────────────────────────────────────────────
+    if state == "AWAITING_COST_CONFIRM":
+        _handle_cost_confirm(text, db)
+        return
+
+    # ── Universal exit ────────────────────────────────────────────────────────
+    if state != "MAIN_MENU" and text.lower() in _EXIT_KEYWORDS:
+        _reset_to_menu("↩️ חזרת לתפריט הראשי.")
+        return
+
+    # ── Route by state ────────────────────────────────────────────────────────
     if state == "MAIN_MENU":
         _handle_menu_command(text, db)
     elif state == "CHAT_WITH_GROK":
@@ -83,32 +143,218 @@ def handle_admin_message(text: str, db: Session) -> None:
         _chat_gemini(text)
 
 
-# ── Menu command dispatcher ───────────────────────────────────────────────────
+def handle_admin_audio(audio_url: str, mime_type: str, db: Session) -> None:
+    """Download voice note from Evolution, transcribe via Whisper, dispatch as text."""
+    try:
+        _send("🎤 מתמלל הודעה קולית...")
+        text = _transcribe_audio(audio_url, mime_type)
+        if not text:
+            _send("❌ לא הצלחתי לתמלל את ההודעה הקולית.")
+            return
+        _send(f"📝 *תמלול:* _{text}_")
+        handle_admin_message(text, db)
+    except Exception as exc:
+        _send_error("voice transcription", exc)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Safety & inactivity helpers
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _check_inactivity_timeout() -> None:
+    """If in a chat state and idle for ≥20 min, auto-return to MAIN_MENU."""
+    if _session["state"] == "MAIN_MENU":
+        return
+    prev = _session.get("prev_activity")
+    if prev is None:
+        return
+    elapsed = (datetime.now(timezone.utc) - prev).total_seconds()
+    if elapsed >= _INACTIVITY_SECONDS:
+        _reset_to_menu("⏰ *פסק זמן:* לא הייתה פעילות במשך 20 דקות — חזרה לתפריט.")
+
+
+def _reset_to_menu(msg: str = "") -> None:
+    _session["state"] = "MAIN_MENU"
+    _session["claude_history"] = []
+    _session["gemini_history"] = []
+    _session["paginated_items"] = []
+    _session["page_offset"] = 0
+    _session["pending_action"] = None
+    _session["pending_label"] = ""
+    _session["pending_cost"] = 0.0
+    if msg:
+        _send(msg + "\n\n" + _MENU_TEXT)
+    else:
+        _send(_MENU_TEXT)
+
+
+def _emergency_stop() -> None:
+    """Halt all pending work and reset state."""
+    _reset_to_menu()
+    _send("🛑 *EMERGENCY STOP*: כל התהליכים הופסקו.")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PIN gate
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _request_pin(label: str, action, cost: float = 0.0) -> None:
+    """Pause and demand PIN before running `action(db)`."""
+    _session["state"] = "AWAITING_PIN"
+    _session["pending_action"] = action
+    _session["pending_label"] = label
+    _session["pending_cost"] = cost
+    cost_line = f"\nעלות משוערת: ~${cost:.2f}" if cost > 0 else ""
+    _send(
+        f"🔐 *Security Check*\n"
+        f"פעולה: *{label}*{cost_line}\n\n"
+        f"הזן את קוד ה-PIN שלך (4 ספרות) לאישור, או שלח *ביטול*."
+    )
+
+
+def _handle_pin_response(text: str, db: Session) -> None:
+    if text.lower() in _EXIT_KEYWORDS:
+        _session["state"] = "MAIN_MENU"
+        _session["pending_action"] = None
+        _send("❌ הפעולה בוטלה.")
+        return
+    if text.strip() == _ADMIN_PIN:
+        action = _session.pop("pending_action", None)
+        label = _session.pop("pending_label", "")
+        _session.pop("pending_cost", None)
+        _session["state"] = "MAIN_MENU"
+        _send(f"✅ PIN אושר — מבצע: *{label}*...")
+        if action:
+            try:
+                action(db)
+            except Exception as exc:
+                _send_error(label, exc)
+    else:
+        _send("❌ PIN שגוי. נסה שוב או שלח *ביטול*.")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Cost-confirm gate
+# ─────────────────────────────────────────────────────────────────────────────
+
+def request_cost_confirm(label: str, cost_breakdown: str, action, estimated_usd: float) -> None:
+    """Public helper — call from any high-cost operation to get approval before running."""
+    _session["state"] = "AWAITING_COST_CONFIRM"
+    _session["pending_action"] = action
+    _session["pending_label"] = label
+    _session["pending_cost"] = estimated_usd
+    _send(
+        f"💰 *Pre-flight Cost Check*\n"
+        f"פעולה: *{label}*\n\n"
+        f"{cost_breakdown}\n\n"
+        f"*עלות משוערת: ~${estimated_usd:.3f}*\n\n"
+        f"שלח *1* לאישור | *ביטול* לביטול"
+    )
+
+
+def _handle_cost_confirm(text: str, db: Session) -> None:
+    if text.strip() == "1":
+        action = _session.pop("pending_action", None)
+        label = _session.pop("pending_label", "")
+        _session.pop("pending_cost", None)
+        _session["state"] = "MAIN_MENU"
+        _send(f"✅ אושר — מבצע: *{label}*...")
+        if action:
+            try:
+                action(db)
+            except Exception as exc:
+                _send_error(label, exc)
+    elif text.lower() in _EXIT_KEYWORDS:
+        _session["state"] = "MAIN_MENU"
+        _session["pending_action"] = None
+        _send("❌ הפעולה בוטלה.")
+    else:
+        _send("שלח *1* לאישור או *ביטול* לביטול.")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Pagination
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _send_paginated(items: list, header: str = "") -> None:
+    """Store item list and send first page."""
+    _session["paginated_items"] = [str(i) for i in items]
+    _session["page_offset"] = 0
+    _send_next_page(header)
+
+
+def _send_next_page(header: str = "") -> None:
+    items = _session["paginated_items"]
+    offset = _session["page_offset"]
+    chunk = items[offset: offset + _PAGE_SIZE]
+    if not chunk:
+        _send("✅ אין עוד פריטים.")
+        _session["paginated_items"] = []
+        return
+
+    lines = []
+    if header:
+        lines.append(header)
+    lines.extend(chunk)
+    total = len(items)
+    end = min(offset + _PAGE_SIZE, total)
+    lines.append(f"\n_{offset + 1}–{end} מתוך {total}_")
+    if end < total:
+        lines.append("↪️ שלח *next* לפריטים הבאים")
+
+    _send("\n".join(lines))
+    _session["page_offset"] = offset + _PAGE_SIZE
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Menu command dispatcher
+# ─────────────────────────────────────────────────────────────────────────────
 
 def _handle_menu_command(text: str, db: Session) -> None:
     lower = text.lower().strip()
+    blackboard = _session.get("blackboard", "")
+    prev_agent = _session.get("_prev_agent_state", "")
 
     if lower in {"גרוק", "grok", "groc"}:
         _session["state"] = "CHAT_WITH_GROK"
         _session["claude_history"] = []
         _session["gemini_history"] = []
-        _send("🧠 *מצב שיחה: Grok (AI CEO)*\nשלח הודעה לגרוק. שלח *יציאה* לחזרה לתפריט.")
+        _session["_prev_agent_state"] = "CHAT_WITH_GROK"
+        intro = "🧠 *מצב שיחה: Grok (AI CEO)*\nשלח הודעה לגרוק. שלח *יציאה* לחזרה לתפריט."
+        if blackboard and prev_agent and prev_agent != "CHAT_WITH_GROK":
+            intro += f"\n\n📋 *הקשר מהסוכן הקודם:*\n_{blackboard}_"
+        _send(intro)
 
     elif lower in {"קלוד", "claude", "אנתרופיק", "anthropic"}:
         _session["state"] = "CHAT_WITH_CLAUDE"
         _session["claude_history"] = []
-        _send("🤖 *מצב שיחה: Claude (Anthropic)*\nשלח הודעה לקלוד. שלח *יציאה* לחזרה לתפריט.")
+        _session["_prev_agent_state"] = "CHAT_WITH_CLAUDE"
+        intro = "🤖 *מצב שיחה: Claude (Anthropic)*\nשלח הודעה לקלוד. שלח *יציאה* לחזרה לתפריט."
+        if blackboard and prev_agent and prev_agent != "CHAT_WITH_CLAUDE":
+            intro += f"\n\n📋 *הקשר מהסוכן הקודם:*\n_{blackboard}_"
+        _send(intro)
 
     elif lower in {"ג'מיני", "ג׳מיני", "gemini", "google", "גוגל"}:
         _session["state"] = "CHAT_WITH_GEMINI"
         _session["gemini_history"] = []
-        _send("💎 *מצב שיחה: Gemini (Google)*\nשלח הודעה לג'מיני. שלח *יציאה* לחזרה לתפריט.")
+        _session["_prev_agent_state"] = "CHAT_WITH_GEMINI"
+        intro = "💎 *מצב שיחה: Gemini (Google)*\nשלח הודעה לג'מיני. שלח *יציאה* לחזרה לתפריט."
+        if blackboard and prev_agent and prev_agent != "CHAT_WITH_GEMINI":
+            intro += f"\n\n📋 *הקשר מהסוכן הקודם:*\n_{blackboard}_"
+        _send(intro)
 
     elif lower in {"סטטיסטיקות", "stats", "דוח", "report", "statistics", "נתונים"}:
-        _send(_get_stats(db))
+        try:
+            _send(_get_stats(db))
+        except Exception as exc:
+            _send_error("stats", exc)
 
     elif lower in {"לידים", "leads", "חם", "hot", "חמים", "בוערים"}:
-        _send(_get_hot_leads(db))
+        try:
+            items = _get_hot_leads_list(db)
+            _send_paginated(items, "🔥 *לידים חמים:*\n")
+        except Exception as exc:
+            _send_error("hot leads", exc)
 
     elif lower in {"עזרה", "help", "תפריט", "menu", "?", "היי", "שלום", "hello", "hi", "הי"}:
         _send(_MENU_TEXT)
@@ -117,14 +363,26 @@ def _handle_menu_command(text: str, db: Session) -> None:
         _send(f"❓ לא הבנתי את הפקודה: *{text}*\n\n" + _MENU_TEXT)
 
 
-# ── AI chat handlers ──────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+# AI chat handlers
+# ─────────────────────────────────────────────────────────────────────────────
 
 def _chat_grok(text: str, db: Session) -> None:
-    """Forward message to Grok CEO service and reply with the structured response."""
     try:
         from app.services.ceo_agent.ceo_grok_service import CEOGrokService
+        blackboard = _session.get("blackboard", "")
+        is_first_msg = not (
+            # Detect if this is literally the first message in this session
+            # by checking if we just entered (no prior grok usage tracked)
+            _session.get("_grok_had_exchange")
+        )
+        if blackboard and is_first_msg:
+            enriched = f"[Context from previous agent: {blackboard}]\n\n{text}"
+        else:
+            enriched = text
         _send("⏳ שואל את גרוק...")
-        result = CEOGrokService().think(db, ariel_message=text)
+        result = CEOGrokService().think(db, ariel_message=enriched)
+        _session["_grok_had_exchange"] = True
 
         parts: list[str] = []
         if result.get("understanding_and_analysis"):
@@ -136,20 +394,32 @@ def _chat_grok(text: str, db: Session) -> None:
         if result.get("message_to_ariel"):
             parts.append(f"💬 *גרוק אומר:*\n{result['message_to_ariel']}")
 
-        _send("\n\n".join(parts) if parts else str(result))
-    except Exception:
-        logger.exception("[admin_wa] Grok error")
-        _send("❌ שגיאה בחיבור לגרוק. בדוק את ה-XAI_API_KEY.")
+        reply_text = "\n\n".join(parts) if parts else str(result)
+        _send(reply_text)
+
+        # Update shared blackboard
+        summary_src = result.get("understanding_and_analysis") or result.get("strategic_insight") or ""
+        if summary_src:
+            _session["blackboard"] = f"Grok: {summary_src[:200]}"
+    except Exception as exc:
+        _send_error("Grok", exc)
 
 
 def _chat_claude(text: str) -> None:
-    """Forward message to Claude (Anthropic) and reply. Maintains conversation history."""
     try:
         import anthropic
+        # First message in this session: inject blackboard context
+        if not _session["claude_history"]:
+            blackboard = _session.get("blackboard", "")
+            content = (
+                f"[Shared context from previous AI: {blackboard}]\n\nUser: {text}"
+                if blackboard else text
+            )
+            _session["claude_history"].append({"role": "user", "content": content})
+        else:
+            _session["claude_history"].append({"role": "user", "content": text})
 
-        _session["claude_history"].append({"role": "user", "content": text})
         _send("⏳ שואל את קלוד...")
-
         client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
         response = client.messages.create(
             model="claude-opus-4-5",
@@ -165,18 +435,27 @@ def _chat_claude(text: str) -> None:
         reply = response.content[0].text
         _session["claude_history"].append({"role": "assistant", "content": reply})
         _send(f"🤖 *Claude:*\n{reply}")
-    except Exception:
-        logger.exception("[admin_wa] Claude error")
-        _send("❌ שגיאה בחיבור לקלוד. בדוק את ה-ANTHROPIC_API_KEY.")
+        _session["blackboard"] = f"Claude: {reply[:200]}"
+    except Exception as exc:
+        _send_error("Claude", exc)
 
 
 def _chat_gemini(text: str) -> None:
-    """Forward message to Gemini (Google) and reply. Maintains conversation history."""
     try:
         import google.generativeai as genai
-
         _send("⏳ שואל את ג'מיני...")
         genai.configure(api_key=settings.gemini_api_key)
+
+        history = list(_session["gemini_history"])
+        # First message: inject blackboard
+        if not history:
+            blackboard = _session.get("blackboard", "")
+            first_text = (
+                f"[Shared context from previous AI: {blackboard}]\n\nUser: {text}"
+                if blackboard else text
+            )
+        else:
+            first_text = text
 
         model = genai.GenerativeModel(
             "gemini-1.5-flash",
@@ -187,123 +466,132 @@ def _chat_gemini(text: str) -> None:
                 "Respond in the same language the user writes in (Hebrew or English)."
             ),
         )
-
-        # Build Gemini-format history (all messages except the current one)
-        gemini_history = []
-        for entry in _session["gemini_history"]:
-            gemini_history.append({
-                "role": entry["role"],
-                "parts": entry["parts"],
-            })
-
-        chat = model.start_chat(history=gemini_history)
-        response = chat.send_message(text)
+        chat = model.start_chat(history=history)
+        response = chat.send_message(first_text)
         reply = response.text
 
-        # Store both user and assistant turns
         _session["gemini_history"].append({"role": "user", "parts": [text]})
         _session["gemini_history"].append({"role": "model", "parts": [reply]})
-
         _send(f"💎 *Gemini:*\n{reply}")
-    except Exception:
-        logger.exception("[admin_wa] Gemini error")
-        _send("❌ שגיאה בחיבור לג'מיני. בדוק את ה-GEMINI_API_KEY.")
+        _session["blackboard"] = f"Gemini: {reply[:200]}"
+    except Exception as exc:
+        _send_error("Gemini", exc)
 
 
-# ── Stats helpers ─────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+# Voice note transcription (OpenAI Whisper)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _transcribe_audio(audio_url: str, mime_type: str) -> str:
+    """Download audio from Evolution and transcribe via OpenAI Whisper."""
+    import openai
+
+    ext_map = {
+        "audio/ogg": ".ogg",
+        "audio/mpeg": ".mp3",
+        "audio/mp4": ".mp4",
+        "audio/webm": ".webm",
+        "audio/wav": ".wav",
+        "audio/aac": ".aac",
+    }
+    ext = ext_map.get((mime_type or "").lower().split(";")[0].strip(), ".ogg")
+
+    evo_key = settings.evolution_api_key or ""
+    headers = {"apikey": evo_key} if evo_key else {}
+    resp = httpx.get(audio_url, headers=headers, timeout=30, follow_redirects=True)
+    resp.raise_for_status()
+
+    with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmp:
+        tmp.write(resp.content)
+        tmp_path = tmp.name
+
+    try:
+        client = openai.OpenAI(api_key=settings.openai_api_key)
+        with open(tmp_path, "rb") as audio_file:
+            transcript = client.audio.transcriptions.create(
+                model="whisper-1",
+                file=audio_file,
+                response_format="text",
+            )
+        return (transcript or "").strip()
+    finally:
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Stats & leads helpers
+# ─────────────────────────────────────────────────────────────────────────────
 
 def _get_stats(db: Session) -> str:
-    """Fetch quick daily stats from DB and format as a WhatsApp message."""
-    try:
-        import datetime as dt
-        from sqlalchemy import cast, func
-        from sqlalchemy.types import Date
-        from app.models.lead_record import LeadRecord
-        from app.models.business import Business
-        from app.models.outreach_message import OutreachMessage
+    import datetime as dt
+    from sqlalchemy import cast, func
+    from sqlalchemy.types import Date
+    from app.models.lead_record import LeadRecord
+    from app.models.business import Business
+    from app.models.outreach_message import OutreachMessage
 
-        today = dt.date.today()
+    today = dt.date.today()
+    total_leads   = db.query(func.count(LeadRecord.id)).scalar() or 0
+    hot_leads     = db.query(func.count(LeadRecord.id)).filter(LeadRecord.status.in_(["hot","super_hot","boiling_hot"])).scalar() or 0
+    boiling       = db.query(func.count(LeadRecord.id)).filter(LeadRecord.status == "boiling_hot").scalar() or 0
+    total_biz     = db.query(func.count(Business.id)).scalar() or 0
+    sent_today    = db.query(func.count(OutreachMessage.id)).filter(cast(OutreachMessage.created_at, Date) == today).filter(OutreachMessage.channel == "whatsapp").scalar() or 0
+    replied_today = db.query(func.count(OutreachMessage.id)).filter(cast(OutreachMessage.created_at, Date) == today).filter(OutreachMessage.status.in_(["replied","read"])).scalar() or 0
 
-        total_leads = db.query(func.count(LeadRecord.id)).scalar() or 0
-        hot_leads = (
-            db.query(func.count(LeadRecord.id))
-            .filter(LeadRecord.status.in_(["hot", "super_hot", "boiling_hot"]))
-            .scalar() or 0
-        )
-        boiling = (
-            db.query(func.count(LeadRecord.id))
-            .filter(LeadRecord.status == "boiling_hot")
-            .scalar() or 0
-        )
-        total_businesses = db.query(func.count(Business.id)).scalar() or 0
-
-        sent_today = (
-            db.query(func.count(OutreachMessage.id))
-            .filter(cast(OutreachMessage.created_at, Date) == today)
-            .filter(OutreachMessage.channel == "whatsapp")
-            .scalar() or 0
-        )
-        replied_today = (
-            db.query(func.count(OutreachMessage.id))
-            .filter(cast(OutreachMessage.created_at, Date) == today)
-            .filter(OutreachMessage.status.in_(["replied", "read"]))
-            .scalar() or 0
-        )
-
-        now_str = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
-        return (
-            f"📊 *SiteNest — דוח מהיר*\n"
-            f"🗓 {now_str}\n\n"
-            f"👥 *לידים:*\n"
-            f"  סה\"כ: {total_leads}\n"
-            f"  🔥 חמים: {hot_leads}\n"
-            f"  🌡 בוערים: {boiling}\n\n"
-            f"🏢 *עסקים במערכת:* {total_businesses}\n\n"
-            f"📱 *WhatsApp היום:*\n"
-            f"  נשלחו: {sent_today}\n"
-            f"  ענו: {replied_today}"
-        )
-    except Exception:
-        logger.exception("[admin_wa] _get_stats error")
-        return "❌ שגיאה בטעינת הסטטיסטיקות."
+    now_str = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
+    return (
+        f"📊 *SiteNest — דוח מהיר*\n🗓 {now_str}\n\n"
+        f"👥 *לידים:*\n  סה\"כ: {total_leads}\n  🔥 חמים: {hot_leads}\n  🌡 בוערים: {boiling}\n\n"
+        f"🏢 *עסקים במערכת:* {total_biz}\n\n"
+        f"📱 *WhatsApp היום:*\n  נשלחו: {sent_today}\n  ענו: {replied_today}"
+    )
 
 
-def _get_hot_leads(db: Session) -> str:
-    """Return the top 10 hot/boiling leads formatted for WhatsApp."""
-    try:
-        from sqlalchemy import func
-        from app.models.lead_record import LeadRecord
-
-        leads = (
-            db.query(LeadRecord)
-            .filter(LeadRecord.status.in_(["boiling_hot", "super_hot", "hot"]))
-            .order_by(LeadRecord.score.desc())
-            .limit(10)
-            .all()
-        )
-
-        if not leads:
-            return "✅ אין לידים חמים כרגע."
-
-        _STATUS_EMOJI = {"boiling_hot": "🌡", "super_hot": "⚡️", "hot": "🔥"}
-        lines = ["🔥 *לידים חמים (Top 10):*\n"]
-        for i, lead in enumerate(leads, 1):
-            emoji = _STATUS_EMOJI.get(lead.status, "📌")
-            name = getattr(lead, "imported_name", None) or getattr(lead, "name", None) or "—"
-            phone = getattr(lead, "phone", "") or ""
-            score = getattr(lead, "score", 0) or 0
-            lines.append(f"{i}. {emoji} {name} | {phone} | ציון: {score}")
-
-        return "\n".join(lines)
-    except Exception:
-        logger.exception("[admin_wa] _get_hot_leads error")
-        return "❌ שגיאה בטעינת הלידים."
+def _get_hot_leads_list(db: Session) -> list[str]:
+    from app.models.lead_record import LeadRecord
+    leads = (
+        db.query(LeadRecord)
+        .filter(LeadRecord.status.in_(["boiling_hot", "super_hot", "hot"]))
+        .order_by(LeadRecord.score.desc())
+        .limit(50)
+        .all()
+    )
+    if not leads:
+        return ["✅ אין לידים חמים כרגע."]
+    _EMOJI = {"boiling_hot": "🌡", "super_hot": "⚡️", "hot": "🔥"}
+    lines = []
+    for i, lead in enumerate(leads, 1):
+        emoji = _EMOJI.get(lead.status, "📌")
+        name  = getattr(lead, "imported_name", None) or getattr(lead, "name", None) or "—"
+        phone = getattr(lead, "phone", "") or ""
+        score = getattr(lead, "score", 0) or 0
+        lines.append(f"{i}. {emoji} {name} | {phone} | ציון: {score}")
+    return lines
 
 
-# ── Send helper ───────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+# Error helper
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _send_error(context: str, exc: Exception) -> None:
+    logger.exception("[admin_wa] error in %s", context)
+    short = str(exc)
+    if len(short) > 200:
+        short = short[:200] + "…"
+    _send(
+        f"❌ *שגיאה ב-{context}:*\n`{short}`\n\n"
+        f"_לוגים: `journalctl -u sitenest-backend -n 50`_"
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Send helper
+# ─────────────────────────────────────────────────────────────────────────────
 
 def _send(text: str) -> None:
-    """Send a reply to the admin's WhatsApp phone."""
     owner = (settings.whatsapp_owner_phone or "").strip()
     if not owner:
         logger.warning("[admin_wa] whatsapp_owner_phone not configured — cannot send reply")

@@ -108,6 +108,7 @@ async def webhook_receive(request: Request, db: Session = Depends(get_db)):
 
             if not from_me or is_self_msg:
                 # Extract text from various Evolution message sub-types
+                msg_type = data.get('messageType', '')
                 text_body = (
                     raw_msg.get('conversation')
                     or raw_msg.get('extendedTextMessage', {}).get('text')
@@ -115,6 +116,24 @@ async def webhook_receive(request: Request, db: Session = Depends(get_db)):
                 )
                 # For self-messages, set from = owner phone so admin bouncer matches
                 from_jid = f"{owner_digits}@s.whatsapp.net" if is_self_msg else remote_jid
+
+                # ── Voice note / audio → Whisper transcription ────────────────
+                if msg_type in {'audioMessage', 'pttMessage'} or 'audioMessage' in raw_msg:
+                    audio_msg = raw_msg.get('audioMessage', raw_msg)
+                    audio_url = audio_msg.get('url') or audio_msg.get('directPath', '')
+                    mime_type = audio_msg.get('mimetype', 'audio/ogg')
+                    if audio_url and (is_self_msg or not from_me):
+                        logger.warning('[WA_DEBUG] audio/ptt → Whisper  url=%r', audio_url[:60])
+                        try:
+                            from app.services.admin_remote.whatsapp_admin_router import handle_admin_audio
+                            handle_admin_audio(audio_url, mime_type, db)
+                        except Exception:
+                            logger.exception('[admin_wa] audio dispatch error')
+                        processed += 1
+                        logger.warning('[whatsapp_webhook] Evolution event=%s processed=%d', event, processed)
+                        return {'ok': True, 'processed': processed}
+                # ─────────────────────────────────────────────────────────────
+
                 logger.warning('[WA_DEBUG] dispatching to _handle_inbound  from=%r  text=%r', from_jid, text_body[:50])
                 evo_msg = {
                     'from': from_jid,

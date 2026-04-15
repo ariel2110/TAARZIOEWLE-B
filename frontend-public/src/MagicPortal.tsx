@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-const API = import.meta.env.VITE_API_BASE || 'https://api.sitenest.site/api/v1';
-const WHATSAPP_NUMBER = import.meta.env.VITE_WA_NUMBER || '972546363350';
+const API = import.meta.env.VITE_API_BASE_URL || 'https://api.sitenest.site/api/v1';
+const WHATSAPP_NUMBER = import.meta.env.VITE_SITENEST_WA_PHONE || '972546363350';
 const SCARCITY_MINUTES = 15;
 
 // ── Types ─────────────────────────────────────────────────────────────────────

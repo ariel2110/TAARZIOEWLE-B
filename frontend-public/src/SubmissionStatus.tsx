@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-const API = import.meta.env.VITE_API_BASE || 'https://api.sitenest.site/api/v1';
+const API = import.meta.env.VITE_API_BASE_URL || 'https://api.sitenest.site/api/v1';
 const WA = '972546363350';
 const MAX_CORRECTIONS = 3;
 

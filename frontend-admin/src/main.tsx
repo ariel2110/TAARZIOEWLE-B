@@ -7,6 +7,10 @@ import App from './App';
 import './styles.css';
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? '';
+if (!googleClientId) {
+  // eslint-disable-next-line no-console
+  console.warn('[admin] VITE_GOOGLE_CLIENT_ID is not set — Google OAuth login will be disabled.');
+}
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import './styles.css';
 
-const API = import.meta.env.VITE_API_BASE || 'https://api.sitenest.site/api/v1';
+const API = import.meta.env.VITE_API_BASE_URL || 'https://api.sitenest.site/api/v1';
 
 // ── Types ──────────────────────────────────────────────────────────
 interface Me {

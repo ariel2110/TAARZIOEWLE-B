@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { LangProvider, ThemeProvider } from './i18n';
 import App from './App';
+import { ScrollToTop } from './components/ScrollToTop';
 import './styles.css';
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? '';
@@ -18,6 +19,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <LangProvider>
         <ThemeProvider>
           <BrowserRouter>
+            <ScrollToTop />
             <App />
           </BrowserRouter>
         </ThemeProvider>

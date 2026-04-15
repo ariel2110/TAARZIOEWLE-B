@@ -10,6 +10,8 @@ services:
       - '5433:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - sitenest_net
     healthcheck:
       test: [ 'CMD-SHELL', 'pg_isready -U localbiz -d localbiz' ]
       interval: 5s
@@ -23,6 +25,8 @@ services:
       - '6380:6379'
     volumes:
       - redis_data:/data
+    networks:
+      - sitenest_net
     healthcheck:
       test: [ 'CMD', 'redis-cli', 'ping' ]
       interval: 5s
@@ -38,17 +42,19 @@ services:
       - ./backend/.env.example
     environment:
       USE_POSTGRES: 'true'
-      POSTGRES_HOST: postgres
+      POSTGRES_HOST: localbiz-postgres
       POSTGRES_PORT: 5432
       POSTGRES_DB: localbiz
       POSTGRES_USER: localbiz
       POSTGRES_PASSWORD: localbiz
       AUTO_CREATE_TABLES: 'false'
       AUTO_SEED_DEMO_DATA: 'false'
-      CELERY_BROKER_URL: 'redis://redis:6379/0'
-      CELERY_RESULT_BACKEND: 'redis://redis:6379/0'
+      CELERY_BROKER_URL: 'redis://localbiz-redis:6379/0'
+      CELERY_RESULT_BACKEND: 'redis://localbiz-redis:6379/0'
     ports:
       - '8000:8000'
+    networks:
+      - sitenest_net
     depends_on:
       postgres:
         condition: service_healthy
@@ -65,13 +71,15 @@ services:
       - ./backend/.env.example
     environment:
       USE_POSTGRES: 'true'
-      POSTGRES_HOST: postgres
+      POSTGRES_HOST: localbiz-postgres
       POSTGRES_PORT: 5432
       POSTGRES_DB: localbiz
       POSTGRES_USER: localbiz
       POSTGRES_PASSWORD: localbiz
-      CELERY_BROKER_URL: 'redis://redis:6379/0'
-      CELERY_RESULT_BACKEND: 'redis://redis:6379/0'
+      CELERY_BROKER_URL: 'redis://localbiz-redis:6379/0'
+      CELERY_RESULT_BACKEND: 'redis://localbiz-redis:6379/0'
+    networks:
+      - sitenest_net
     command: celery -A app.core.celery_app worker --loglevel=info --concurrency=2 -Q sitenest
     depends_on:
       postgres:
@@ -88,19 +96,25 @@ services:
       - ./backend/.env.example
     environment:
       USE_POSTGRES: 'true'
-      POSTGRES_HOST: postgres
+      POSTGRES_HOST: localbiz-postgres
       POSTGRES_PORT: 5432
       POSTGRES_DB: localbiz
       POSTGRES_USER: localbiz
       POSTGRES_PASSWORD: localbiz
-      CELERY_BROKER_URL: 'redis://redis:6379/0'
-      CELERY_RESULT_BACKEND: 'redis://redis:6379/0'
+      CELERY_BROKER_URL: 'redis://localbiz-redis:6379/0'
+      CELERY_RESULT_BACKEND: 'redis://localbiz-redis:6379/0'
+    networks:
+      - sitenest_net
     command: celery -A app.core.celery_app beat --loglevel=info --scheduler celery.beat:PersistentScheduler
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+
+networks:
+  sitenest_net:
+    driver: bridge
 
 volumes:
   postgres_data:

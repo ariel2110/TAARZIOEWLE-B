@@ -52,6 +52,7 @@ AdminState = Literal[
     "CHAT_WITH_GROK",
     "CHAT_WITH_CLAUDE",
     "CHAT_WITH_GEMINI",
+    "CHAT_WITH_GPT",
     "AWAITING_PIN",
     "AWAITING_COST_CONFIRM",
 ]
@@ -61,6 +62,7 @@ _session: dict = {
     "state": "MAIN_MENU",
     "claude_history": [],      # list[{role, content}]
     "gemini_history": [],      # list[{role, parts}]
+    "gpt_history": [],         # list[{role, content}]
     "blackboard": "",          # shared 1-sentence summary across agent switches
     "_prev_agent_state": "",   # last active agent state for blackboard delivery
     "paginated_items": [],     # items waiting to be paged out
@@ -80,6 +82,7 @@ _MENU_TEXT = (
     "• *גרוק* — שוחח עם Grok (AI CEO)\n"
     "• *קלוד* — שוחח עם Claude (Anthropic)\n"
     "• *ג'מיני* — שוחח עם Gemini (Google)\n"
+    "• *ג'פיטי* — שוחח עם ChatGPT (OpenAI)\n"
     "• *סטטיסטיקות* — דוח יומי מהיר\n"
     "• *לידים* — לידים חמים ובוערים\n"
     "• *עזרה* — תפריט זה\n\n"
@@ -141,6 +144,8 @@ def handle_admin_message(text: str, db: Session) -> None:
         _chat_claude(text)
     elif state == "CHAT_WITH_GEMINI":
         _chat_gemini(text)
+    elif state == "CHAT_WITH_GPT":
+        _chat_gpt(text)
 
 
 def handle_admin_audio(audio_url: str, mime_type: str, db: Session) -> None:
@@ -177,6 +182,7 @@ def _reset_to_menu(msg: str = "") -> None:
     _session["state"] = "MAIN_MENU"
     _session["claude_history"] = []
     _session["gemini_history"] = []
+    _session["gpt_history"] = []
     _session["paginated_items"] = []
     _session["page_offset"] = 0
     _session["pending_action"] = None
@@ -343,6 +349,15 @@ def _handle_menu_command(text: str, db: Session) -> None:
             intro += f"\n\n📋 *הקשר מהסוכן הקודם:*\n_{blackboard}_"
         _send(intro)
 
+    elif lower in {"ג'פיטי", "ג׳פיטי", "גיפיטי", "chatgpt", "gpt", "openai", "צ'טגיפיטי"}:
+        _session["state"] = "CHAT_WITH_GPT"
+        _session["gpt_history"] = []
+        _session["_prev_agent_state"] = "CHAT_WITH_GPT"
+        intro = "🟢 *מצב שיחה: ChatGPT (OpenAI)*\nשלח הודעה ל-GPT. שלח *יציאה* לחזרה לתפריט."
+        if blackboard and prev_agent and prev_agent != "CHAT_WITH_GPT":
+            intro += f"\n\n📋 *הקשר מהסוכן הקודם:*\n_{blackboard}_"
+        _send(intro)
+
     elif lower in {"סטטיסטיקות", "stats", "דוח", "report", "statistics", "נתונים"}:
         try:
             _send(_get_stats(db))
@@ -477,6 +492,45 @@ def _chat_gemini(text: str) -> None:
     except Exception as exc:
         _send_error("Gemini", exc)
 
+
+def _chat_gpt(text: str) -> None:
+    try:
+        import openai
+        # First message: inject blackboard context
+        if not _session["gpt_history"]:
+            blackboard = _session.get("blackboard", "")
+            content = (
+                f"[Shared context from previous AI: {blackboard}]\n\nUser: {text}"
+                if blackboard else text
+            )
+            _session["gpt_history"].append({"role": "user", "content": content})
+        else:
+            _session["gpt_history"].append({"role": "user", "content": text})
+
+        _send("⏳ שואל את ג'פיטי...")
+        client = openai.OpenAI(api_key=settings.openai_api_key)
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            max_tokens=1500,
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are ChatGPT, an AI assistant helping Ariel, the founder of SiteNest — "
+                        "an automated platform that automatically builds and sells AI-powered websites "
+                        "for local businesses in Israel. Answer concisely and helpfully. "
+                        "Respond in the same language the user writes in (Hebrew or English)."
+                    ),
+                },
+                *_session["gpt_history"],
+            ],
+        )
+        reply = response.choices[0].message.content or ""
+        _session["gpt_history"].append({"role": "assistant", "content": reply})
+        _send(f"🟢 *ChatGPT:*\n{reply}")
+        _session["blackboard"] = f"ChatGPT: {reply[:200]}"
+    except Exception as exc:
+        _send_error("ChatGPT", exc)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Voice note transcription (OpenAI Whisper)

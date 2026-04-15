@@ -24,6 +24,25 @@ from app.models.activity_log import ActivityLog
 router = APIRouter(prefix='/webhooks/whatsapp', tags=['webhooks'])
 logger = logging.getLogger(__name__)
 
+# ── Message-ID deduplication (prevents double-dispatch when WhatsApp sends
+#    the same message as both @s.whatsapp.net AND @lid events simultaneously)
+import time as _time
+_seen_msg_ids: dict[str, float] = {}
+_MSG_DEDUP_TTL = 30  # seconds
+
+def _is_duplicate(msg_id: str) -> bool:
+    """Return True if this message ID was already processed within the last 30 s."""
+    if not msg_id:
+        return False
+    now = _time.time()
+    stale = [k for k, t in _seen_msg_ids.items() if now - t > _MSG_DEDUP_TTL]
+    for k in stale:
+        del _seen_msg_ids[k]
+    if msg_id in _seen_msg_ids:
+        return True
+    _seen_msg_ids[msg_id] = now
+    return False
+
 # Map provider delivery statuses → our internal status
 _DELIVERY_MAP: dict[str, str] = {
     'sent': 'sent',
@@ -86,6 +105,10 @@ async def webhook_receive(request: Request, db: Session = Depends(get_db)):
         logger.warning('[WA_DEBUG] Evolution event=%r  data_keys=%s', event, list(data.keys()))
         if event == 'messages.upsert':
             key = data.get('key', {})
+            msg_id = key.get('id', '')
+            if _is_duplicate(msg_id):
+                logger.warning('[WA_DEBUG] DEDUP: skipping already-processed msg_id=%r', msg_id)
+                return {'ok': True, 'processed': 0}
             from_me: bool = key.get('fromMe', False)
             remote_jid: str = key.get('remoteJid', '')
             raw_msg = data.get('message', {})

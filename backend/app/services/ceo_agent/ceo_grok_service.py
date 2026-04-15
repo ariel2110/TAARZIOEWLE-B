@@ -160,7 +160,7 @@ class CEOGrokService:
         try:
             from app.services.llm.router_service import LLMRouterService
             router = LLMRouterService()
-            return router._call_xai(
+            result = router._call_xai(
                 prompt,
                 settings.xai_api_key,
                 model="grok-3-mini",
@@ -168,6 +168,8 @@ class CEOGrokService:
                 max_tokens=1800,
                 json_mode=True,
             )
+            # _call_xai returns (text, model_name, in_tokens, out_tokens)
+            return result[0] if isinstance(result, tuple) else result
         except Exception:
             logger.exception("CEOGrokService._call_grok failed")
             return None

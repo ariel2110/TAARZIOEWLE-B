@@ -78,6 +78,46 @@ async def webhook_receive(request: Request, db: Session = Depends(get_db)):
 
     processed = 0
 
+    # ── Evolution API format ─────────────────────────────────────
+    # Evolution sends {"event": "messages.upsert"|"messages.update", "instance": "...", "data": {...}}
+    if payload.get('event'):
+        event = payload['event']
+        data = payload.get('data', {})
+        if event == 'messages.upsert':
+            key = data.get('key', {})
+            from_me: bool = key.get('fromMe', False)
+            if not from_me:
+                # Extract text from various Evolution message sub-types
+                raw_msg = data.get('message', {})
+                text_body = (
+                    raw_msg.get('conversation')
+                    or raw_msg.get('extendedTextMessage', {}).get('text')
+                    or ''
+                )
+                evo_msg = {
+                    'from': key.get('remoteJid', ''),
+                    'type': 'text',
+                    'text': {'body': text_body},
+                }
+                _handle_inbound(db, evo_msg, {})
+                processed += 1
+        elif event == 'messages.update':
+            # Delivery receipt: Evolution status int → our string
+            _EVO_STATUS_MAP = {1: 'sent', 2: 'sent', 3: 'delivered', 4: 'read'}
+            update = data.get('update', {})
+            evo_status_int = update.get('status')
+            if evo_status_int is not None:
+                key = data.get('key', {})
+                evo_status_evt = {
+                    'id': key.get('id', ''),
+                    'recipient_id': key.get('remoteJid', '').replace('@s.whatsapp.net', ''),
+                    'status': _EVO_STATUS_MAP.get(evo_status_int, 'sent'),
+                }
+                _handle_status(db, evo_status_evt)
+                processed += 1
+        logger.info('[whatsapp_webhook] Evolution event=%s processed=%d', event, processed)
+        return {'ok': True, 'processed': processed}
+
     # ── Meta Cloud API format ────────────────────────────────────
     for entry in payload.get('entry', []):
         for change in entry.get('changes', []):
@@ -151,6 +191,21 @@ def _handle_inbound(db: Session, msg: dict, metadata: dict) -> None:
         text = msg.get('text', {}).get('body', '')
     elif msg.get('type') == 'button':
         text = msg.get('button', {}).get('text', '')
+
+    # ── Admin Remote Control: gate on owner phone ─────────────────────────────
+    # Strip JID suffix and any country-code prefix variations for comparison.
+    owner_phone = (getattr(settings, 'whatsapp_owner_phone', '') or '').strip()
+    if owner_phone:
+        import re as _re
+        normalized_from = _re.sub(r'\D', '', from_phone)
+        if normalized_from == owner_phone and text:
+            try:
+                from app.services.admin_remote.whatsapp_admin_router import handle_admin_message
+                handle_admin_message(text, db)
+            except Exception:
+                logger.exception('[admin_wa] unhandled error in handle_admin_message')
+            return  # do not process as a regular outreach reply
+    # ─────────────────────────────────────────────────────────────────────────
 
     # Mark matching outreach as replied
     if from_phone:

@@ -86,7 +86,16 @@ async def webhook_receive(request: Request, db: Session = Depends(get_db)):
         if event == 'messages.upsert':
             key = data.get('key', {})
             from_me: bool = key.get('fromMe', False)
-            if not from_me:
+            remote_jid: str = key.get('remoteJid', '')
+
+            # Detect self-message (admin uses "Message Yourself" / Saved Messages):
+            # fromMe=true but remoteJid is the owner's own number → admin command
+            owner_digits = (getattr(settings, 'whatsapp_owner_phone', '') or '').strip()
+            import re as _re2
+            remote_digits = _re2.sub(r'\D', '', remote_jid)
+            is_self_msg = from_me and owner_digits and remote_digits.startswith(owner_digits)
+
+            if not from_me or is_self_msg:
                 # Extract text from various Evolution message sub-types
                 raw_msg = data.get('message', {})
                 text_body = (
@@ -94,8 +103,10 @@ async def webhook_receive(request: Request, db: Session = Depends(get_db)):
                     or raw_msg.get('extendedTextMessage', {}).get('text')
                     or ''
                 )
+                # For self-messages, set from = owner phone so admin bouncer matches
+                from_jid = f"{owner_digits}@s.whatsapp.net" if is_self_msg else remote_jid
                 evo_msg = {
-                    'from': key.get('remoteJid', ''),
+                    'from': from_jid,
                     'type': 'text',
                     'text': {'body': text_body},
                 }

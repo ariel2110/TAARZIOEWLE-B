@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useLang, useTheme } from '../i18n';
 import { Tooltip } from './ui';
 import { HelpPanel } from './HelpPanel';
@@ -53,10 +53,17 @@ const NAV_GROUPS: NavGroup[] = [
 
 export function Shell({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { lang, toggle, t } = useLang();
   const { theme, toggleTheme } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+
+  // Close sidebar and scroll to top on every route change
+  useEffect(() => {
+    setMobileOpen(false);
+    window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
+  }, [location.pathname]);
 
   const handleLogout = () => {
     localStorage.removeItem('admin_access_token');
@@ -113,8 +120,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                           to={item.to}
                           end={item.end}
                           className={({ isActive }) => isActive ? 'active' : ''}
-                          style={{ display: 'flex', alignItems: 'center', gap: 10 }}
-                          onClick={closeOnMobile}
+                          style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%' }}
                         >
                           <span style={{ fontSize: 15, width: 20, textAlign: 'center' }}>{item.icon}</span>
                           <span style={{ fontSize: 14 }}>{item.label}</span>

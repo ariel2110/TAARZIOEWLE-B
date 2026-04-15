@@ -22,7 +22,7 @@ export function Tooltip({ text, children, position = 'top' }: {
 
   return (
     <span
-      style={{ position: 'relative', display: 'inline-block' }}
+      style={{ position: 'relative', display: 'block' }}
       onMouseEnter={() => setVisible(true)}
       onMouseLeave={() => setVisible(false)}
     >

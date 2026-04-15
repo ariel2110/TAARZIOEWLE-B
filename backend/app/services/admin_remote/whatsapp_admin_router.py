@@ -308,4 +308,9 @@ def _send(text: str) -> None:
     if not owner:
         logger.warning("[admin_wa] whatsapp_owner_phone not configured — cannot send reply")
         return
-    EvolutionWhatsAppService().send_text(owner, text)
+    logger.warning("[admin_wa] _send → phone=%r  text=%r", owner, text[:80])
+    try:
+        ok = EvolutionWhatsAppService().send_text(owner, text)
+        logger.warning("[admin_wa] _send result: %s", "OK" if ok else "FAILED")
+    except Exception:
+        logger.exception("[admin_wa] _send raised exception")

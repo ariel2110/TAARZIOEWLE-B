@@ -83,21 +83,31 @@ async def webhook_receive(request: Request, db: Session = Depends(get_db)):
     if payload.get('event'):
         event = payload['event']
         data = payload.get('data', {})
+        logger.warning('[WA_DEBUG] Evolution event=%r  data_keys=%s', event, list(data.keys()))
         if event == 'messages.upsert':
             key = data.get('key', {})
             from_me: bool = key.get('fromMe', False)
             remote_jid: str = key.get('remoteJid', '')
+            raw_msg = data.get('message', {})
+            logger.warning('[WA_DEBUG] messages.upsert  fromMe=%s  remoteJid=%r  msg_keys=%s',
+                           from_me, remote_jid, list(raw_msg.keys()))
 
             # Detect self-message (admin uses "Message Yourself" / Saved Messages):
-            # fromMe=true but remoteJid is the owner's own number → admin command
+            # Case 1: fromMe=true AND remoteJid is owner's phone number
+            # Case 2: fromMe=true AND remoteJid ends with @lid (WhatsApp LID privacy format —
+            #         always indicates a self-message / "Message Yourself")
             owner_digits = (getattr(settings, 'whatsapp_owner_phone', '') or '').strip()
             import re as _re2
             remote_digits = _re2.sub(r'\D', '', remote_jid)
-            is_self_msg = from_me and owner_digits and remote_digits.startswith(owner_digits)
+            is_lid = remote_jid.endswith('@lid')
+            is_self_msg = from_me and owner_digits and (
+                remote_digits.startswith(owner_digits) or is_lid
+            )
+            logger.warning('[WA_DEBUG] owner_digits=%r  remote_digits=%r  is_lid=%s  is_self_msg=%s',
+                           owner_digits, remote_digits, is_lid, is_self_msg)
 
             if not from_me or is_self_msg:
                 # Extract text from various Evolution message sub-types
-                raw_msg = data.get('message', {})
                 text_body = (
                     raw_msg.get('conversation')
                     or raw_msg.get('extendedTextMessage', {}).get('text')
@@ -105,6 +115,7 @@ async def webhook_receive(request: Request, db: Session = Depends(get_db)):
                 )
                 # For self-messages, set from = owner phone so admin bouncer matches
                 from_jid = f"{owner_digits}@s.whatsapp.net" if is_self_msg else remote_jid
+                logger.warning('[WA_DEBUG] dispatching to _handle_inbound  from=%r  text=%r', from_jid, text_body[:50])
                 evo_msg = {
                     'from': from_jid,
                     'type': 'text',
@@ -112,6 +123,8 @@ async def webhook_receive(request: Request, db: Session = Depends(get_db)):
                 }
                 _handle_inbound(db, evo_msg, {})
                 processed += 1
+            else:
+                logger.warning('[WA_DEBUG] SKIPPED — fromMe=True and not self-msg')
         elif event == 'messages.update':
             # Delivery receipt: Evolution status int → our string
             _EVO_STATUS_MAP = {1: 'sent', 2: 'sent', 3: 'delivered', 4: 'read'}
@@ -206,16 +219,24 @@ def _handle_inbound(db: Session, msg: dict, metadata: dict) -> None:
     # ── Admin Remote Control: gate on owner phone ─────────────────────────────
     # Strip JID suffix and any country-code prefix variations for comparison.
     owner_phone = (getattr(settings, 'whatsapp_owner_phone', '') or '').strip()
+    import re as _re
+    normalized_from = _re.sub(r'\D', '', from_phone)
+    logger.warning('[WA_DEBUG] _handle_inbound  from_phone=%r  normalized=%r  owner=%r  text=%r',
+                   from_phone, normalized_from, owner_phone, text[:50] if text else '')
     if owner_phone:
-        import re as _re
-        normalized_from = _re.sub(r'\D', '', from_phone)
-        if normalized_from == owner_phone and text:
-            try:
-                from app.services.admin_remote.whatsapp_admin_router import handle_admin_message
-                handle_admin_message(text, db)
-            except Exception:
-                logger.exception('[admin_wa] unhandled error in handle_admin_message')
+        if normalized_from == owner_phone:
+            if text:
+                logger.warning('[WA_DEBUG] → ADMIN DISPATCH  text=%r', text[:80])
+                try:
+                    from app.services.admin_remote.whatsapp_admin_router import handle_admin_message
+                    handle_admin_message(text, db)
+                except Exception:
+                    logger.exception('[admin_wa] unhandled error in handle_admin_message')
+            else:
+                logger.warning('[WA_DEBUG] → ADMIN but text is empty — skipping')
             return  # do not process as a regular outreach reply
+        else:
+            logger.warning('[WA_DEBUG] → NOT admin (%r != %r) — regular outreach flow', normalized_from, owner_phone)
     # ─────────────────────────────────────────────────────────────────────────
 
     # Mark matching outreach as replied

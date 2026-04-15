@@ -38,6 +38,13 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.services.communications.evolution_whatsapp_service import EvolutionWhatsAppService
+from app.services.admin_remote.agents_config import (
+    GROK_SYSTEM_PROMPT,
+    GEMINI_SYSTEM_PROMPT,
+    CLAUDE_SYSTEM_PROMPT,
+    GPT_SYSTEM_PROMPT,
+    AGENT_MAP,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -395,15 +402,6 @@ def _chat_grok(text: str, db: Session) -> None:
 
         _send("⏳ שואל את גרוק...")
 
-        _GROK_CHAT_SYSTEM = (
-            "אתה ה-CEO של SiteNest. התפקיד שלך הוא ניהול אסטרטגי ותעדוף. "
-            "כשמגיע ליד, אתה מנתח את הפוטנציאל העסקי שלו לפי הנתונים שג'ימיני אוסף. "
-            "אתה חד, סרקסטי מעט (בסגנון אילון מאסק), וישיר מאוד. "
-            "אם אריאל שואל 'מה המצב?', אתה נותן סיכום מנהלים. "
-            "אתה מחליט מתי להפעיל את קלוד לבנייה ומתי לעצור כי העסק לא רווחי. "
-            "אתה המילה האחרונה במערכת."
-        )
-
         evo_key = getattr(_settings, "xai_api_key", None) or ""
         if not evo_key:
             _send("❌ XAI_API_KEY לא מוגדר. הוסף אותו ל-.env")
@@ -414,7 +412,7 @@ def _chat_grok(text: str, db: Session) -> None:
         payload = {
             "model": "grok-3-mini",
             "messages": [
-                {"role": "system", "content": _GROK_CHAT_SYSTEM},
+                {"role": "system", "content": GROK_SYSTEM_PROMPT},
                 {"role": "user", "content": enriched},
             ],
             "max_tokens": 1200,
@@ -454,14 +452,7 @@ def _chat_claude(text: str) -> None:
         response = client.messages.create(
             model="claude-opus-4-5",
             max_tokens=1500,
-            system=(
-                "אתה ה-CTO והמהנדס הראשי של SiteNest. התפקיד שלך הוא ביצוע טכני מושלם. "
-                "כשג'ימיני מביא נתונים, אתה יוצר את המבנה של האתר, מגדיר את ה-Layout, "
-                "ובונה את ה-Automation Scripts ב-Python. "
-                "אתה מומחה בפתרון בעיות טכניות ובאופטימיזציה. "
-                "אתה לא מדבר הרבה – אתה בונה. "
-                "אם יש באג בחיבור ל-WhatsApp, אתה זה שמתקן אותו."
-            ),
+            system=CLAUDE_SYSTEM_PROMPT,
             messages=_session["claude_history"],
         )
         reply = response.content[0].text
@@ -491,14 +482,7 @@ def _chat_gemini(text: str) -> None:
 
         model = genai.GenerativeModel(
             "gemini-1.5-flash",
-            system_instruction=(
-                "אתה ה-Research & Data Officer. המשימה שלך היא אפס טעויות במידע. "
-                "כשניתן לך שם עסק, אתה צולל ל-Google Places, Facebook ו-Instagram. "
-                "אתה מנתח את ה-API של Serper ומביא את ה'בשר' הגולמי: "
-                "טלפון, כתובת, שעות פתיחה, ודירוג לקוחות. "
-                "אתה מספק דוחות יבשים ומדויקים. "
-                "אתה העיניים של המערכת, בלעדיך קלוד בונה אתרים לעסקים שלא קיימים."
-            ),
+            system_instruction=GEMINI_SYSTEM_PROMPT,
         )
         chat = model.start_chat(history=history)
         response = chat.send_message(first_text)
@@ -534,14 +518,7 @@ def _chat_gpt(text: str) -> None:
             messages=[
                 {
                     "role": "system",
-                    "content": (
-                        "אתה ה-CMO ומנהל הקריאייטיב. התפקיד שלך הוא להפוך נתונים לכסף. "
-                        "אתה לוקח את המידע היבש של ג'ימיני והופך אותו לטקסט שיווקי מהפנט. "
-                        "אתה כותב כותרות שתופסות את העין והודעות וואטסאפ אישיות "
-                        "שגורמות לבעל העסק להרגיש שאתה מכיר אותו שנים. "
-                        "המטרה שלך היא אחת: יחס המרה מקסימלי. "
-                        "כל מילה שלך צריכה למכור."
-                    ),
+                    "content": GPT_SYSTEM_PROMPT,
                 },
                 *_session["gpt_history"],
             ],

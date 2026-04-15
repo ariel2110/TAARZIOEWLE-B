@@ -45,6 +45,11 @@ from app.services.admin_remote.agents_config import (
     GPT_SYSTEM_PROMPT,
     AGENT_MAP,
 )
+from app.services.admin_remote.system_tools import (
+    TOOLS_SCHEMA,
+    TOOLS_SCHEMA_ANTHROPIC,
+    dispatch_tool,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -148,11 +153,11 @@ def handle_admin_message(text: str, db: Session) -> None:
     elif state == "CHAT_WITH_GROK":
         _chat_grok(text, db)
     elif state == "CHAT_WITH_CLAUDE":
-        _chat_claude(text)
+        _chat_claude(text, db)
     elif state == "CHAT_WITH_GEMINI":
-        _chat_gemini(text)
+        _chat_gemini(text, db)
     elif state == "CHAT_WITH_GPT":
-        _chat_gpt(text)
+        _chat_gpt(text, db)
 
 
 def handle_admin_audio(evo_message_data: dict, db: Session) -> None:
@@ -390,42 +395,73 @@ def _handle_menu_command(text: str, db: Session) -> None:
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _chat_grok(text: str, db: Session) -> None:
-    """Direct conversational Grok chat — CEO partner, not full metrics loop."""
+    """Grok chat with native function-calling tool loop (xAI OpenAI-compatible API)."""
     try:
         from app.core.config import settings as _settings
+        import httpx as _httpx
+        import json as _json
+
         blackboard = _session.get("blackboard", "")
         is_first_msg = not _session.get("_grok_had_exchange")
-        if blackboard and is_first_msg:
-            enriched = f"[Context from previous agent: {blackboard}]\n\n{text}"
-        else:
-            enriched = text
-
-        _send("⏳ שואל את גרוק...")
+        user_content = (
+            f"[Context from previous agent: {blackboard}]\n\n{text}"
+            if (blackboard and is_first_msg) else text
+        )
 
         evo_key = getattr(_settings, "xai_api_key", None) or ""
         if not evo_key:
             _send("❌ XAI_API_KEY לא מוגדר. הוסף אותו ל-.env")
             return
 
-        import httpx as _httpx, json as _json
+        _send("⏳ שואל את גרוק...")
         headers = {"Authorization": f"Bearer {evo_key}", "Content-Type": "application/json"}
-        payload = {
-            "model": "grok-3-mini",
-            "messages": [
-                {"role": "system", "content": GROK_SYSTEM_PROMPT},
-                {"role": "user", "content": enriched},
-            ],
-            "max_tokens": 1200,
-            "temperature": 0.7,
-        }
-        resp = _httpx.post(
-            "https://api.x.ai/v1/chat/completions",
-            json=payload,
-            headers=headers,
-            timeout=45,
-        )
-        resp.raise_for_status()
-        reply = resp.json()["choices"][0]["message"]["content"] or ""
+        messages = [
+            {"role": "system", "content": GROK_SYSTEM_PROMPT},
+            {"role": "user", "content": user_content},
+        ]
+
+        # Tool-calling loop (up to 3 rounds)
+        for _round in range(3):
+            payload = {
+                "model": "grok-3-mini",
+                "messages": messages,
+                "tools": TOOLS_SCHEMA,
+                "tool_choice": "auto",
+                "max_tokens": 1200,
+                "temperature": 0.7,
+            }
+            resp = _httpx.post(
+                "https://api.x.ai/v1/chat/completions",
+                json=payload,
+                headers=headers,
+                timeout=45,
+            )
+            resp.raise_for_status()
+            choice = resp.json()["choices"][0]
+            msg = choice["message"]
+            finish = choice.get("finish_reason", "")
+
+            if finish == "tool_calls" or msg.get("tool_calls"):
+                # Execute each requested tool and feed results back
+                messages.append(msg)
+                for tc in msg.get("tool_calls", []):
+                    fn_name = tc["function"]["name"]
+                    fn_args = _json.loads(tc["function"].get("arguments", "{}"))
+                    logger.warning("[admin_wa] Grok calling tool: %s(%s)", fn_name, fn_args)
+                    result = dispatch_tool(fn_name, fn_args, db)
+                    messages.append({
+                        "role": "tool",
+                        "tool_call_id": tc["id"],
+                        "content": _json.dumps(result, ensure_ascii=False),
+                    })
+                continue  # next round with tool results
+
+            # Final text reply
+            reply = msg.get("content") or ""
+            break
+        else:
+            reply = "לא הצלחתי לקבל תשובה סופית מגרוק."
+
         _session["_grok_had_exchange"] = True
         _send(f"🧠 *Grok:*\n{reply}")
         _session["blackboard"] = f"Grok: {reply[:200]}"
@@ -433,10 +469,12 @@ def _chat_grok(text: str, db: Session) -> None:
         _send_error("Grok", exc)
 
 
-def _chat_claude(text: str) -> None:
+def _chat_claude(text: str, db: Session) -> None:
+    """Claude chat with native tool_use loop (Anthropic API)."""
     try:
         import anthropic
-        # First message in this session: inject blackboard context
+        import json as _json
+
         if not _session["claude_history"]:
             blackboard = _session.get("blackboard", "")
             content = (
@@ -449,13 +487,43 @@ def _chat_claude(text: str) -> None:
 
         _send("⏳ שואל את קלוד...")
         client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
-        response = client.messages.create(
-            model="claude-opus-4-5",
-            max_tokens=1500,
-            system=CLAUDE_SYSTEM_PROMPT,
-            messages=_session["claude_history"],
-        )
-        reply = response.content[0].text
+
+        # Tool-calling loop (up to 3 rounds)
+        for _round in range(3):
+            response = client.messages.create(
+                model="claude-opus-4-5",
+                max_tokens=1500,
+                system=CLAUDE_SYSTEM_PROMPT,
+                tools=TOOLS_SCHEMA_ANTHROPIC,
+                messages=_session["claude_history"],
+            )
+
+            if response.stop_reason == "tool_use":
+                # Append assistant message with tool_use blocks
+                _session["claude_history"].append({
+                    "role": "assistant",
+                    "content": response.content,
+                })
+                # Build tool_result blocks
+                tool_results = []
+                for block in response.content:
+                    if block.type == "tool_use":
+                        logger.warning("[admin_wa] Claude calling tool: %s(%s)", block.name, block.input)
+                        result = dispatch_tool(block.name, block.input, db)
+                        tool_results.append({
+                            "type": "tool_result",
+                            "tool_use_id": block.id,
+                            "content": _json.dumps(result, ensure_ascii=False),
+                        })
+                _session["claude_history"].append({"role": "user", "content": tool_results})
+                continue
+
+            # Final text reply
+            reply = response.content[0].text if response.content else ""
+            break
+        else:
+            reply = "לא הצלחתי לקבל תשובה סופית מקלוד."
+
         _session["claude_history"].append({"role": "assistant", "content": reply})
         _send(f"🤖 *Claude:*\n{reply}")
         _session["blackboard"] = f"Claude: {reply[:200]}"
@@ -463,9 +531,11 @@ def _chat_claude(text: str) -> None:
         _send_error("Claude", exc)
 
 
-def _chat_gemini(text: str) -> None:
+def _chat_gemini(text: str, db: Session) -> None:
+    """Gemini chat — auto-fetches live data before answering data questions."""
     try:
         import google.generativeai as genai
+        import json as _json
         _send("⏳ שואל את ג'מיני...")
         genai.configure(api_key=settings.gemini_api_key)
 
@@ -479,6 +549,19 @@ def _chat_gemini(text: str) -> None:
             )
         else:
             first_text = text
+
+        # Pre-flight: detect data-related keywords and inject live context
+        _DATA_KEYWORDS = {
+            "ליד", "לידים", "סטטיסטיקות", "נתונים", "כמה", "stats", "leads", "how many", "מה המצב",
+            "lead", "מצב", "היום", "בוקר", "הלילה",
+        }
+        if any(kw in text.lower() for kw in _DATA_KEYWORDS):
+            live = dispatch_tool("get_system_stats", {}, db)
+            if live["ok"]:
+                first_text = (
+                    f"[Live SiteNest data as of now: {_json.dumps(live['data'], ensure_ascii=False)}]\n\n"
+                    + first_text
+                )
 
         model = genai.GenerativeModel(
             "gemini-1.5-flash",
@@ -496,10 +579,12 @@ def _chat_gemini(text: str) -> None:
         _send_error("Gemini", exc)
 
 
-def _chat_gpt(text: str) -> None:
+def _chat_gpt(text: str, db: Session) -> None:
+    """GPT chat with native function-calling tool loop (OpenAI API)."""
     try:
         import openai
-        # First message: inject blackboard context
+        import json as _json
+
         if not _session["gpt_history"]:
             blackboard = _session.get("blackboard", "")
             content = (
@@ -512,18 +597,39 @@ def _chat_gpt(text: str) -> None:
 
         _send("⏳ שואל את ג'פיטי...")
         client = openai.OpenAI(api_key=settings.openai_api_key)
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            max_tokens=1500,
-            messages=[
-                {
-                    "role": "system",
-                    "content": GPT_SYSTEM_PROMPT,
-                },
-                *_session["gpt_history"],
-            ],
-        )
-        reply = response.choices[0].message.content or ""
+
+        # Tool-calling loop (up to 3 rounds)
+        loop_messages = [{"role": "system", "content": GPT_SYSTEM_PROMPT}, *_session["gpt_history"]]
+        for _round in range(3):
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                max_tokens=1500,
+                tools=TOOLS_SCHEMA,
+                tool_choice="auto",
+                messages=loop_messages,
+            )
+            choice = response.choices[0]
+            msg = choice.message
+
+            if choice.finish_reason == "tool_calls" and msg.tool_calls:
+                loop_messages.append(msg)
+                for tc in msg.tool_calls:
+                    fn_name = tc.function.name
+                    fn_args = _json.loads(tc.function.arguments or "{}")
+                    logger.warning("[admin_wa] GPT calling tool: %s(%s)", fn_name, fn_args)
+                    result = dispatch_tool(fn_name, fn_args, db)
+                    loop_messages.append({
+                        "role": "tool",
+                        "tool_call_id": tc.id,
+                        "content": _json.dumps(result, ensure_ascii=False),
+                    })
+                continue
+
+            reply = msg.content or ""
+            break
+        else:
+            reply = "לא הצלחתי לקבל תשובה סופית מ-GPT."
+
         _session["gpt_history"].append({"role": "assistant", "content": reply})
         _send(f"🟢 *ChatGPT:*\n{reply}")
         _session["blackboard"] = f"ChatGPT: {reply[:200]}"

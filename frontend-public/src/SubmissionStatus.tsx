@@ -21,6 +21,7 @@ interface IntakeStatus {
     created_at: string | null;
     ai_status: string | null;
     generated_preview_url: string | null;
+    generated_preview_url_v2: string | null;
     desired_domain: string | null;
     payment_status: string;
     payment_link: string | null;
@@ -51,6 +52,7 @@ export default function SubmissionStatus({ token, onBack }: Props) {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [deleteSubmitting, setDeleteSubmitting] = useState(false);
     const [actionSuccess, setActionSuccess] = useState('');
+    const [activeVariant, setActiveVariant] = useState<1 | 2>(1);
     // Checkout state
     const [domainInput, setDomainInput] = useState('');
     const [domainError, setDomainError] = useState('');
@@ -304,6 +306,98 @@ export default function SubmissionStatus({ token, onBack }: Props) {
                         </button>
 
                         <p className="ss-checkout-footer">תשלום מאובטח דרך Morning · ניתן לבטל בכל עת</p>
+                    </div>
+                )}
+
+                {/* ── Dual Preview Section ── */}
+                {data.ai_status === 'done' && data.generated_preview_url && (
+                    <div className="ss-card ss-preview-card">
+                        <h2 className="ss-card-title">🎨 האתר שלך מוכן — בחר את העיצוב שאהבת</h2>
+                        <p className="ss-preview-subtitle">
+                            בנינו עבורך <strong>שני עיצובים שונים לחלוטין</strong> — כל אחד עם סגנון ייחודי.
+                            עיין בשניהם ובחר את האחד שהכי מדבר אליך.
+                        </p>
+                        <div className="ss-variant-tabs">
+                            <button
+                                className={`ss-variant-tab ${activeVariant === 1 ? 'active' : ''}`}
+                                onClick={() => setActiveVariant(1)}
+                            >
+                                ✨ גרסה 1 — ויזואלי ומודרני
+                            </button>
+                            {data.generated_preview_url_v2 && (
+                                <button
+                                    className={`ss-variant-tab ${activeVariant === 2 ? 'active' : ''}`}
+                                    onClick={() => setActiveVariant(2)}
+                                >
+                                    🌟 גרסה 2 — פרמיום וסיפורי
+                                </button>
+                            )}
+                        </div>
+                        <div className="ss-preview-frame-wrap">
+                            {activeVariant === 1 && (
+                                <iframe
+                                    key="v1"
+                                    src={`https://api.sitenest.site${data.generated_preview_url}`}
+                                    className="ss-preview-iframe"
+                                    title="עיצוב 1"
+                                    sandbox="allow-same-origin allow-scripts"
+                                />
+                            )}
+                            {activeVariant === 2 && data.generated_preview_url_v2 && (
+                                <iframe
+                                    key="v2"
+                                    src={`https://api.sitenest.site${data.generated_preview_url_v2}`}
+                                    className="ss-preview-iframe"
+                                    title="עיצוב 2"
+                                    sandbox="allow-same-origin allow-scripts"
+                                />
+                            )}
+                            {activeVariant === 2 && !data.generated_preview_url_v2 && (
+                                <div className="ss-preview-generating">
+                                    <div className="ss-spinner-large" />
+                                    <p>גרסה 2 עדיין בהכנה... נסה שוב בעוד כמה דקות</p>
+                                </div>
+                            )}
+                        </div>
+                        <div className="ss-preview-links">
+                            <a
+                                href={`https://api.sitenest.site${data.generated_preview_url}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="ss-preview-open-btn"
+                            >
+                                🔗 פתח גרסה 1 בטאב חדש
+                            </a>
+                            {data.generated_preview_url_v2 && (
+                                <a
+                                    href={`https://api.sitenest.site${data.generated_preview_url_v2}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="ss-preview-open-btn ss-preview-open-v2"
+                                >
+                                    🔗 פתח גרסה 2 בטאב חדש
+                                </a>
+                            )}
+                        </div>
+                        <p className="ss-preview-choice-hint">
+                            💬 לבחירת גרסה — שלח לנו הודעה בוואטסאפ עם "גרסה 1" או "גרסה 2"
+                        </p>
+                    </div>
+                )}
+
+                {/* ── Still generating ── */}
+                {(data.ai_status === 'generating' || data.ai_status === 'pending') && (
+                    <div className="ss-card ss-generating-card">
+                        <div style={{display:'flex',justifyContent:'center',margin:'12px 0'}}>
+                            <div className="ss-spinner-large" />
+                        </div>
+                        <h3 style={{textAlign:'center',fontWeight:700,fontSize:'1.1rem',marginBottom:'6px'}}>ה-AI בונה את האתר שלך עכשיו...</h3>
+                        <p style={{textAlign:'center',color:'#6b7280',marginBottom:'12px'}}>זה לוקח בין 2–5 דקות. לחץ "רענן סטטוס" כדי לבדוק.</p>
+                        <div className="ss-generating-steps">
+                            {['🔍 מנתח את פרטי העסק', '✍️ כותב תוכן בעברית', '🎨 מעצב שני עיצובים ייחודיים', '✅ שומר ומפרסם'].map((step, i) => (
+                                <div key={i} className="ss-gen-step">{step}</div>
+                            ))}
+                        </div>
                     </div>
                 )}
 

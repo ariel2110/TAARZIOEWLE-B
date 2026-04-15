@@ -77,6 +77,7 @@ class IntakeStatusResponse(BaseModel):
     created_at: str | None
     ai_status: str | None
     generated_preview_url: str | None
+    generated_preview_url_v2: str | None  # second design variant
     # Payment & domain activation
     desired_domain: str | None
     payment_status: str
@@ -117,6 +118,7 @@ def _build_status_response(intake: PublicIntake) -> IntakeStatusResponse:
         created_at=intake.created_at.isoformat() if intake.created_at else None,
         ai_status=intake.ai_status,
         generated_preview_url=intake.generated_preview_url,
+        generated_preview_url_v2=intake.generated_preview_url_v2,
         desired_domain=intake.desired_domain,
         payment_status=intake.payment_status or 'unpaid',
         payment_link=intake.payment_link,
@@ -231,6 +233,38 @@ def _run_intake_pipeline(token: str) -> None:
             'tiktok_url': intake.tiktok_url or '',
         }
 
+        # Merge Google Places enrichment if the customer found themselves in search
+        if intake.google_enrichment_json:
+            try:
+                google_data = json.loads(intake.google_enrichment_json)
+                # Inject all Google data into enrichment and the text input
+                if google_data.get('address'):
+                    lines.append(f"Address: {google_data['address']}")
+                if google_data.get('rating'):
+                    lines.append(f"Rating: {google_data['rating']} ({google_data.get('reviews_count', 0)} reviews)")
+                if google_data.get('top_review'):
+                    lines.append(f"Top review: {google_data['top_review']}")
+                if google_data.get('opening_hours'):
+                    hrs = " | ".join(google_data['opening_hours'][:3])
+                    lines.append(f"Hours: {hrs}")
+                if google_data.get('types'):
+                    lines.append(f"Business types: {', '.join(google_data['types'][:4])}")
+                enrichment.update({
+                    'address': google_data.get('address', ''),
+                    'rating': google_data.get('rating'),
+                    'reviews_count': google_data.get('reviews_count', 0),
+                    'top_review': google_data.get('top_review', ''),
+                    'opening_hours': google_data.get('opening_hours', []),
+                    'website_url': google_data.get('website') or intake.website_url or '',
+                    'category': ', '.join(google_data.get('types', [])[:3]),
+                })
+                # Override phone with Google's if the form phone was empty
+                if not enrichment['phone'] and google_data.get('phone'):
+                    enrichment['phone'] = google_data['phone']
+                    lines[1] = f"Phone: {google_data['phone']}"
+            except Exception:
+                logger.warning("[IntakePipeline] Failed to parse google_enrichment_json for token=%s", token[:8])
+
         result = AutoSitePipelineService().run('\n'.join(lines), enrichment=enrichment)
         if not result or not result.html or len(result.html) < 500:
             intake.ai_status = 'failed'
@@ -238,13 +272,29 @@ def _run_intake_pipeline(token: str) -> None:
             logger.warning("[IntakePipeline] Pipeline returned no HTML for token=%s", token[:8])
             return
 
-        # Save HTML preview to filesystem
+        # Save HTML variant 1
         safe_slug = token[:16]
         html_file = PREVIEW_DIR / f'intake_{safe_slug}.html'
         html_file.write_text(result.html, encoding='utf-8')
 
         intake.generated_preview_url = f'/static/intake_previews/intake_{safe_slug}.html'
         intake.generated_html = result.html
+
+        # ── Generate variant 2 (different visual style) ──────────────────────
+        try:
+            pipeline_svc = AutoSitePipelineService()
+            html_v2 = pipeline_svc.generate_variant2(result, enrichment)
+            if html_v2 and len(html_v2) > 500:
+                html_file_v2 = PREVIEW_DIR / f'intake_{safe_slug}_v2.html'
+                html_file_v2.write_text(html_v2, encoding='utf-8')
+                intake.generated_preview_url_v2 = f'/static/intake_previews/intake_{safe_slug}_v2.html'
+                intake.generated_html_v2 = html_v2
+                logger.info("[IntakePipeline] Variant 2 saved for token=%s", token[:8])
+            else:
+                logger.warning("[IntakePipeline] Variant 2 empty for token=%s", token[:8])
+        except Exception:
+            logger.exception("[IntakePipeline] Variant 2 generation failed for token=%s", token[:8])
+
         intake.ai_status = 'done'
         intake.status = 'in_review'
         db.commit()
@@ -278,6 +328,55 @@ def _run_intake_pipeline(token: str) -> None:
             db.close()
 
 
+# ── GET /public/search-business ────────────────────────────────────────────
+@router.get('/search-business')
+def search_business(q: str = '', limit: int = 6) -> list[dict]:
+    """Search Google Places for a business by free-text query.
+    Returns up to `limit` results with name, address, phone, rating,
+    reviews, category and place_id — for auto-filling the intake form.
+    """
+    q = q.strip()
+    if not q or len(q) < 2:
+        return []
+    if limit < 1 or limit > 10:
+        limit = 6
+    try:
+        from app.services.enrichment.places_service import PlacesService
+        # Use text search: treat `q` as both name and city hint
+        svc = PlacesService()
+        if not svc.api_key:
+            return []
+        results = svc._text_search_all(q, limit * 2)
+        out: list[dict] = []
+        for place in results[:limit * 2]:
+            pid = place.get('place_id', '')
+            if not pid:
+                continue
+            detail = svc._get_place_detail(pid)
+            if not detail:
+                continue
+            norm = svc._normalize(detail)
+            out.append({
+                'place_id': norm.get('place_id', ''),
+                'name': norm.get('name', ''),
+                'address': norm.get('address', ''),
+                'phone': norm.get('phone', ''),
+                'rating': norm.get('rating'),
+                'reviews_count': norm.get('reviews_count'),
+                'google_maps_url': norm.get('google_maps_url', ''),
+                'top_review': norm.get('top_review', ''),
+                'opening_hours': norm.get('opening_hours', []),
+                'types': norm.get('types', []),
+                'website': norm.get('website', ''),
+            })
+            if len(out) >= limit:
+                break
+        return out
+    except Exception:
+        logger.exception("[search-business] error for q=%r", q[:40])
+        return []
+
+
 # ── POST /public/intake ─────────────────────────────────────────────────────
 @router.post('/intake', response_model=IntakeSubmitResponse)
 async def submit_intake(
@@ -292,6 +391,8 @@ async def submit_intake(
     description: str | None = Form(default=None, max_length=1000),
     images: list[UploadFile] = File(default=[]),
     vip_token: str | None = Form(default=None),   # Google VIP token bypasses rate limits
+    google_place_id: str | None = Form(default=None, max_length=120),   # from Places search
+    google_enrichment_json: str | None = Form(default=None),            # JSON blob of Places data
     db: Session = Depends(get_db),
 ) -> IntakeSubmitResponse:
     # Basic validation
@@ -360,6 +461,15 @@ async def submit_intake(
         saved_filenames.append(safe_name)
 
     token = secrets.token_urlsafe(32)
+    # Validate google_enrichment_json if provided (prevent storing malformed JSON)
+    safe_enrichment_json: str | None = None
+    if google_enrichment_json:
+        try:
+            parsed = json.loads(google_enrichment_json)
+            safe_enrichment_json = json.dumps(parsed)  # re-serialise to guarantee clean JSON
+        except Exception:
+            safe_enrichment_json = None
+
     intake = PublicIntake(
         token=token,
         business_name=business_name.strip(),
@@ -372,6 +482,8 @@ async def submit_intake(
         image_filenames=json.dumps(saved_filenames),
         status='submitted',
         correction_count=0,
+        google_place_id=(google_place_id or '').strip()[:120] or None,
+        google_enrichment_json=safe_enrichment_json,
     )
     db.add(intake)
     db.commit()

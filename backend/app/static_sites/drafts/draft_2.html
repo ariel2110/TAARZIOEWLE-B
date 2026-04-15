@@ -1,29 +1,235 @@
-<!doctype html>
-<html lang='en'>
-  <head>
-    <meta charset='utf-8' />
-    <meta name='viewport' content='width=device-width, initial-scale=1' />
-    <meta name='robots' content='noindex,nofollow' />
-    <title>Gordon Gym at Gordon Pool Draft Site</title>
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>רימון - גלה את תל אביב</title>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-      body { font-family: Arial, sans-serif; background:#f8fafc; color:#111827; margin:0; }
-      main { max-width: 960px; margin: 0 auto; padding: 32px 20px; }
-      .card { background:#fff; border-radius:18px; padding:24px; box-shadow:0 10px 24px rgba(0,0,0,.06); }
-      .cta { display:inline-block; background:#111827; color:#fff; padding:12px 16px; border-radius:12px; text-decoration:none; margin-top:16px; }
+      body {
+        font-family: 'Heebo', sans-serif;
+      }
+      .carousel {
+        overflow: hidden;
+        position: relative;
+      }
+      .carousel-inner {
+        display: flex;
+        animation: scroll 20s linear infinite;
+      }
+      @keyframes scroll {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(calc(-250px * 2)); }
+      }
+      .carousel-item {
+        min-width: 250px;
+        margin-right: 15px;
+      }
+      .hover\:zoom:hover {
+        transform: scale(1.05);
+      }
+      .transition {
+        transition: all 0.3s ease;
+      }
     </style>
-  </head>
-  <body>
-    <div style="background:#f59e0b;color:#111827;padding:12px;text-align:center;font-weight:700">Temporary draft/demo site</div>
-    <main>
-      <div class='card'>
-        <h1>Gordon Gym at Gordon Pool — establishment, gym באליעזר פרי 14</h1>
-        <p>Gordon Gym at Gordon Pool הוא עסק מקומי מוביל בתחום establishment, gym באליעזר פרי 14. אנו מתמחים במתן שירות מקצועי ואישי ללקוחותינו.</p>
-        <a class='cta' href='#contact'>Contact</a>
-      </div>
-      <div id='contact' class='card' style='margin-top:16px'>
-        <h2>Contact</h2>
-        <p>This page is ready for outreach preview and basic activation workflows.</p>
-      </div>
-    </main>
-  </body>
+</head>
+<body class="bg-gray-100">
+    <!-- Hero Section -->
+    <section class="bg-gradient-to-r from-blue-500 to-blue-700 text-white p-10">
+        <div class="max-w-screen-lg mx-auto text-center">
+            <h1 class="text-4xl font-bold mb-4">גלה את תל אביב כמו שמעולם לא חווית!</h1>
+            <p class="text-xl mb-6">חוויה צעירה ודינמית במרכז העיר, שמחברת בין אוכל, תרבות ובילוי במקום אחד.</p>
+            <div class="flex justify-center space-x-4">
+                <a href="tel:035064345" class="bg-white text-blue-700 px-6 py-3 rounded-full shadow-md hover:bg-gray-200 transition">התקשרו עכשיו</a>
+                <a href="https://wa.me/035064345" class="bg-green-500 text-white px-6 py-3 rounded-full shadow-md hover:bg-green-600 transition">וואטסאפ</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Trust Badges Section -->
+    <section class="py-8">
+        <div class="max-w-screen-lg mx-auto flex justify-around text-center">
+            <div class="bg-white shadow-lg rounded-full px-4 py-2">מענה מהיר</div>
+            <div class="bg-white shadow-lg rounded-full px-4 py-2">אמינות מלאה</div>
+            <div class="bg-white shadow-lg rounded-full px-4 py-2">מחיר הוגן</div>
+            <div class="bg-white shadow-lg rounded-full px-4 py-2">ניסיון רב שנים</div>
+        </div>
+    </section>
+
+    <!-- Services Grid Section -->
+    <section class="py-8">
+        <div class="max-w-screen-lg mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="bg-white shadow-lg rounded-xl p-6 hover:zoom transition">
+                <span role="img" aria-label="food" class="text-3xl">🍽️</span>
+                <h3 class="text-xl font-bold mt-4">מסעדות עם תפריטים יצירתיים</h3>
+                <p class="mt-2">התפריטים שלנו משלבים טעמים מהעולם עם מנות ייחודיות.</p>
+            </div>
+            <div class="bg-white shadow-lg rounded-xl p-6 hover:zoom transition">
+                <span role="img" aria-label="shop" class="text-3xl">🛍️</span>
+                <h3 class="text-xl font-bold mt-4">חנויות עם מוצרים ייחודיים</h3>
+                <p class="mt-2">גלה את המוצרים המיוחדים שלנו שלא תמצאו בשום מקום אחר.</p>
+            </div>
+            <div class="bg-white shadow-lg rounded-xl p-6 hover:zoom transition">
+                <span role="img" aria-label="music" class="text-3xl">🎶</span>
+                <h3 class="text-xl font-bold mt-4">הופעות חיות שמרגשות את הקהל</h3>
+                <p class="mt-2">הופעות חיות עם האמנים הטובים ביותר לתל אביב.</p>
+            </div>
+            <div class="bg-white shadow-lg rounded-xl p-6 hover:zoom transition">
+                <span role="img" aria-label="event" class="text-3xl">🎉</span>
+                <h3 class="text-xl font-bold mt-4">אירועים מגוונים לכל הגילאים</h3>
+                <p class="mt-2">אירועים שמחברים אנשים בכל הגילאים ובכל תחומי העניין.</p>
+            </div>
+            <div class="bg-white shadow-lg rounded-xl p-6 hover:zoom transition">
+                <span role="img" aria-label="attraction" class="text-3xl">🎢</span>
+                <h3 class="text-xl font-bold mt-4">אטרקציות יומיות לכל המשפחה</h3>
+                <p class="mt-2">אטרקציות מהנות לכל המשפחה שפתוחות כל יום.</p>
+            </div>
+            <div class="bg-white shadow-lg rounded-xl p-6 hover:zoom transition">
+                <span role="img" aria-label="seating" class="text-3xl">🛋️</span>
+                <h3 class="text-xl font-bold mt-4">פינות ישיבה נוחות ומזמינות</h3>
+                <p class="mt-2">פינות ישיבה שיספקו לכם נוחות והרפיה מלאה.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Reviews Carousel Section -->
+    <section class="py-8">
+        <div class="max-w-screen-lg mx-auto">
+            <h2 class="text-2xl font-bold text-center mb-6">מה אומרים עלינו</h2>
+            <div class="carousel">
+                <div class="carousel-inner">
+                    <div class="carousel-item bg-white shadow-lg rounded-2xl p-6">
+                        <div class="flex items-center mb-4">
+                            <div class="text-yellow-500 text-xl">★★★★★</div>
+                            <span class="ml-2 font-bold">אורן לוי</span>
+                        </div>
+                        <p>חוויתי כאן את אחת החוויות הכי מגניבות שהיו לי. צוות אדיב, אווירה מדהימה ואירועים שאין כמותם!</p>
+                    </div>
+                    <div class="carousel-item bg-white shadow-lg rounded-2xl p-6">
+                        <div class="flex items-center mb-4">
+                            <div class="text-yellow-500 text-xl">★★★★★</div>
+                            <span class="ml-2 font-bold">נעמי כהן</span>
+                        </div>
+                        <p>מקום מושלם לבלות בו עם המשפחה! הילדים נהנו מכל רגע באטרקציות השונות.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Why-Us Section -->
+    <section class="bg-blue-100 py-8">
+        <div class="max-w-screen-lg mx-auto">
+            <h2 class="text-2xl font-bold text-center mb-6">למה לבחור בנו?</h2>
+            <ul class="list-none space-y-4">
+                <li class="flex items-center">
+                    <span class="text-blue-700 text-2xl mr-2">✔️</span>
+                    שירות לקוחות אישי ומקצועי
+                </li>
+                <li class="flex items-center">
+                    <span class="text-blue-700 text-2xl mr-2">✔️</span>
+                    מגוון רחב של פעילויות ואטרקציות
+                </li>
+                <li class="flex items-center">
+                    <span class="text-blue-700 text-2xl mr-2">✔️</span>
+                    מיקום מרכזי ונגיש לכל
+                </li>
+                <li class="flex items-center">
+                    <span class="text-blue-700 text-2xl mr-2">✔️</span>
+                    חוויה בלתי נשכחת לכל המשפחה
+                </li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="py-8">
+        <div class="max-w-screen-lg mx-auto">
+            <h2 class="text-2xl font-bold text-center mb-6">שאלות נפוצות</h2>
+            <div class="space-y-4">
+                <details class="bg-white shadow-lg rounded-lg p-4">
+                    <summary class="font-bold cursor-pointer">מהם מחירי הכניסה?</summary>
+                    <p class="mt-2 text-gray-600">המחירים משתנים בהתאם לפעילות. אנא צרו קשר לפרטים נוספים.</p>
+                </details>
+                <details class="bg-white shadow-lg rounded-lg p-4">
+                    <summary class="font-bold cursor-pointer">אילו שירותים אתם מציעים?</summary>
+                    <p class="mt-2 text-gray-600">אנו מציעים מגוון רחב של מסעדות, חנויות, הופעות ואטרקציות לכל המשפחה.</p>
+                </details>
+                <details class="bg-white shadow-lg rounded-lg p-4">
+                    <summary class="font-bold cursor-pointer">מהן שעות הפעילות?</summary>
+                    <p class="mt-2 text-gray-600">שעות הפעילות משתנות בהתאם לעונה ולפעילות. צרו קשר לפרטים נוספים.</p>
+                </details>
+                <details class="bg-white shadow-lg rounded-lg p-4">
+                    <summary class="font-bold cursor-pointer">כיצד ניתן לבצע הזמנות?</summary>
+                    <p class="mt-2 text-gray-600">הזמנות ניתן לבצע דרך הטלפון או האתר שלנו.</p>
+                </details>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section class="py-8">
+        <div class="max-w-screen-lg mx-auto">
+            <h2 class="text-2xl font-bold text-center mb-6">אודות רימון</h2>
+            <p class="text-center text-gray-700">ברוכים הבאים לרימון, המקום בו תל אביב פוגשת יצירתיות ודינמיות. אנחנו ממוקמים בלב תל אביב-יפו ומציעים חוויות בלתי נשכחות לכל אחד ואחת. עם ריבוי פעילויות ואירועים ייחודיים, אנחנו כאן כדי להוסיף צבע לחיי היומיום שלך. הצטרף אלינו למסע תרבותי עם שירותים באיכות הגבוהה ביותר.</p>
+        </div>
+    </section>
+
+    <!-- SiteNest Badge Section -->
+    <section class="py-4">
+        <div class="max-w-screen-lg mx-auto text-center">
+            <div class="bg-blue-700 text-white py-2 px-4 inline-block rounded-full">
+                העסק הזה אומת ונבדק על-ידי SiteNest — הפלטפורמה המובילה לאתרי עסקים בישראל
+            </div>
+            <p class="text-sm text-gray-500 mt-2">האתר נבנה בטכנולוגיה מתקדמת ומותאם לחיפוש Google</p>
+        </div>
+    </section>
+
+    <!-- Contact CTA Strip -->
+    <section class="bg-blue-700 text-white py-6">
+        <div class="max-w-screen-lg mx-auto text-center">
+            <h2 class="text-2xl font-bold mb-4">הצטרפו אלינו להרפתקה היום!</h2>
+            <div class="flex justify-center space-x-4">
+                <a href="tel:035064345" class="bg-white text-blue-700 px-6 py-3 rounded-full shadow-md hover:bg-gray-200 transition">התקשרו עכשיו</a>
+                <a href="https://wa.me/035064345" class="bg-green-500 text-white px-6 py-3 rounded-full shadow-md hover:bg-green-600 transition">וואטסאפ</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer Section -->
+    <footer class="bg-gray-900 text-white py-6">
+        <div class="max-w-screen-lg mx-auto">
+            <div class="text-center mb-4">עקבו אחרינו</div>
+            <div class="flex justify-center space-x-4 mb-4">
+                <a href="https://developers.facebook.com" target="_blank" rel="noopener noreferrer">
+                    <svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 24 24"><path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 5.236 4.016 9.54 9.195 9.951v-7.032h-2.766v-2.919h2.766V9.845c0-2.741 1.63-4.256 4.125-4.256 1.194 0 2.439.218 2.439.218v2.676h-1.372c-1.354 0-1.776.841-1.776 1.701v2.064h3.112l-.498 2.919h-2.614V22C17.984 21.54 22 17.236 22 12z"/></svg>
+                </a>
+                <a href="https://www.instagram.com/p/DWZePvNjb_C" target="_blank" rel="noopener noreferrer">
+                    <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <radialGradient id="paint0_radial" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(12 12) rotate(90) scale(12)">
+                            <stop offset="0%" stop-color="#F58529" />
+                            <stop offset="30%" stop-color="#DD2A7B" />
+                            <stop offset="60%" stop-color="#8134AF" />
+                            <stop offset="100%" stop-color="#515BD4" />
+                        </radialGradient>
+                        <path fill="url(#paint0_radial)" d="M7.5 2C5.015 2 3 4.015 3 6.5V17.5C3 19.985 5.015 22 7.5 22H16.5C18.985 22 21 19.985 21 17.5V6.5C21 4.015 18.985 2 16.5 2H7.5ZM12 7C15.3137 7 18 9.68629 18 13C18 16.3137 15.3137 19 12 19C8.68629 19 6 16.3137 6 13C6 9.68629 8.68629 7 12 7ZM18.5 5C19.3284 5 20 5.67157 20 6.5C20 7.32843 19.3284 8 18.5 8C17.6716 8 17 7.32843 17 6.5C17 5.67157 17.6716 5 18.5 5Z" />
+                    </svg>
+                </a>
+                <a href="https://effecthouse.tiktok.com" target="_blank" rel="noopener noreferrer">
+                    <svg class="w-6 h-6 text-black" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm.63 14.43c-1.24 0-2.24-.99-2.24-2.24V9.52h1.48v4.67c0 .42.34.76.76.76s.76-.34.76-.76V8h1.48v5.48c0 1.24-1 2.24-2.24 2.24z"/></svg>
+                </a>
+            </div>
+            <div class="text-center text-sm text-gray-500 mb-2">לקחנו את הידע המקצועי שלכם והפכנו אותו לחוויה מודרנית ומהירה ✨</div>
+            <div class="text-center text-xs text-gray-500">&copy; 2023 רימון. כל הזכויות שמורות.</div>
+        </div>
+    </footer>
+
+    <!-- Floating WhatsApp Button -->
+    <a href="https://wa.me/035064345" class="fixed bottom-4 left-4 bg-green-500 rounded-full p-3 shadow-lg hover:bg-green-600 transition">
+        <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M20.52 3.48a10 10 0 0 0-15.54 12.5L2 22l5.95-2.02A10 10 0 0 0 20.52 3.48zm-1.4 11.6c-.2.55-1.13 1.07-1.55 1.13-.42.06-.82.1-1.18.03-.36-.07-.79-.31-.95-.5-.16-.19-.43-.28-.68-.4-.25-.12-.58.06-1.12.06s-1.31-.45-1.74-.95c-.43-.5-.78-1.12-.9-1.3-.12-.18-.3-.45-.06-.87s.73-1.41.89-1.55c.16-.14.34-.12.55-.05.21.07 1.37.65 1.61.72.24.07.42.1.58-.12.16-.22.66-.77.81-.95.15-.18.33-.18.55-.12s1.44.69 1.69.81c.25.12.42.18.48.28.06.1.07.55-.14 1.08z"/>
+        </svg>
+    </a>
+</body>
 </html>

@@ -25,11 +25,18 @@ class PublicIntake(Base, TimestampMixin):
     admin_note: Mapped[str | None] = mapped_column(Text, nullable=True)
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=False), nullable=True)
 
+    # Google Places enrichment (set when customer finds themselves in search)
+    google_place_id: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    google_enrichment_json: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON blob
+
     # AI generation tracking
     ai_status: Mapped[str | None] = mapped_column(String(20), nullable=True)
     # 'pending' | 'generating' | 'done' | 'failed'
     generated_preview_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
     generated_html: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Variant 2 — alternative visual style for customer to compare
+    generated_preview_url_v2: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    generated_html_v2: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # WhatsApp approval queue
     whatsapp_pending_message: Mapped[str | None] = mapped_column(Text, nullable=True)

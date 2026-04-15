@@ -1,296 +1,208 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>מאמנת כושר בתל אביב - יעל פנחס</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
-  <style>
-    * { font-family: 'Heebo', sans-serif; }
-
-    /* Carousel */
-    .carousel-track {
-      display: flex;
-      gap: 1.5rem;
-      animation: scrollCarousel 22s linear infinite;
-      width: max-content;
-    }
-    .carousel-track:hover { animation-play-state: paused; }
-    @keyframes scrollCarousel {
-      0%   { transform: translateX(0); }
-      100% { transform: translateX(-50%); }
-    }
-    .carousel-wrapper {
-      overflow: hidden;
-      position: relative;
-      mask-image: linear-gradient(to left, transparent 0%, black 10%, black 90%, transparent 100%);
-      -webkit-mask-image: linear-gradient(to left, transparent 0%, black 10%, black 90%, transparent 100%);
-    }
-
-    /* Gradient hero */
-    .hero-bg {
-      background: linear-gradient(135deg, #1E3A8A 0%, #1e4fc7 50%, #3B82F6 100%);
-    }
-
-    /* WhatsApp pulse */
-    @keyframes pulse-green {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(37,211,102,0.5); }
-      50%       { box-shadow: 0 0 0 12px rgba(37,211,102,0); }
-    }
-    .whatsapp-btn { animation: pulse-green 2s infinite; }
-
-    /* Section fade classes */
-    .section-card {
-      background: #ffffff;
-      border-radius: 1.5rem;
-      box-shadow: 0 4px 24px rgba(30,58,138,0.08);
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WayCup Coffee</title>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Heebo', sans-serif; background-color: #F9FAFB; color: #1E3A8A; }
+        .hero { background: linear-gradient(135deg, #1E3A8A, #3B82F6); }
+        .whatsapp-btn { position: fixed; bottom: 20px; left: 20px; background-color: #25D366; color: white; border-radius: 50%; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+    </style>
 </head>
-<body class="bg-gray-50 text-gray-800">
-
-  <!-- ===================== HERO ===================== -->
-  <section class="hero-bg min-h-screen flex flex-col items-center justify-center text-center px-6 py-24 relative overflow-hidden">
-    <!-- decorative circles -->
-    <div class="absolute top-[-80px] left-[-80px] w-72 h-72 rounded-full bg-white opacity-5"></div>
-    <div class="absolute bottom-[-60px] right-[-60px] w-96 h-96 rounded-full bg-white opacity-5"></div>
-
-    <div class="relative z-10 max-w-3xl mx-auto">
-      <span class="inline-block bg-white bg-opacity-20 text-white text-sm font-600 px-4 py-1.5 rounded-full mb-6 tracking-wide">
-        🏋️ מאמנת כושר בתל אביב
-      </span>
-      <h1 class="text-4xl md:text-6xl font-black text-white leading-tight mb-6 drop-shadow-lg">
-        חווית אימון בלתי נשכחת בתל אביב!
-      </h1>
-      <p class="text-lg md:text-2xl text-blue-100 font-light mb-10 leading-relaxed">
-        הצטרפו ליעל פנחס ותגלו איך כושר יכול להיות גם כיף וגם עוצמתי.
-      </p>
-      <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
-        <a href="tel:972549899305"
-           class="bg-white text-blue-900 font-bold text-lg px-8 py-4 rounded-full shadow-xl hover:bg-blue-50 transition-all duration-300 hover:scale-105">
-          📞 התקשרו עכשיו
-        </a>
-        <a href="https://wa.me/972549899305" target="_blank" rel="noopener noreferrer"
-           class="bg-green-500 text-white font-bold text-lg px-8 py-4 rounded-full shadow-xl hover:bg-green-400 transition-all duration-300 hover:scale-105">
-          💬 WhatsApp
-        </a>
-      </div>
-
-      <!-- Rating badge -->
-      <div class="mt-10 inline-flex items-center gap-2 bg-white bg-opacity-15 backdrop-blur-sm text-white px-5 py-3 rounded-2xl border border-white border-opacity-25">
-        <span class="text-yellow-300 text-xl">⭐</span>
-        <span class="font-bold text-lg">4.9 / 5</span>
-        <span class="text-blue-100 text-sm">— 39 ביקורות מרוצות</span>
-      </div>
-    </div>
-  </section>
-
-  <!-- ===================== SERVICES ===================== -->
-  <section class="py-20 px-6 bg-gray-50">
-    <div class="max-w-5xl mx-auto">
-      <div class="text-center mb-14">
-        <h2 class="text-3xl md:text-4xl font-black text-blue-900 mb-3">השירותים שלנו</h2>
-        <div class="w-16 h-1.5 bg-blue-500 rounded-full mx-auto"></div>
-        <p class="text-gray-500 mt-4 text-lg">מגוון שירותים מקצועיים המותאמים לכל מטרה</p>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-
-        <!-- Service 1 -->
-        <div class="section-card p-8 text-center group hover:shadow-2xl hover:-translate-y-2 transition-all duration-300">
-          <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-5 group-hover:bg-blue-600 transition-colors duration-300">
-            <span class="text-3xl group-hover:scale-110 transition-transform duration-300">🏋️</span>
-          </div>
-          <h3 class="text-xl font-bold text-blue-900 mb-3">אימוני כושר אישיים</h3>
-          <p class="text-gray-500 leading-relaxed text-sm">אימון מותאם אישית לצרכים ולמטרות שלך, עם ליווי מקצועי צמוד.</p>
+<body class="bg-light">
+    <!-- Hero Section -->
+    <section class="hero text-white text-center py-16">
+        <h1 class="text-4xl font-bold mb-4">הקפה שיעיר את תל אביב!</h1>
+        <p class="text-lg mb-6">הצטרפו לחוויית קפה בלתי נשכחת בלב העיר.</p>
+        <div>
+            <a href="tel:039243962" class="bg-white text-blue-800 rounded-lg px-8 py-2 mx-2 shadow hover:bg-gray-100 transition">התקשרו אלינו</a>
+            <a href="https://wa.me/039243962" class="bg-white text-blue-800 rounded-lg px-8 py-2 mx-2 shadow hover:bg-gray-100 transition">שלחו הודעה בוואטסאפ</a>
         </div>
+    </section>
 
-        <!-- Service 2 -->
-        <div class="section-card p-8 text-center group hover:shadow-2xl hover:-translate-y-2 transition-all duration-300">
-          <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-5 group-hover:bg-blue-600 transition-colors duration-300">
-            <span class="text-3xl group-hover:scale-110 transition-transform duration-300">👥</span>
-          </div>
-          <h3 class="text-xl font-bold text-blue-900 mb-3">הדרכות קבוצתיות</h3>
-          <p class="text-gray-500 leading-relaxed text-sm">אימונים קבוצתיים מלאי אנרגיה ומוטיבציה שמניעים אותך קדימה.</p>
+    <!-- Trust Badges Section -->
+    <section class="flex justify-center my-8 space-x-4">
+        <div class="text-center bg-white p-4 shadow-lg rounded-full">מענה מהיר</div>
+        <div class="text-center bg-white p-4 shadow-lg rounded-full">אמינות מלאה</div>
+        <div class="text-center bg-white p-4 shadow-lg rounded-full">מחיר הוגן</div>
+        <div class="text-center bg-white p-4 shadow-lg rounded-full">ניסיון רב שנים</div>
+    </section>
+
+    <!-- Services Grid Section -->
+    <section class="my-8 px-4">
+        <h2 class="text-2xl font-bold text-center mb-4">השירותים שלנו</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-white p-6 shadow-lg rounded-2xl hover:shadow-xl transition">
+                <p>☕ קפה מוקפד ומשובח</p>
+            </div>
+            <div class="bg-white p-6 shadow-lg rounded-2xl hover:shadow-xl transition">
+                <p>🥐 מאפים טריים ומגוונים</p>
+            </div>
+            <div class="bg-white p-6 shadow-lg rounded-2xl hover:shadow-xl transition">
+                <p>🍹 משקאות מיוחדים לטעמכם</p>
+            </div>
+            <div class="bg-white p-6 shadow-lg rounded-2xl hover:shadow-xl transition">
+                <p>🎶 אווירה צעירה ותוססת</p>
+            </div>
+            <div class="bg-white p-6 shadow-lg rounded-2xl hover:shadow-xl transition">
+                <p>🕒 שירות אישי ומהיר</p>
+            </div>
+            <div class="bg-white p-6 shadow-lg rounded-2xl hover:shadow-xl transition">
+                <p>📍 מיקום מרכזי ונוח</p>
+            </div>
         </div>
+    </section>
 
-        <!-- Service 3 -->
-        <div class="section-card p-8 text-center group hover:shadow-2xl hover:-translate-y-2 transition-all duration-300">
-          <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-5 group-hover:bg-blue-600 transition-colors duration-300">
-            <span class="text-3xl group-hover:scale-110 transition-transform duration-300">🥗</span>
-          </div>
-          <h3 class="text-xl font-bold text-blue-900 mb-3">ייעוץ תזונתי</h3>
-          <p class="text-gray-500 leading-relaxed text-sm">תוכנית תזונה מותאמת שתשלים את האימון ותביא לתוצאות מהירות.</p>
+    <!-- Reviews Carousel Section -->
+    <section class="my-8 px-4">
+        <div class="text-center mb-4">
+            <span>⭐ 4.7 / 5 — 783 ביקורות</span>
         </div>
-
-      </div>
-    </div>
-  </section>
-
-  <!-- ===================== REVIEWS CAROUSEL ===================== -->
-  <section class="py-20 px-6 bg-white overflow-hidden">
-    <div class="max-w-5xl mx-auto">
-      <div class="text-center mb-6">
-        <h2 class="text-3xl md:text-4xl font-black text-blue-900 mb-3">מה אומרים עלינו</h2>
-        <div class="w-16 h-1.5 bg-blue-500 rounded-full mx-auto mb-5"></div>
-
-        <!-- Google Rating Badge -->
-        <div class="inline-flex items-center gap-3 bg-blue-50 border border-blue-100 rounded-2xl px-6 py-3 shadow-sm">
-          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
-            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-          </svg>
-          <span class="font-bold text-gray-800 text-lg">⭐ 4.9 / 5</span>
-          <span class="text-gray-500">— 39 ביקורות בגוגל</span>
+        <div class="flex overflow-x-auto space-x-4 p-4">
+            <div class="min-w-1/3 bg-white p-6 shadow-lg rounded-2xl">
+                <div class="flex mb-2">
+                    <span class="text-yellow-400">★★★★★</span>
+                </div>
+                <p class="font-bold">יונתן</p>
+                <p>מקום מקסים עם קפה מצוין ושירות נהדר!</p>
+            </div>
+            <div class="min-w-1/3 bg-white p-6 shadow-lg rounded-2xl">
+                <div class="flex mb-2">
+                    <span class="text-yellow-400">★★★★★</span>
+                </div>
+                <p class="font-bold">רעות</p>
+                <p>המאפים תמיד טריים והאווירה פשוט כיפית!</p>
+            </div>
         </div>
-      </div>
+    </section>
 
-      <!-- Carousel -->
-      <div class="carousel-wrapper mt-10">
-        <div class="carousel-track">
-          <!-- Review 1 (real) -->
-          <div class="bg-white shadow-lg rounded-2xl p-6 min-w-[300px] max-w-[320px] flex flex-col gap-3 border border-gray-100">
-            <div class="flex gap-1 text-yellow-400 text-xl">★★★★★</div>
-            <p class="text-gray-700 leading-relaxed text-sm">"מאמנת כושר פצצה !! מקצועית מאוד ומביאה אותך לקצה היכולת שלך בקטע טוב."</p>
-            <span class="font-bold text-blue-900 text-sm mt-auto">— אנונימי</span>
-          </div>
-          <!-- Placeholder 2 -->
-          <div class="bg-white shadow-lg rounded-2xl p-6 min-w-[300px] max-w-[320px] flex flex-col gap-3 border border-gray-100">
-            <div class="flex gap-1 text-yellow-400 text-xl">★★★★★</div>
-            <p class="text-gray-700 leading-relaxed text-sm">"יעל היא מאמנת מדהימה! כל אימון מרגיש חדש ומאתגר. ממליצה בחום לכל אחד שרוצה לשנות את חייו."</p>
-            <span class="font-bold text-blue-900 text-sm mt-auto">— לקוחה מרוצה</span>
-          </div>
-          <!-- Placeholder 3 -->
-          <div class="bg-white shadow-lg rounded-2xl p-6 min-w-[300px] max-w-[320px] flex flex-col gap-3 border border-gray-100">
-            <div class="flex gap-1 text-yellow-400 text-xl">★★★★★</div>
-            <p class="text-gray-700 leading-relaxed text-sm">"הצלחתי להגיע ליעדים שלי תוך שלושה חודשים עם יעל. מקצועית, סבלנית ומלאת אנרגיה!"</p>
-            <span class="font-bold text-blue-900 text-sm mt-auto">— דני כ.</span>
-          </div>
-          <!-- Placeholder 4 -->
-          <div class="bg-white shadow-lg rounded-2xl p-6 min-w-[300px] max-w-[320px] flex flex-col gap-3 border border-gray-100">
-            <div class="flex gap-1 text-yellow-400 text-xl">★★★★★</div>
-            <p class="text-gray-700 leading-relaxed text-sm">"האימונים הקבוצתיים עם יעל הם הכי כיפיים שהיו לי. האווירה מדהימה והמוטיבציה אין סופית!"</p>
-            <span class="font-bold text-blue-900 text-sm mt-auto">— מיכל ר.</span>
-          </div>
-          <!-- Placeholder 5 -->
-          <div class="bg-white shadow-lg rounded-2xl p-6 min-w-[300px] max-w-[320px] flex flex-col gap-3 border border-gray-100">
-            <div class="flex gap-1 text-yellow-400 text-xl">★★★★★</div>
-            <p class="text-gray-700 leading-relaxed text-sm">"ייעוץ התזונה של יעל שינה את כל הגישה שלי לאוכל. שילוב של אימון ותזונה נכונה עשה פלאים!"</p>
-            <span class="font-bold text-blue-900 text-sm mt-auto">— רונית מ.</span>
-          </div>
-
-          <!-- Duplicates for seamless loop -->
-          <div class="bg-white shadow-lg rounded-2xl p-6 min-w-[300px] max-w-[320px] flex flex-col gap-3 border border-gray-100">
-            <div class="flex gap-1 text-yellow-400 text-xl">★★★★★</div>
-            <p class="text-gray-700 leading-relaxed text-sm">"מאמנת כושר פצצה !! מקצועית מאוד ומביאה אותך לקצה היכולת שלך בקטע טוב."</p>
-            <span class="font-bold text-blue-900 text-sm mt-auto">— אנונימי</span>
-          </div>
-          <div class="bg-white shadow-lg rounded-2xl p-6 min-w-[300px] max-w-[320px] flex flex-col gap-3 border border-gray-100">
-            <div class="flex gap-1 text-yellow-400 text-xl">★★★★★</div>
-            <p class="text-gray-700 leading-relaxed text-sm">"יעל היא מאמנת מדהימה! כל אימון מרגיש חדש ומאתגר. ממליצה בחום לכל אחד שרוצה לשנות את חייו."</p>
-            <span class="font-bold text-blue-900 text-sm mt-auto">— לקוחה מרוצה</span>
-          </div>
-          <div class="bg-white shadow-lg rounded-2xl p-6 min-w-[300px] max-w-[320px] flex flex-col gap-3 border border-gray-100">
-            <div class="flex gap-1 text-yellow-400 text-xl">★★★★★</div>
-            <p class="text-gray-700 leading-relaxed text-sm">"הצלחתי להגיע ליעדים שלי תוך שלושה חודשים עם יעל. מקצועית, סבלנית ומלאת אנרגיה!"</p>
-            <span class="font-bold text-blue-900 text-sm mt-auto">— דני כ.</span>
-          </div>
-          <div class="bg-white shadow-lg rounded-2xl p-6 min-w-[300px] max-w-[320px] flex flex-col gap-3 border border-gray-100">
-            <div class="flex gap-1 text-yellow-400 text-xl">★★★★★</div>
-            <p class="text-gray-700 leading-relaxed text-sm">"האימונים הקבוצתיים עם יעל הם הכי כיפיים שהיו לי. האווירה מדהימה והמוטיבציה אין סופית!"</p>
-            <span class="font-bold text-blue-900 text-sm mt-auto">— מיכל ר.</span>
-          </div>
-          <div class="bg-white shadow-lg rounded-2xl p-6 min-w-[300px] max-w-[320px] flex flex-col gap-3 border border-gray-100">
-            <div class="flex gap-1 text-yellow-400 text-xl">★★★★★</div>
-            <p class="text-gray-700 leading-relaxed text-sm">"ייעוץ התזונה של יעל שינה את כל הגישה שלי לאוכל. שילוב של אימון ותזונה נכונה עשה פלאים!"</p>
-            <span class="font-bold text-blue-900 text-sm mt-auto">— רונית מ.</span>
-          </div>
+    <!-- Why Us Section -->
+    <section class="bg-blue-100 py-8">
+        <div class="max-w-5xl mx-auto text-center">
+            <h2 class="text-2xl font-bold mb-4">למה לבחור בנו?</h2>
+            <ul class="list-none space-y-2">
+                <li class="flex items-center justify-center"><span>✔️</span> קפה איכותי בלב תל אביב</li>
+                <li class="flex items-center justify-center"><span>✔️</span> שירות לקוחות מצוין</li>
+                <li class="flex items-center justify-center"><span>✔️</span> אווירה צעירה ומודרנית</li>
+                <li class="flex items-center justify-center"><span>✔️</span> מיקום מרכזי ונוח</li>
+            </ul>
         </div>
-      </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- ===================== ABOUT ===================== -->
-  <section class="py-20 px-6 bg-gray-50">
-    <div class="max-w-5xl mx-auto">
-      <div class="section-card overflow-hidden flex flex-col md:flex-row items-center gap-0">
-
-        <!-- Color block -->
-        <div class="hero-bg w-full md:w-2/5 min-h-[260px] flex flex-col items-center justify-center p-10 text-white text-center">
-          <div class="w-24 h-24 bg-white bg-opacity-20 rounded-full flex items-center justify-center mb-5 text-5xl">
-            💪
-          </div>
-          <h3 class="text-2xl font-black mb-2">יעל פנחס</h3>
-          <p class="text-blue-200 text-sm">מאמנת כושר בתל אביב</p>
-          <div class="flex gap-1 text-yellow-300 text-2xl mt-3">★★★★★</div>
-          <p class="text-blue-100 text-sm mt-1">דירוג 4.9 | 39 ביקורות</p>
+    <!-- Media Gallery Section -->
+    <section class="my-8 px-4">
+        <h2 class="text-2xl font-bold text-center mb-4">מהרשת החברתית שלנו</h2>
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <a href="https://www.instagram.com/p/DWZePvNjb_C" target="_blank" rel="noopener noreferrer">
+                <img src="https://api.apify.com/v2/key-value-stores/Aw5SsEVJru6NC6mpj/records/cover-wwwtiktokc-20260112075105-7594379480001449223.jpg" class="rounded-xl object-cover w-full h-full hover:scale-105 transition">
+            </a>
+            <a href="https://www.instagram.com/p/DWZePvNjb_C" target="_blank" rel="noopener noreferrer">
+                <img src="https://api.apify.com/v2/key-value-stores/Aw5SsEVJru6NC6mpj/records/cover-wwwtiktokc-20251007053309-7558348661286014216.jpg" class="rounded-xl object-cover w-full h-full hover:scale-105 transition">
+            </a>
+            <a href="https://www.instagram.com/p/DWZePvNjb_C" target="_blank" rel="noopener noreferrer">
+                <img src="https://api.apify.com/v2/key-value-stores/Aw5SsEVJru6NC6mpj/records/cover-wwwtiktokc-20250507074330-7501606212144745734.jpg" class="rounded-xl object-cover w-full h-full hover:scale-105 transition">
+            </a>
         </div>
+    </section>
 
-        <!-- Text block -->
-        <div class="w-full md:w-3/5 p-10">
-          <h2 class="text-3xl font-black text-blue-900 mb-5">קצת עלינו</h2>
-          <div class="w-12 h-1.5 bg-blue-500 rounded-full mb-6"></div>
-          <p class="text-gray-600 leading-relaxed text-base md:text-lg">
-            יעל פנחס, מאמנת כושר בתל אביב, היא אחת המאמנות המובילות בתחום, עם גישה מקצועית ומלאת אנרגיה שמביאה את הלקוחות לקצה היכולת שלהם בצורה מעוררת השראה. עם עשרות ביקורות נלהבות ודירוג של 4.9, כל שיעור עם יעל הוא חוויה אחרת, מלהיבה ומעשירה. בואו להרגיש איך כושר יכול להיות מהנה ומשתלם.
-          </p>
-          <div class="flex flex-wrap gap-3 mt-7">
-            <span class="bg-blue-100 text-blue-800 font-semibold px-4 py-2 rounded-full text-sm">✅ מקצועית</span>
-            <span class="bg-blue-100 text-blue-800 font-semibold px-4 py-2 rounded-full text-sm">✅ מעוררת השראה</span>
-            <span class="bg-blue-100 text-blue-800 font-semibold px-4 py-2 rounded-full text-sm">✅ תוצאות מוכחות</span>
-          </div>
+    <!-- FAQ Section -->
+    <section class="my-8 px-4">
+        <h2 class="text-2xl font-bold text-center mb-4">שאלות נפוצות</h2>
+        <div class="space-y-4">
+            <details class="bg-white p-4 shadow-lg rounded-lg">
+                <summary class="font-bold">מהם שעות הפעילות של הקפה?</summary>
+                <p class="mt-2 text-gray-700">שעות הפעילות שלנו הן מיום ראשון עד חמישי, בין השעות 7:00 ל-20:00, ובימי שישי עד 15:00.</p>
+            </details>
+            <details class="bg-white p-4 shadow-lg rounded-lg">
+                <summary class="font-bold">האם ניתן להזמין מקומות מראש?</summary>
+                <p class="mt-2 text-gray-700">כן, ניתן להזמין מקומות מראש בטלפון שלנו.</p>
+            </details>
+            <details class="bg-white p-4 shadow-lg rounded-lg">
+                <summary class="font-bold">האם יש לכם אפשרויות צמחוניות וטבעוניות?</summary>
+                <p class="mt-2 text-gray-700">כן, אנו מציעים מגוון מאפים ומשקאות צמחוניים וטבעוניים.</p>
+            </details>
+            <details class="bg-white p-4 shadow-lg rounded-lg">
+                <summary class="font-bold">האם יש חניה באזור?</summary>
+                <p class="mt-2 text-gray-700">כן, יש חניה ציבורית בקרבת המקום.</p>
+            </details>
         </div>
-      </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- ===================== CONTACT ===================== -->
-  <section class="py-20 px-6 bg-white" id="contact">
-    <div class="max-w-3xl mx-auto text-center">
-      <h2 class="text-3xl md:text-4xl font-black text-blue-900 mb-3">צרו קשר</h2>
-      <div class="w-16 h-1.5 bg-blue-500 rounded-full mx-auto mb-6"></div>
-      <p class="text-gray-500 text-lg mb-10">צרו קשר והתחילו להתאמן היום!</p>
+    <!-- About Section -->
+    <section class="my-8 px-4">
+        <h2 class="text-2xl font-bold text-center mb-4">אודותינו</h2>
+        <p class="text-center text-gray-700 max-w-3xl mx-auto">WayCup Coffee ממוקם בלב תל אביב ומשלב אווירה צעירה וחדשנית עם קפה ברמה עולמית. עם דירוג של 4.7 מתוך 5 ויותר מ-780 ביקורות חיוביות, אנו מתחייבים לספק חוויית קפה ייחודית שלא תשכח במהרה.</p>
+    </section>
 
-      <div class="section-card p-10 text-center">
-        <div class="flex flex-col sm:flex-row gap-5 justify-center mb-8">
-          <a href="tel:972549899305"
-             class="flex items-center justify-center gap-3 bg-blue-900 text-white font-bold text-lg px-8 py-4 rounded-full shadow-lg hover:bg-blue-800 transition-all duration-300 hover:scale-105">
-            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M6.62 10.79a15.05 15.05 0 006.59 6.59l2.2-2.2a1 1 0 011.01-.24c1.12.37 2.33.57 3.58.57a1 1 0 011 1V20a1 1 0 01-1 1C9.61 21 3 14.39 3 6a1 1 0 011-1h3.5a1 1 0 011 1c0 1.25.2 2.46.57 3.58a1 1 0 01-.25 1.01l-2.2 2.2z"/></svg>
-            054-989-9305
-          </a>
-          <a href="https://wa.me/972549899305" target="_blank" rel="noopener noreferrer"
-             class="flex items-center justify-center gap-3 bg-green-500 text-white font-bold text-lg px-8 py-4 rounded-full shadow-lg hover:bg-green-400 transition-all duration-300 hover:scale-105">
-            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-            שלחו הודעה
-          </a>
+    <!-- SiteNest Recommendation Badge -->
+    <section class="my-8">
+        <div class="bg-blue-800 text-white text-center py-4 rounded-full w-3/4 mx-auto">
+            העסק הזה אומת ונבדק על-ידי SiteNest — הפלטפורמה המובילה לאתרי עסקים בישראל
         </div>
+        <p class="text-center text-gray-500 text-sm">האתר נבנה בטכנולוגיה מתקדמת ומותאם לחיפוש Google</p>
+    </section>
 
-        <div class="border-t border-gray-100 pt-7">
-          <p class="text-gray-500 font-medium mb-1">📍 תל אביב</p>
-          <p class="text-gray-400 text-sm">זמינה לאימונים אישיים וקבוצתיים בכל האזור</p>
+    <!-- Contact CTA Strip Section -->
+    <section class="bg-blue-800 text-white py-8">
+        <div class="max-w-5xl mx-auto text-center">
+            <h2 class="text-2xl font-bold mb-4">צרו קשר</h2>
+            <p class="mb-4">הזמינו עכשיו את הקפה המושלם שלכם!</p>
+            <div>
+                <a href="tel:039243962" class="bg-white text-blue-800 rounded-lg px-8 py-2 mx-2 shadow hover:bg-gray-100 transition">התקשרו אלינו</a>
+                <a href="https://wa.me/039243962" class="bg-white text-blue-800 rounded-lg px-8 py-2 mx-2 shadow hover:bg-gray-100 transition">שלחו הודעה בוואטסאפ</a>
+            </div>
         </div>
-      </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- ===================== FOOTER ===================== -->
-  <footer class="bg-blue-900 text-white pt-14 pb-8 px-6">
-    <div class="max-w-5xl mx-auto">
+    <!-- TikTok Section -->
+    <section class="my-8 px-4">
+        <div class="text-center">
+            <a href="https://www.tiktok.com" target="_blank" rel="noopener noreferrer" class="bg-black text-white py-2 px-4 rounded-full inline-block">
+                הסרטונים שלנו 🎬
+            </a>
+        </div>
+    </section>
 
-      <div class="text-center mb-10">
-        <h3 class="text-2xl font-black mb-2">מאמנת כושר בתל אביב - יעל פנחס</h3>
-        <p class="text-blue-300 text-sm">חוויית אימון בלתי נשכחת בתל אביב</p>
-      </div>
+    <!-- Footer Section -->
+    <footer class="bg-gray-200 py-4">
+        <div class="max-w-5xl mx-auto text-center">
+            <p class="text-sm text-gray-500">לקחנו את הידע המקצועי שלכם והפכנו אותו לחוויה מודרנית ומהירה ✨</p>
+            <div class="mt-4">
+                <span>עקבו אחרינו: </span>
+                <a href="https://developers.facebook.com" target="_blank" rel="noopener noreferrer">
+                    <svg class="inline-block w-6 h-6 text-blue-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M22.675 0h-21.35c-.729 0-1.325.596-1.325 1.325v21.351c0 .729.596 1.324 1.325 1.324h11.495v-9.294h-3.128v-3.622h3.128v-2.671c0-3.1 1.894-4.788 4.659-4.788 1.325 0 2.463.099 2.794.143v3.239l-1.918.001c-1.504 0-1.794.715-1.794 1.763v2.312h3.587l-.467 3.622h-3.12v9.294h6.116c.729 0 1.324-.595 1.324-1.324v-21.35c0-.729-.595-1.325-1.324-1.325z"/>
+                    </svg>
+                </a>
+                <a href="https://www.instagram.com/p/DWZePvNjb_C" target="_blank" rel="noopener noreferrer">
+                    <svg class="inline-block w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="url(#instagram)">
+                        <defs>
+                            <linearGradient id="instagram" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#f58529"/>
+                                <stop offset="50%" style="stop-color:#dd2a7b"/>
+                                <stop offset="100%" style="stop-color:#8134af"/>
+                            </linearGradient>
+                        </defs>
+                        <path d="M12 2.163c3.204 0 3.584.012 4.849.07 1.206.056 1.803.248 2.224.415a4.92 4.92 0 0 1 1.675 1.099 4.92 4.92 0 0 1 1.099 1.675c.167.421.359 1.018.415 2.224.058 1.265.07 1.645.07 4.849s-.012 3.584-.07 4.849c-.056 1.206-.248 1.803-.415 2.224a4.902 4.902 0 0 1-1.099 1.675 4.902 4.902 0 0 1-1.675 1.099c-.421.167-1.018.359-2.224.415-1.265.058-1.645.07-4.849.70-3.204 0-3.584-.012-4.849-.07-1.206-.056-1.803-.248-2.224-.415a4.92 4.92 0 0 1-1.675-1.099 4.92 4.92 0 0 1-1.099-1.675c-.167-.421-.359-1.018-.415-2.224-.058-1.265-.07-1.645-.07-4.849s.012-3.584.07-4.849c.056-1.206.248-1.803.415-2.224a4.902 4.902 0 0 1 1.099-1.675 4.902 4.902 0 0 1 1.675-1.099c.421-.167 1.018-.359 2.224-.415 1.265-.058 1.645-.07 4.849-.07m0-2.163c-3.257 0-3.67.012-4.947.072-1.276.06-2.154.27-2.909.574a6.912 6.912 0 0 0-2.554 1.672 6.912 6.912 0 0 0-1.672 2.554c-.304.755-.514 1.633-.574 2.909-.06 1.277-.072 1.69-.072 4.947s.012 3.67.072 4.947c.06 1.276.27 2.154.574 2.909a6.912 6.912 0 0 0 1.672 2.554 6.912 6.912 0 0 0 2.554 1.672c.755.304 1.633.514 2.909.574 1.277.06 1.69.072 4.947.072s3.67-.012 4.947-.072c1.276-.06 2.154-.27 2.909-.574a6.912 6.912 0 0 0 2.554-1.672 6.912 6.912 0 0 0 1.672-2.554c.304-.755.514-1.633.574-2.909.06-1.277.072-1.69.072-4.947s-.012-3.67-.072-4.947c-.06-1.276-.27-2.154-.574-2.909a6.912 6.912 0 0 0-1.672-2.554 6.912 6.912 0 0 0-2.554-1.672c-.755-.304-1.633-.514-2.909-.574-1.277-.06-1.69-.072-4.947-.072zm0 5.834c-3.602 0-6.526 2.924-6.526 6.526s2.924 6.526 6.526 6.526 6.526-2.924 6.526-6.526-2.924-6.526-6.526-6.526zm0 10.835c-2.377 0-4.309-1.932-4.309-4.309s1.932-4.309 4.309-4.309 4.309 1.932 4.309 4.309-1.932 4.309-4.309 4.309zm7.631-10.750c-.796 0-1.441.645-1.441 1.441s.645 1.441 1.441 1.441 1.441-.645 1.441-1.441-.645-1.441-1.441-1.441z"/>
+                    </svg>
+                </a>
+                <a href="https://www.tiktok.com" target="_blank" rel="noopener noreferrer">
+                    <svg class="inline-block w-6 h-6 text-black" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2.163c3.204 0 3.584.012 4.849.07 1.206.056 1.803.248 2.224.415a4.92 4.92 0 0 1 1.675 1.099 4.92 4.92 0 0 1 1.099 1.675c.167.421.359 1.018.415 2.224.058 1.265.07 1.645.07 4.849s-.012 3.584-.07 4.849c-.056 1.206-.248 1.803-.415 2.224a4.902 4.902 0 0 1-1.099 1.675 4.902 4.902 0 0 1-1.675 1.099c-.421.167-1.018.359-2.224.415-1.265.058-1.645.07-4.849.70-3.204 0-3.584-.012-4.849-.07-1.206-.056-1.803-.248-2.224-.415a4.92 4.92 0 0 1-1.675-1.099 4.92 4.92 0 0 1-1.099-1.675c-.167-.421-.359-1.018-.415-2.224-.058-1.265-.07-1.645-.07-4.849s.012-3.584.07-4.849c.056-1.206.248-1.803.415-2.224a4.902 4.902 0 0 1 1.099-1.675 4.902 4.902 0 0 1 1.675-1.099c.421-.167 1.018-.359 2.224-.415 1.265-.058 1.645-.07 4.849-.07m0-2.163c-3.257 0-3.67.012-4.947.072-1.276.06-2.154.27-2.909.574a6.912 6.912 0 0 0-2.554 1.672 6.912 6.912 0 0 0-1.672 2.554c-.304.755-.514 1.633-.574 2.909-.06 1.277-.072 1.69-.072 4.947s.012 3.67.072 4.947c.06 1.276.27 2.154.574 2.909a6.912 6.912 0 0 0 1.672 2.554 6.912 6.912 0 0 0 2.554 1.672c.755.304 1.633.514 2.909.574 1.277.06 1.69.072 4.947.072s3.67-.012 4.947-.072c1.276-.06 2.154-.27 2.909-.574a6.912 6.912 0 0 0 2.554-1.672 6.912 6.912 0 0 0 1.672-2.554c.304-.755.514-1.633.574-2.909.06-1.277.072-1.69.072-4.947s-.012-3.67-.072-4.947c-.06-1.276-.27-2.154-.574-2.909a6.912 6.912 0 0 0-1.672-2.554 6.912 6.912 0 0 0-2.554-1.672c-.755-.304-1.633-.514-2.909-.574-1.277-.06-1.69-.072-4.947-.072zm0 5.834c-3.602 0-6.526 2.924-6.526 6.526s2.924 6.526 6.526 6.526 6.526-2.924 6.526-6.526-2.924-6.526-6.526-6.526zm0 10.835c-2.377 0-4.309-1.932-4.309-4.309s1.932-4.309 4.309-4.309 4.309 1.932 4.309 4.309-1.932 4.309-4.309 4.309zm7.631-10.750c-.796 0-1.441.645-1.441 1.441s.645 1.441 1.441 1.441 1.441-.645 1.441-1.441-.645-1.441-1.441-1.441z"/>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </footer>
 
-      <!-- Social Bar -->
-      <div class="border-t border-blue-800 pt-8 text-center">
-        <p class="text-blue-300 text-sm mb-4">עקבו אחרינו</p>
-        <div class="flex gap-4 justify-center mt-2 mb-8">
-          <!-- Facebook -->
-          <a href="https://www.facebook.com/business" target="_blank" rel="noopener noreferrer" aria-label="Facebook"
-             class="w-11 h-11 rounded-full bg-blue-700 hover:bg-blue-600 flex items-center justify-center transition-colors duration-300">
-            <svg class="w-5 h-5" fill="#ffffff" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path d="M24 12.073C24 5.406 18.627 0 12 0S0 5.406 0 12.073c0 6.027 4.388 11.024 10.125 11.927v-8.437H7.078v-3.49h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.49h-2.796v8.437C19.612
+    <!-- WhatsApp Floating Button -->
+    <a href="https://wa.me/039243962" class="whatsapp-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="white" viewBox="0 0 24 24">
+            <path d="M12 0c-6.627 0-12 5.373-12 12 0 2.122.554 4.116 1.533 5.868l-1.533 6.132 6.332-1.662c1.666.888 3.568 1.394 5.668 1.394 6.627 0 12-5.373 12-12s-5.373-12-12-12zm.014 21.915c-1.572 0-3.088-.391-4.438-1.131l-.317-.175-3.759.988.99-3.658-.182-.303c-.94-1.563-1.428-3.361-1.428-5.231 0-5.514 4.486-10 10-10 5.514 0 10 4.486 10 10s-4.486 10-10 10zm5.255-7.748c-.291-.145-1.715-.847-1.982-.945-.267-.097-.462-.145-.656.145-.194.291-.752.945-.922 1.139-.174.194-.34.218-.631.073-.291-.145-1.229-.451-2.342-1.437-.866-.772-1.452-1.722-1.622-2.012-.174-.291-.018-.448.127-.593.131-.128.291-.34.436-.511.145-.175.194-.291.291-.485.097-.194.048-.364-.024-.511-.073-.145-.656-1.585-.898-2.167-.235-.563-.475-.485-.656-.485-.145-.012-.311-.012-.485-.012-.17 0-.448.073-.683.364-.242.291-.947.923-.947 2.25s.969 2.615 1.103 2.79c.145.194 1.903 2.912 4.614 4.08.645.291 1.146.466 1.537.598.646.204 1.234.175 1.699.106.518-.078 1.715-.701 1.956-1.381.242-.679.242-1.262.17-1.381-.072-.121-.267-.194-.559-.339z"/>
+        </svg>
+    </a>
+</body>
 </html>

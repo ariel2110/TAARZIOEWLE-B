@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>אמנון שרותי חשמל ותחזוקה | החשמלאי המוביל בתל אביב</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    * { font-family: 'Heebo', sans-serif; }
+
+    /* HERO GRADIENT */
+    .hero-gradient {
+      background: linear-gradient(135deg, #1E3A8A 0%, #1e40af 40%, #2563eb 70%, #3B82F6 100%);
+    }
+
+    /* SCROLL REVEAL */
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* CAROUSEL */
+    .carousel-track {
+      display: flex;
+      gap: 1.5rem;
+      animation: scroll-left 28s linear infinite;
+      width: max-content;
+    }
+    .carousel-track:hover { animation-play-state: paused; }
+    @keyframes scroll-left {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+    .carousel-wrapper {
+      overflow: hidden;
+      position: relative;
+    }
+    .carousel-wrapper::before,
+    .carousel-wrapper::after {
+      content: '';
+      position: absolute;
+      top: 0; bottom: 0;
+      width: 80px;
+      z-index: 2;
+      pointer-events: none;
+    }
+    .carousel-wrapper::before {
+      right: 0;
+      background: linear-gradient(to left, #f8fafc, transparent);
+    }
+    .carousel-wrapper::after {
+      left: 0;
+      background: linear-gradient(to right, #f8fafc, transparent);
+    }
+
+    /* CARD HOVER */
+    .service-card {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .service-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 20px 40px rgba(30,58,138,0.15);
+    }
+
+    /* ACCORDION */
+    details > summary { list-style: none; cursor: pointer; }
+    details > summary::-webkit-details-marker { display: none; }
+    details[open] summary .faq-icon { transform: rotate(45deg); }
+    .faq-icon { transition: transform 0.3s ease; }
+    details > div {
+      overflow: hidden;
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* WHATSAPP FLOAT */
+    .whatsapp-float {
+      position: fixed;
+      bottom: 24px;
+      left: 24px;
+      z-index: 9999;
+      animation: pulse-wa 2.5s infinite;
+    }
+    @keyframes pulse-wa {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(37,211,102,0.5); }
+      50% { box-shadow: 0 0 0 14px rgba(37,211,102,0); }
+    }
+
+    /* BUTTON HOVER */
+    .btn-primary {
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(30,58,138,0.4);
+    }
+
+    /* STRIP GRADIENT */
+    .why-strip {
+      background: linear-gradient(135deg, #1E3A8A 0%, #2563eb 100%);
+    }
+
+    /* HOURS TABLE STRIPE */
+    .hours-row:nth-child(even) { background-color: #eff6ff; }
+  </style>
+</head>
+<body class="bg-slate-50 text-gray-800">
+
+<!-- ===================== FLOATING WHATSAPP ===================== -->
+<a href="https://wa.me/036960555" target="_blank" rel="noopener noreferrer"
+   class="whatsapp-float w-16 h-16 bg-green-500 rounded-full flex items-center justify-center shadow-2xl">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" class="w-9 h-9 fill-white">
+    <path d="M16 0C7.164 0 0 7.163 0 16c0 2.822.736 5.472 2.025 7.773L0 32l8.438-2.012A15.93 15.93 0 0016 32c8.836 0 16-7.163 16-16S24.836 0 16 0zm7.77 22.48c-.33.924-1.93 1.766-2.64 1.878-.676.106-1.528.15-2.464-.155-.567-.185-1.295-.432-2.23-.847-3.92-1.69-6.48-5.65-6.676-5.913-.196-.263-1.6-2.128-1.6-4.06 0-1.932.994-2.887 1.348-3.28.353-.393.77-.491 1.027-.491.257 0 .513.002.737.014.237.012.554-.09.867.662.33.785 1.12 2.718 1.218 2.914.1.196.167.425.033.685-.132.26-.197.422-.393.65-.197.228-.414.51-.59.685-.197.196-.4.41-.172.804.228.393.998 1.645 2.14 2.664 1.47 1.31 2.71 1.714 3.1 1.91.393.196.622.163.852-.098.228-.263.98-1.143 1.24-1.535.26-.392.522-.327.882-.196.36.13 2.28 1.076 2.672 1.27.393.196.653.294.75.458.098.163.098.946-.23 1.87z"/>
+  </svg>
+</a>
+
+<!-- ===================== HERO ===================== -->
+<section class="hero-gradient text-white py-24 px-4 relative overflow-hidden">
+  <div class="absolute inset-0 opacity-10">
+    <div class="absolute top-10 right-10 w-72 h-72 bg-white rounded-full blur-3xl"></div>
+    <div class="absolute bottom-10 left-10 w-96 h-96 bg-blue-300 rounded-full blur-3xl"></div>
+  </div>
+  <div class="relative max-w-5xl mx-auto text-center">
+    <div class="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-4 py-1.5 mb-6 text-sm font-medium">
+      ⚡ חשמלאי מוסמך ומורשה | תל אביב וסביבתה
+    </div>
+    <h1 class="text-4xl md:text-6xl font-black mb-4 leading-tight drop-shadow-lg">
+      אמנון - החשמלאי המוביל בתל אביב
+    </h1>
+    <p class="text-xl md:text-2xl font-light mb-10 text-blue-100 max-w-2xl mx-auto">
+      שירות מקצועי, אדיב ומהיר לכל צורך חשמלי בבית ובעסק!
+    </p>
+    <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+      <a href="tel:036960555"
+         class="btn-primary bg-white text-blue-900 font-bold text-lg px-8 py-4 rounded-full shadow-xl flex items-center gap-3">
+        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"/>
+        </svg>
+        03-696-0555
+      </a>
+      <a href="https://wa.me/036960555" target="_blank" rel="noopener noreferrer"
+         class="btn-primary bg-green-500 hover:bg-green-400 text-white font-bold text-lg px-8 py-4 rounded-full shadow-xl flex items-center gap-3">
+        <svg class="w-5 h-5 fill-white" viewBox="0 0 32 32">
+          <path d="M16 0C7.164 0 0 7.163 0 16c0 2.822.736 5.472 2.025 7.773L0 32l8.438-2.012A15.93 15.93 0 0016 32c8.836 0 16-7.163 16-16S24.836 0 16 0zm7.77 22.48c-.33.924-1.93 1.766-2.64 1.878-.676.106-1.528.15-2.464-.155-.567-.185-1.295-.432-2.23-.847-3.92-1.69-6.48-5.65-6.676-5.913-.196-.263-1.6-2.128-1.6-4.06 0-1.932.994-2.887 1.348-3.28.353-.393.77-.491 1.027-.491.257 0 .513.002.737.014.237.012.554-.09.867.662.33.785 1.12 2.718 1.218 2.914.1.196.167.425.033.685-.132.26-.197.422-.393.65-.197.228-.414.51-.59.685-.197.196-.4.41-.172.804.228.393.998 1.645 2.14 2.664 1.47 1.31 2.71 1.714 3.1 1.91.393.196.622.163.852-.098.228-.263.98-1.143 1.24-1.535.26-.392.522-.327.882-.196.36.13 2.28 1.076 2.672 1.27.393.196.653.294.75.458.098.163.098.946-.23 1.87z"/>
+        </svg>
+        שלחו WhatsApp
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== TRUST BADGES ===================== -->
+<section class="bg-white py-10 px-4 border-b border-gray-100">
+  <div class="max-w-5xl mx-auto">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="flex flex-col items-center gap-2 p-5 bg-blue-50 rounded-2xl text-center reveal">
+        <span class="text-3xl">⚡</span>
+        <span class="font-bold text-blue-900 text-sm">מענה מהיר</span>
+        <span class="text-xs text-gray-500">זמינות גבוהה לאורך היום</span>
+      </div>
+      <div class="flex flex-col items-center gap-2 p-5 bg-blue-50 rounded-2xl text-center reveal">
+        <span class="text-3xl">🛡️</span>
+        <span class="font-bold text-blue-900 text-sm">אמינות מלאה</span>
+        <span class="text-xs text-gray-500">לקוחות מרוצים מדברים בעדנו</span>
+      </div>
+      <div class="flex flex-col items-center gap-2 p-5 bg-blue-50 rounded-2xl text-center reveal">
+        <span class="text-3xl">💰</span>
+        <span class="font-bold text-blue-900 text-sm">מחיר הוגן</span>
+        <span class="text-xs text-gray-500">שקיפות מלאה ללא הפתעות</span>
+      </div>
+      <div class="flex flex-col items-center gap-2 p-5 bg-blue-50 rounded-2xl text-center reveal">
+        <span class="text-3xl">🏆</span>
+        <span class="font-bold text-blue-900 text-sm">ניסיון רב שנים</span>
+        <span class="text-xs text-gray-500">מומחיות מוכחת בתחום</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== SERVICES ===================== -->
+<section class="py-20 px-4 bg-slate-50">
+  <div class="max-w-6xl mx-auto">
+    <div class="text-center mb-14 reveal">
+      <h2 class="text-3xl md:text-4xl font-black text-blue-900 mb-3">השירותים שלנו</h2>
+      <p class="text-gray-500 text-lg max-w-xl mx-auto">פתרונות חשמל מקיפים לבית ולעסק — מהירים, מקצועיים ובמחיר הוגן</p>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+
+      <div class="service-card bg-white rounded-2xl shadow-md p-7 border border-blue-50 reveal">
+        <div class="w-14 h-14 bg-blue-100 rounded-xl flex items-center justify-center text-2xl mb-4">🔧</div>
+        <h3 class="font-bold text-blue-900 text-lg mb-2">תיקוני חשמל מהירים</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">האם יש לך תקלת חשמל דחופה? אמנון מגיע עד אליך במהירות ומתקן כל תקלה באופן מקצועי ובטוח, ללא דחיות מיותרות.</p>
+      </div>
+
+      <div class="service-card bg-white rounded-2xl shadow-md p-7 border border-blue-50 reveal">
+        <div class="w-14 h-14 bg-yellow-100 rounded-xl flex items-center justify-center text-2xl mb-4">💡</div>
+        <h3 class="font-bold text-blue-900 text-lg mb-2">התקנת מערכות תאורה</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">החלפה, שדרוג והתקנה של מערכות תאורה חדישות — LED, ספוטים, תאורת חוץ וכל פתרון תאורה לפי בחירתכם.</p>
+      </div>
+
+      <div class="service-card bg-white rounded-2xl shadow-md p-7 border border-blue-50 reveal">
+        <div class="w-14 h-14 bg-red-100 rounded-xl flex items-center justify-center text-2xl mb-4">🔌</div>
+        <h3 class="font-bold text-blue-900 text-lg mb-2">שדרוג ותיקון לוחות חשמל</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">לוח חשמל ישן או עמוס? אנחנו מבצעים שדרוג מקצועי לתקנים העדכניים, ומבטיחים פעולה בטוחה ואמינה של כל המערכת.</p>
+      </div>
+
+      <div class="service-card bg-white rounded-2xl shadow-md p-7 border border-blue-50 reveal">
+        <div class="w-14 h-14 bg-green-100 rounded-xl flex items-center justify-center text-2xl mb-4">✅</div>
+        <h3 class="font-bold text-blue-900 text-lg mb-2">בדיקות בטיחות חשמליות</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">הבטיחות שלכם היא העדיפות הראשונה. אנו מבצעים בדיקות בטיחות מקיפות ומפורטות לזיהוי ומניעת סכנות חשמליות.</p>
+      </div>
+
+      <div class="service-card bg-white rounded-2xl shadow-md p-7 border border-blue-50 reveal">
+        <div class="w-14 h-14 bg-orange-100 rounded-xl flex items-center justify-center text-2xl mb-4">⚠️</div>
+        <h3 class="font-bold text-blue-900 text-lg mb-2">פתרון בעיות קצר חשמלי</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">קצר חשמלי יכול להיות מסוכן. אמנון מאתר ופותר את הגורם לקצר במהירות, תוך הקפדה על בטיחות מרבית ומניעת נזקים עתידיים.</p>
+      </div>
+
+      <div class="service-card bg-white rounded-2xl shadow-md p-7 border border-blue-50 reveal">
+        <div class="w-14 h-14 bg-purple-100 rounded-xl flex items-center justify-center text-2xl mb-4">🛠️</div>
+        <h3 class="font-bold text-blue-900 text-lg mb-2">שירותי תחזוקה שוטפים</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">תחזוקה מונעת חוסכת כסף ומונעת תקלות. אנו מציעים חוזי תחזוקה שוטפים לבתים ועסקים, לשקט נפשי לאורך כל השנה.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ===================== REVIEWS CAROUSEL ===================== -->
+<section class="py-20 px-4 bg-slate-100 overflow-hidden">
+  <div class="max-w-6xl mx-auto">
+    <div class="text-center mb-6 reveal">
+      <!-- Google Rating Badge -->
+      <div class="inline-flex items-center gap-2 bg-white border border-yellow-200 shadow-md rounded-full px-6 py-2.5 mb-6">
+        <span class="text-yellow-400 text-xl">⭐</span>
+        <span class="font-black text-blue-900 text-lg">5.0 / 5</span>
+        <span class="text-gray-400 text-sm">—</span>
+        <span class="text-gray-600 text-sm font-medium">44 ביקורות גוגל</span>
+      </div>
+      <h2 class="text-3xl md:text-4xl font-black text-blue-900 mb-3">מה הלקוחות אומרים?</h2>
+      <p class="text-gray-500">הלקוחות שלנו הם הפרסומת הטובה ביותר שלנו</p>
+    </div>
+
+    <div class="carousel-wrapper">
+      <div class="carousel-track py-4">
+        <!-- Review 1 -->
+        <div class="bg-white rounded-2xl shadow-lg p-7 flex-shrink-0 w-80">
+          <div class="flex gap-1 mb-3">
+            <span class="text-yellow-400 text-xl">★★★★★</span>
+          </div>
+          <p class="text-gray-600 text-sm leading-relaxed mb-4">"אין על אמנון ובנו מס 1 בתחום — אדיבים, נחמדים ומקצועיים לגמרי!"</p>
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-900 font-bold">י</div>
+            <span class="font-semibold text-blue-900">יוסי כהן</span>
+          </div>
+        </div>
+
+        <!-- Review 2 -->
+        <div class="bg-white rounded-2xl shadow-lg p-7 flex-shrink-0 w-80">
+          <div class="flex gap-1 mb-3">
+            <span class="text-yellow-400 text-xl">★★★★★</span>
+          </div>
+          <p class="text-gray-600 text-sm leading-relaxed mb-4">"שירות מדהים ומהיר, אמנון פתר לי את הבעיה במהירות ובמקצועיות!"</p>
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-900 font-bold">מ</div>
+            <span class="font-semibold text-blue-900">מיכל לוי</span>
+          </div>
+        </div>
+
+        <!-- Placeholder Review 3 -->
+        <div class="bg-white rounded-2xl shadow-lg p-7 flex-shrink-0 w-80">
+          <div class="flex gap-1 mb-3">
+            <span class="text-yellow-400 text-xl">★★★★★</span>
+          </div>
+          <p class="text-gray-600 text-sm leading-relaxed mb-4">"תגובה מהירה, עבודה נקייה ומסודרת. ממליץ בחום לכל מי שצריך חשמלאי מקצועי!"</p>
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-900 font-bold">ד</div>
+            <span class="font-semibold text-blue-900">דוד אברהם</span>
+          </div>
+        </div>
+
+        <!-- Placeholder Review 4 -->
+        <div class="bg-white rounded-2xl shadow-lg p-7 flex-shrink-0 w-80">
+          <div class="flex gap-1 mb-3">
+            <span class="text-yellow-400 text-xl">★★★★★</span>
+          </div>
+          <p class="text-gray-600 text-sm leading-relaxed mb-4">"הגיע בזמן, הסביר כל שלב בעבודה ולא גבה מחיר מפתיע. שירות אמין ומצוין!"</p>
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-900 font-bold">ר</div>
+            <span class="font-semibold text-blue-900">רחל שמעוני</span>
+          </div>
+        </div>
+
+        <!-- Duplicate for seamless loop -->
+        <div class="bg-white rounded-2xl shadow-lg p-7 flex-shrink-0 w-80">
+          <div class="flex gap-1 mb-3">
+            <span class="text-yellow-400 text-xl">★★★★★</span>
+          </div>
+          <p class="text-gray-600 text-sm leading-relaxed mb-4">"אין על אמנון ובנו מס 1 בתחום — אדיבים, נחמדים ומקצועיים לגמרי!"</p>
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-900 font-bold">י</div>
+            <span class="font-semibold text-blue-900">יוסי כהן</span>
+          </div>
+        </div>
+        <div class="bg-white rounded-2xl shadow-lg p-7 flex-shrink-0 w-80">
+          <div class="flex gap-1 mb-3">
+            <span class="text-yellow-400 text-xl">★★★★★</span>
+          </div>
+          <p class="text-gray-600 text-sm leading-relaxed mb-4">"שירות מדהים ומהיר, אמנון פתר לי את הבעיה במהירות ובמקצועיות!"</p>
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-900 font-bold">מ</div>
+            <span class="font-semibold text-blue-900">מיכל לוי</span>
+          </div>
+        </div>
+        <div class="bg-white rounded-2xl shadow-lg p-7 flex-shrink-0 w-80">
+          <div class="flex gap-1 mb-3">
+            <span class="text-yellow-400 text-xl">★★★★★</span>
+          </div>
+          <p class="text-gray-600 text-sm leading-relaxed mb-4">"תגובה מהירה, עבודה נקייה ומסודרת. ממליץ בחום לכל מי שצריך חשמלאי מקצועי!"</p>
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-900 font-bold">ד</div>
+            <span class="font-semibold text-blue-900">דוד אברהם</span>
+          </div>
+        </div>
+        <div class="bg-white rounded-2xl shadow-lg p-7 flex-shrink-0 w-80">
+          <div class="flex gap-1 mb-3">
+            <span class="text-yellow-400 text-xl">★★★★★</span>
+          </div>
+          <p class="text-gray-600 text-sm leading-relaxed mb-4">"הגיע בזמן, הסביר כל שלב בעבודה ולא גבה מחיר מפתיע. שירות אמין ומצוין!"</p>
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-900 font-bold">ר</div>
+            <span class="font-semibold text-blue-900">רחל שמעוני</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== WHY US ===================== -->
+<section class="why-strip py-20 px-4">
+  <div class="max-w-5xl mx-auto">
+    <div class="text-center mb-14 reveal">
+      <h2 class="text-3xl md:text-4xl font-black text-white mb-3">למה לבחור באמנון?</h2>
+      <p class="text-blue-200 text-lg">הסיבות שהלקוחות חוזרים אלינו שוב ושוב</p>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="flex items-start gap-5 bg-white/10 backdrop-blur rounded-2xl p-6 reveal">
+        <div class="w-12 h-12 bg-green-400 rounded-full flex items-center justify-center flex-shrink-0">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+          </svg>
+        </div>
+        <div>
+          <h3 class="text-white font-bold text-lg mb-1">מורשה ומוסמך לחלוטין</h3>
+          <p class="text-blue-200 text-sm leading-relaxed">עובד בהתאם לכל תקנות ה
+</html>

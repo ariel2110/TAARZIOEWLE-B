@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 
 const API = import.meta.env.VITE_API_BASE || 'https://api.sitenest.site/api/v1';
 const WA = '972546363350';
@@ -10,6 +10,20 @@ interface Props {
 
 const MAX_IMAGES = 5;
 const ACCEPTED = 'image/jpeg,image/png,image/webp,image/gif';
+
+interface PlaceResult {
+    place_id: string;
+    name: string;
+    address: string;
+    phone: string;
+    rating: number | null;
+    reviews_count: number | null;
+    google_maps_url: string;
+    top_review: string;
+    opening_hours: string[];
+    types: string[];
+    website: string;
+}
 
 // ── Validation helpers ──────────────────────────────────────────────────────
 function isValidPhone(v: string) {
@@ -41,6 +55,69 @@ export default function IntakeForm({ onSubmitted, onBack }: Props) {
     const [error, setError] = useState('');
     const [touched, setTouched] = useState<Record<string, boolean>>({});
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // ── Google Places search state ──────────────────────────────────────────
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState<PlaceResult[]>([]);
+    const [searchLoading, setSearchLoading] = useState(false);
+    const [selectedPlace, setSelectedPlace] = useState<PlaceResult | null>(null);
+    const [showDropdown, setShowDropdown] = useState(false);
+    const searchRef = useRef<HTMLDivElement>(null);
+    const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    // Close dropdown on outside click
+    useEffect(() => {
+        function onClickOutside(e: MouseEvent) {
+            if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+                setShowDropdown(false);
+            }
+        }
+        document.addEventListener('mousedown', onClickOutside);
+        return () => document.removeEventListener('mousedown', onClickOutside);
+    }, []);
+
+    async function handleSearchInput(q: string) {
+        setSearchQuery(q);
+        setSelectedPlace(null);
+        if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+        if (q.trim().length < 2) {
+            setSearchResults([]);
+            setShowDropdown(false);
+            return;
+        }
+        searchTimerRef.current = setTimeout(async () => {
+            setSearchLoading(true);
+            try {
+                const res = await fetch(`${API}/public/search-business?q=${encodeURIComponent(q.trim())}&limit=6`);
+                if (res.ok) {
+                    const data: PlaceResult[] = await res.json();
+                    setSearchResults(data);
+                    setShowDropdown(data.length > 0);
+                }
+            } catch {
+                // silent fail — search is optional
+            } finally {
+                setSearchLoading(false);
+            }
+        }, 600);
+    }
+
+    function handleSelectPlace(place: PlaceResult) {
+        setSelectedPlace(place);
+        setSearchQuery(place.name);
+        setShowDropdown(false);
+        setBusinessName(place.name);
+        if (place.phone) setPhone(place.phone.replace(/[-\s]/g, ''));
+        if (place.website) setWebsite(place.website);
+        // Build description from available data
+        const descParts: string[] = [];
+        if (place.address) descParts.push(place.address);
+        if (place.rating) descParts.push(`דירוג: ${place.rating} (${place.reviews_count || 0} ביקורות)`);
+        if (place.top_review) descParts.push(`ביקורת מייצגת: "${place.top_review}"`);
+        if (place.opening_hours?.length) descParts.push(`שעות: ${place.opening_hours.slice(0,2).join(' | ')}`);
+        if (descParts.length) setDescription(descParts.join('\n').slice(0, 1000));
+        setTouched(t => ({ ...t, businessName: true, phone: !!place.phone }));
+    }
 
     function touch(field: string) {
         setTouched(t => ({ ...t, [field]: true }));
@@ -95,6 +172,11 @@ export default function IntakeForm({ onSubmitted, onBack }: Props) {
             if (website) fd.append('website_url', website.trim());
             if (description) fd.append('description', description.trim());
             images.forEach(img => fd.append('images', img));
+            // Google Places enrichment
+            if (selectedPlace) {
+                fd.append('google_place_id', selectedPlace.place_id);
+                fd.append('google_enrichment_json', JSON.stringify(selectedPlace));
+            }
 
             const res = await fetch(`${API}/public/intake`, {
                 method: 'POST',
@@ -162,6 +244,60 @@ export default function IntakeForm({ onSubmitted, onBack }: Props) {
                     <p className="if-form-subtitle">
                         ככל שתתן יותר פרטים, כך האתר יהיה מדויק ומקצועי יותר
                     </p>
+
+                    {/* ── Google Places search ── */}
+                    <div className="if-field if-google-search-field" ref={searchRef}>
+                        <label className="if-label if-google-label">
+                            <span>🔍</span> חפש את העסק שלך בגוגל
+                            <span className="if-badge-recommended">מומלץ</span>
+                        </label>
+                        <p className="if-hint" style={{marginBottom: '6px'}}>
+                            חיפוש ימלא אוטומטית את כל הפרטים — דירוג, ביקורות, שעות ועוד
+                        </p>
+                        <div className="if-search-wrap">
+                            <input
+                                className="if-input if-search-input"
+                                type="text"
+                                placeholder='לדוגמה: "מסעדת אבו גוש ירושלים"'
+                                value={searchQuery}
+                                onChange={e => handleSearchInput(e.target.value)}
+                                onFocus={() => searchResults.length > 0 && setShowDropdown(true)}
+                                autoComplete="off"
+                            />
+                            {searchLoading && <span className="if-search-spinner" />}
+                        </div>
+                        {selectedPlace && (
+                            <div className="if-place-tag">
+                                ✅ נבחר: <strong>{selectedPlace.name}</strong>
+                                {selectedPlace.rating && <span className="if-place-rating"> ⭐ {selectedPlace.rating}</span>}
+                                <button type="button" className="if-place-clear" onClick={() => {
+                                    setSelectedPlace(null); setSearchQuery('');
+                                }}>✕</button>
+                            </div>
+                        )}
+                        {showDropdown && searchResults.length > 0 && (
+                            <ul className="if-search-dropdown">
+                                {searchResults.map(p => (
+                                    <li
+                                        key={p.place_id}
+                                        className="if-search-result"
+                                        onMouseDown={() => handleSelectPlace(p)}
+                                    >
+                                        <div className="if-result-name">{p.name}</div>
+                                        <div className="if-result-meta">
+                                            {p.address && <span>{p.address}</span>}
+                                            {p.rating && <span className="if-result-rating">⭐ {p.rating} ({p.reviews_count})</span>}
+                                        </div>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                        {searchQuery.length >= 2 && !searchLoading && searchResults.length === 0 && !selectedPlace && (
+                            <p className="if-hint" style={{color: '#9ca3af'}}>לא נמצאו תוצאות — מלא את הפרטים ידנית למטה</p>
+                        )}
+                    </div>
+
+                    <div className="if-divider"><span>— או מלא ידנית —</span></div>
 
                     {/* ── Business name ── */}
                     <div className="if-field">

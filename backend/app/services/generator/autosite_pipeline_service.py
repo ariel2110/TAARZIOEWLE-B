@@ -65,6 +65,7 @@ class PipelineResult:
     html: str
     outreach_message: str | None = None   # ready to send (no [DEMO_LINK] yet)
     content: ContentBundle | None = None
+    _design: "DesignConfig | None" = None  # stored for variant 2 reuse
 
 
 # ── System Prompts ─────────────────────────────────────────────────────────────
@@ -205,7 +206,92 @@ SITENEST RECOMMENDATION BADGE (rule 21):
 TRANSFORMATION LINE (rule 22):
 22. Always add this tagline above the footer copyright line:
     "לקחנו את הידע המקצועי שלכם והפכנו אותו לחוויה מודרנית ומהירה ✨"
-    Style it small, muted text."""
+    Style it small, muted text.
+
+INDUSTRY-SPECIFIC SECTIONS (rule 23):
+23. Based on industry_type, add ONE extra unique section:
+    - Restaurant/Cafe/Bar → "התפריט שלנו" section with 3-4 styled menu item cards (name + description in Hebrew)
+    - Plumber/Electrician/Contractor/HVAC → "לפני ואחרי" before-after section with two placeholder divs showing improvement story
+    - Lawyer/Accountant/Consultant → "תחומי התמחות" section as a styled timeline or numbered list with icons
+    - Beauty/Salon/Spa/Nails → "הטיפולים שלנו בספא" section with service packages grid
+    - Doctor/Clinic/Physiotherapy/Vet → "איך עובד הטיפול" 3-step process section
+    - Gym/Yoga/Pilates/Fitness → "לוח זמנים שבועי" styled timetable section
+    - If none match → "הישגים ומספרים" stats counter bar with 4 animated counters
+
+CREDIBILITY STATS BAR (rule 24):
+24. Add a "הספרות מדברות" horizontal stats bar between the Hero and Trust Badges sections.
+    Show 3-4 impressive credibility numbers derived from the data (years of experience, number of clients,
+    average rating, number of reviews, or area of service).
+    Style: dark strip, large bold numbers in white, small label below, slight gradient.
+    Animate the numbers counting up on scroll (IntersectionObserver + CSS counter animation).
+    Example: "12+ שנות ניסיון" | "⭐ 4.8 דירוג ממוצע" | "200+ לקוחות מרוצים" | "כל הארץ"
+
+UNIQUE DESIGN FINGERPRINT (rule 25):
+25. Do NOT use the default Tailwind blue. Use the EXACT primary_color_hex and secondary_color_hex provided.
+    Add ONE unique visual effect that matches the industry:
+    - Food businesses: subtle floating food emoji animations in the hero
+    - Beauty: soft shimmer/shine gradient on the hero
+    - Technical trades: diagonal stripe pattern on section dividers
+    - Professional services: geometric dots pattern on the hero background
+    - Fitness: energy wave animation on the CTA button"""
+
+
+# ── V2 System Prompt (Variant 2 — Premium Story) ─────────────────────────────
+
+_CLAUDE_BUILDER_SYSTEM_V2 = """\
+You are a world-class Frontend UI/UX Developer specializing in PREMIUM storytelling-driven digital experiences.
+Generate a SECOND VARIANT of the Hebrew landing page — this variant uses a COMPLETELY DIFFERENT visual
+and structural strategy from a first version. Make it feel like a different agency designed it.
+
+VARIANT 2 — "Premium Story" Strategy:
+- DARK IMMERSIVE HERO: Use a deep, rich hero background (dark overlay on gradient using primary_color_hex).
+  Large centered text, soft glow effect, animated pulsing CTA button.
+- NARRATIVE-FIRST FLOW: Lead with the business identity and story BEFORE listing services.
+- ACHIEVEMENT COUNTER BAR: Full-width dark strip with 4 animated counters (years, clients, rating, area).
+  Numbers count up on scroll using IntersectionObserver.
+- ABOUT STORY SECTION: A magazine-style split layout — large quote on the left, text content on the right.
+  Include a "מה מניע אותנו" (what drives us) personal paragraph from the about_us field.
+- SERVICES as a stylish NUMBERED list (not a grid) — each item has a large accent number, bold title, description.
+  Alternate background colors per item (light/accent/light) for visual rhythm.
+- FEATURED TESTIMONIAL: One hero-sized testimonial block — large italic quote, big reviewer name,
+  gold stars, soft gradient background. Then a grid of smaller review cards below.
+- PROCESS STEPS: A "איך זה עובד" 3-step horizontal flow (icon → text → connector arrow) showing how to engage.
+- FAQ as accordion (same as V1 but different styling — use card flip animation on open/close).
+- FOOTER: Full dark footer with logo, tagline, all social links, and service area map mention.
+
+PAGE SECTIONS ORDER (V2):
+  Immersive Hero → Achievement Counter Bar → About Story → Services Numbered List →
+  Featured Testimonial + Reviews Grid → Process Steps → Media Gallery (if present) →
+  FAQ Accordion → SiteNest Badge → Contact CTA Strip → Dark Footer
+
+CRITICAL TECHNICAL CONSTRAINTS:
+1. Output ONLY raw valid HTML. No explanations, no markdown wrappers.
+2. The very first characters MUST be <!DOCTYPE html> and the very last MUST be </html>.
+3. Use HTML5 and Tailwind CSS via CDN (<script src="https://cdn.tailwindcss.com"></script>).
+4. The page MUST be strictly RTL with dir="rtl" on the <html> tag (Hebrew content).
+5. Import Google Font 'Heebo'.
+
+DESIGN RULES (V2):
+6. Use primary_color_hex as the hero background gradient (dark → primary color).
+7. Secondary_color_hex for accent buttons, counter numbers, and featured highlights.
+8. Dark sections (#1a1a2e or near-black) for counter bar and footer.
+9. Cards: white background, premium shadow (shadow-2xl), rounded-3xl.
+10. Typography: very large headings in the hero (text-6xl on desktop), smaller elsewhere.
+11. Floating sticky WhatsApp button (same as V1).
+12. Hero: large gradient background, prominent headline, sub-headline, two CTA buttons (call + WhatsApp).
+13. ALL hover transitions: 300ms ease, scale 1.03 on cards.
+14. Click-to-call and WhatsApp deep-link in contact section.
+15. Google rating badge if rating > 0.
+16. PHOTO/VIDEO GALLERY: if media_urls non-empty, render as full-width 3-column masonry grid.
+    Each image: rounded-2xl, aspect-video (not square), subtle hover zoom.
+17. SOCIAL BAR in footer: Facebook/Instagram/TikTok SVG icons, target="_blank".
+18. TikTok section if tiktok_url present.
+19. Opening hours table if easy_hours non-empty.
+20. SiteNest verification badge above contact strip.
+21. Tagline above footer: "לקחנו את הידע המקצועי שלכם והפכנו אותו לחוויה מודרנית ומהירה ✨"
+22. INDUSTRY-SPECIFIC SECTION (same rule as V1 rule 23): add one extra section based on industry_type.
+23. Unique V2 design fingerprint: add a subtle animated SVG wave divider between major sections.
+    Use wave-shaped section separators (SVG path) with primary color fill."""
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -286,14 +372,37 @@ class AutoSitePipelineService:
 
             logger.info("[Pipeline] Stage 2 OK — %d bytes", len(html))
 
-            return PipelineResult(
+            result = PipelineResult(
                 html=html,
                 outreach_message=content.whatsapp_outreach_message or None,
                 content=content,
             )
+            result._design = design  # store for variant 2 reuse
+            return result
 
         except Exception:
             logger.exception("[Pipeline] Unhandled top-level error")
+            return None
+
+    def generate_variant2(self, base_result: "PipelineResult", enrichment: dict) -> str | None:
+        """Generate a second HTML variant from an already-run pipeline result.
+        Reuses the content + design from base_result — only re-runs Stage 2 with V2 prompt.
+        Returns raw HTML or None on failure.
+        """
+        if not base_result or not base_result.content:
+            return None
+        try:
+            # Use same design if available, or create a default
+            design = DesignConfig()
+            if base_result.content:
+                # Try to re-derive design from content (or use whatever was stored)
+                design = getattr(base_result, '_design', DesignConfig())
+            html = self._stage2_build(base_result.content, design, enrichment, variant=2)
+            if html:
+                logger.info("[Pipeline] Variant 2 generated — %d bytes", len(html))
+            return html
+        except Exception:
+            logger.exception("[Pipeline] Variant 2 generation failed")
             return None
 
     # ── Stage 0: Social & Web Intelligence ───────────────────────────────────
@@ -447,8 +556,7 @@ class AutoSitePipelineService:
         self,
         content: ContentBundle,
         design: DesignConfig,
-        enrichment: dict,
-    ) -> str | None:
+        enrichment: dict,        variant: int = 1,    ) -> str | None:
         try:
             from app.services.llm.router_service import LLMRouterService
             logger.info("[Stage 2] Claude Master Builder — generating Tailwind HTML")
@@ -524,7 +632,7 @@ class AutoSitePipelineService:
             response = LLMRouterService().call(
                 "build_site_html",
                 prompt,
-                system=_CLAUDE_BUILDER_SYSTEM,
+                system=_CLAUDE_BUILDER_SYSTEM_V2 if variant == 2 else _CLAUDE_BUILDER_SYSTEM,
                 model="claude-sonnet-4-6",
                 max_tokens=8000,
             )

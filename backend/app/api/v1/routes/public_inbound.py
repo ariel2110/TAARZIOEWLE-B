@@ -14,15 +14,17 @@ import logging
 from typing import Any
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
 from app.core.celery_app import celery_app
 from app.core.config import settings
+from app.services.common.rate_limit_service import RateLimitService
 
 logger = logging.getLogger(__name__)
+_rate_svc = RateLimitService()
 
 router = APIRouter(prefix='/public', tags=['public-inbound'])
 
@@ -149,11 +151,23 @@ def place_detail(place_id: str = Query(...), session_token: str | None = Query(d
 
 
 @router.post('/build-instant', response_model=BuildInstantResponse)
-def build_instant(payload: BuildInstantRequest, db: Session = Depends(get_db)):
+def build_instant(payload: BuildInstantRequest, request: Request, db: Session = Depends(get_db)):
     """
     Create a LeadRecord + Business from a Place selection and dispatch the
     inbound_build_task Celery task.  Rate-limit: one active task per place_id.
     """
+    # Rate limit: max 5 build requests per IP per hour
+    client_ip = request.headers.get('x-real-ip') or (request.client.host if request.client else 'unknown')
+    allowed, count, limit = _rate_svc.check_and_record(
+        db,
+        scope='public_build_instant',
+        key=client_ip,
+        action='build',
+        window_minutes=60,
+        max_per_window=5,
+    )
+    if not allowed:
+        raise HTTPException(status_code=429, detail='יותר מדי בקשות — נסה שוב מאוחר יותר')
     from app.models.lead_record import LeadRecord
     from app.models.business import Business
     from app.models.enriched_biz_cache import EnrichedBizCache

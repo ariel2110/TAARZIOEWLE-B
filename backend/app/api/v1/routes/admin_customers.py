@@ -62,7 +62,65 @@ def _row_to_dict(r: CustomerAccount, db: Session) -> dict:
 @router.get('')
 def list_customers(skip: int = Query(default=0, ge=0), limit: int = Query(default=100, ge=1, le=500), db: Session = Depends(get_db), _: User = Depends(get_current_admin)):
     rows = db.query(CustomerAccount).order_by(CustomerAccount.id.desc()).offset(skip).limit(limit).all()
-    return [_row_to_dict(r, db) for r in rows]
+    if not rows:
+        return []
+
+    # Batch-load related records to avoid N+1 queries (1 query per model, not per row)
+    biz_ids = {r.business_id for r in rows if r.business_id}
+    draft_ids = {r.draft_site_id for r in rows if r.draft_site_id}
+    active_biz_ids = {r.business_id for r in rows if r.active_site_id and r.business_id}
+
+    biz_map: dict[int, Business] = {b.id: b for b in db.query(Business).filter(Business.id.in_(biz_ids)).all()} if biz_ids else {}
+    draft_map: dict[int, DraftSite] = {d.id: d for d in db.query(DraftSite).filter(DraftSite.id.in_(draft_ids)).all()} if draft_ids else {}
+    payment_map: dict[int, PaymentRecord] = {
+        p.business_id: p
+        for p in db.query(PaymentRecord).filter(
+            PaymentRecord.business_id.in_(active_biz_ids),
+            PaymentRecord.internal_status == 'confirmed',
+        ).all()
+    } if active_biz_ids else {}
+
+    result = []
+    for r in rows:
+        biz = biz_map.get(r.business_id) if r.business_id else None
+        draft = draft_map.get(r.draft_site_id) if r.draft_site_id else None
+        payment = payment_map.get(r.business_id) if r.business_id else None
+
+        if r.active_site_id:
+            if payment:
+                status = 'לקוח במנוי' if r.package_name else 'שילם — אתר פעיל'
+            else:
+                status = 'אתר פעיל'
+        elif draft:
+            if draft.status == 'approved':
+                status = 'אישר דמו'
+            elif draft.status in ('published_preview', 'draft'):
+                status = 'דמו נשלח'
+            else:
+                status = 'חשבון נוצר'
+        else:
+            status = 'חשבון נוצר'
+
+        result.append({
+            'id': r.id,
+            'business_id': r.business_id,
+            'business_name': biz.name if biz else None,
+            'business_city': biz.city if biz else None,
+            'business_category': biz.category if biz else None,
+            'phone': r.phone,
+            'email': r.email,
+            'contact_name': r.contact_name,
+            'active_site_id': r.active_site_id,
+            'draft_site_id': r.draft_site_id,
+            'draft_preview_url': draft.preview_url if draft else None,
+            'draft_status': draft.status if draft else None,
+            'must_change_password': r.must_change_password,
+            'is_active': r.is_active,
+            'package_name': r.package_name,
+            'customer_status': status,
+            'created_at': r.created_at.isoformat() if hasattr(r, 'created_at') and r.created_at else None,
+        })
+    return result
 
 
 @router.post('', response_model=CustomerCreateResponse)

@@ -41,7 +41,7 @@ def _verify_signature(request_body: bytes, signature_header: str | None) -> bool
         return True  # No secret configured — accept all (dev mode)
     if not signature_header:
         return False
-    expected = hmac.new(key=secret.encode(), msg=request_body, digestmod=hashlib.sha256).hexdigest()
+    expected = hmac.HMAC(key=secret.encode(), msg=request_body, digestmod=hashlib.sha256).hexdigest()
     provided = signature_header.removeprefix('sha256=')
     return hmac.compare_digest(expected, provided)
 

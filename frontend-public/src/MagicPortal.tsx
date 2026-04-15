@@ -362,12 +362,15 @@ export default function MagicPortal() {
                             <a href={waLink} target="_blank" rel="noopener noreferrer" className="mp-btn-gold">
                                 ✦ אני רוצה את האתר הזה!
                             </a>
-                            <button
+                            <a
+                                href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent('היי, ראיתי את האתר שנבנה לעסק שלי ואשמח לדבר!')}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
                                 className="mp-btn-outline"
-                                onClick={() => window.open(`${API.replace('/api/v1', '')}/ceo-chat`, '_blank')}
+                                style={{ display: 'inline-block', textDecoration: 'none', textAlign: 'center' }}
                             >
-                                💬 שוחח עם המנכ״ל AI
-                            </button>
+                                💬 דברו איתנו בוואטסאפ
+                            </a>
                             <button
                                 className="mp-btn-restart"
                                 onClick={() => { setPhase('search'); setQuery(''); setPreviewUrl(''); setPublicUrl(''); setPhoneSaved(false); }}

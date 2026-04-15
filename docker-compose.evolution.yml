@@ -5,6 +5,12 @@
 #
 # v1.8.7 is the newest release (2025-06-02) and uses file-based storage (no DB needed).
 # Port: host:8181 -> container:8080 (host 8080 is already taken)
+#
+# IMPORTANT: EVOLUTION_API_KEY must be available in the shell environment OR
+# in a .env file at this directory's root (Docker Compose auto-loads ./.env
+# for ${VAR} substitution). If the variable is empty, Evolution will start
+# without authentication — exposing the gateway. Verify with:
+#   docker compose -f docker-compose.evolution.yml config | grep AUTHENTICATION_API_KEY
 
 services:
 

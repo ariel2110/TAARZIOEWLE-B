@@ -13,7 +13,10 @@ import {
     TaskStatus,
 } from '../services/queries';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'https://api.sitenest.site';
+// Static files (e.g. /static/drafts/...) are served at the API root, not under /api/v1.
+// Strip the /api/vN suffix so previewUrl() resolves correctly.
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1')
+    .replace(/\/api\/v\d+\/?$/, '');
 
 function previewUrl(draft: DraftSite): string {
     if (!draft.preview_url) return '';

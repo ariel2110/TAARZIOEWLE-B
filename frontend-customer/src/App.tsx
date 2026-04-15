@@ -585,6 +585,10 @@ export default function App() {
   const [loadingMe, setLoadingMe] = useState(false);
 
   useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [tab]);
+
+  useEffect(() => {
     if (!token) return;
     setLoadingMe(true);
     apiCall('/customer/me', token).then(setMe).catch(() => { localStorage.removeItem('customer_token'); setToken(''); }).finally(() => setLoadingMe(false));

@@ -148,11 +148,11 @@ def handle_admin_message(text: str, db: Session) -> None:
         _chat_gpt(text)
 
 
-def handle_admin_audio(audio_url: str, mime_type: str, db: Session) -> None:
-    """Download voice note from Evolution, transcribe via Whisper, dispatch as text."""
+def handle_admin_audio(evo_message_data: dict, db: Session) -> None:
+    """Download voice note via Evolution base64 API, transcribe via Whisper, dispatch as text."""
     try:
         _send("🎤 מתמלל הודעה קולית...")
-        text = _transcribe_audio(audio_url, mime_type)
+        text = _transcribe_audio(evo_message_data)
         if not text:
             _send("❌ לא הצלחתי לתמלל את ההודעה הקולית.")
             return
@@ -536,27 +536,58 @@ def _chat_gpt(text: str) -> None:
 # Voice note transcription (OpenAI Whisper)
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _transcribe_audio(audio_url: str, mime_type: str) -> str:
-    """Download audio from Evolution and transcribe via OpenAI Whisper."""
+def _transcribe_audio(evo_message_data: dict) -> str:
+    """Fetch audio via Evolution's base64 API and transcribe via OpenAI Whisper.
+
+    WhatsApp audio is end-to-end encrypted — the `url` field in audioMessage
+    is a CDN path for encrypted bytes, unusable directly.  We ask Evolution
+    to decrypt and deliver the raw bytes as base64.
+    """
+    import base64
     import openai
 
-    ext_map = {
-        "audio/ogg": ".ogg",
-        "audio/mpeg": ".mp3",
-        "audio/mp4": ".mp4",
-        "audio/webm": ".webm",
-        "audio/wav": ".wav",
-        "audio/aac": ".aac",
+    evo_base = (settings.evolution_api_url or "http://127.0.0.1:8181").rstrip("/")
+    instance  = settings.evolution_instance or "sitenest"
+    evo_key   = settings.evolution_api_key or ""
+
+    # Build the exact payload Evolution expects
+    payload = {
+        "message": {
+            "key":     evo_message_data.get("key", {}),
+            "message": evo_message_data.get("message", {}),
+        }
     }
-    ext = ext_map.get((mime_type or "").lower().split(";")[0].strip(), ".ogg")
-
-    evo_key = settings.evolution_api_key or ""
-    headers = {"apikey": evo_key} if evo_key else {}
-    resp = httpx.get(audio_url, headers=headers, timeout=30, follow_redirects=True)
+    headers = {"apikey": evo_key, "Content-Type": "application/json"}
+    resp = httpx.post(
+        f"{evo_base}/chat/getBase64FromMediaMessage/{instance}",
+        json=payload,
+        headers=headers,
+        timeout=30,
+    )
     resp.raise_for_status()
+    result = resp.json()
 
+    b64_data: str = result.get("base64") or result.get("data") or ""
+    if not b64_data:
+        raise ValueError(f"Evolution returned no base64 data: {result}")
+
+    # Determine file extension from returned mimetype (e.g. "audio/ogg; codecs=opus")
+    mime_type: str = result.get("mimetype") or "audio/ogg"
+    ext_map = {
+        "audio/ogg":  ".ogg",
+        "audio/mpeg": ".mp3",
+        "audio/mp4":  ".mp4",
+        "audio/webm": ".webm",
+        "audio/wav":  ".wav",
+        "audio/aac":  ".aac",
+        "audio/flac": ".flac",
+    }
+    clean_mime = mime_type.lower().split(";")[0].strip()
+    ext = ext_map.get(clean_mime, ".ogg")
+
+    audio_bytes = base64.b64decode(b64_data)
     with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmp:
-        tmp.write(resp.content)
+        tmp.write(audio_bytes)
         tmp_path = tmp.name
 
     try:

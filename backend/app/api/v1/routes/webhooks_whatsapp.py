@@ -142,14 +142,11 @@ async def webhook_receive(request: Request, db: Session = Depends(get_db)):
 
                 # ── Voice note / audio → Whisper transcription ────────────────
                 if msg_type in {'audioMessage', 'pttMessage'} or 'audioMessage' in raw_msg:
-                    audio_msg = raw_msg.get('audioMessage', raw_msg)
-                    audio_url = audio_msg.get('url') or audio_msg.get('directPath', '')
-                    mime_type = audio_msg.get('mimetype', 'audio/ogg')
-                    if audio_url and (is_self_msg or not from_me):
-                        logger.warning('[WA_DEBUG] audio/ptt → Whisper  url=%r', audio_url[:60])
+                    if is_self_msg or not from_me:
+                        logger.warning('[WA_DEBUG] audio/ptt → Whisper via Evolution base64 API')
                         try:
                             from app.services.admin_remote.whatsapp_admin_router import handle_admin_audio
-                            handle_admin_audio(audio_url, mime_type, db)
+                            handle_admin_audio(data, db)
                         except Exception:
                             logger.exception('[admin_wa] audio dispatch error')
                         processed += 1

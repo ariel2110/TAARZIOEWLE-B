@@ -162,7 +162,7 @@ def _gemini_name_match(name_anchor: str, name_challenger: str) -> bool | None:
 
     try:
         r = httpx.post(
-            f'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={key}',
+            f'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={key}',
             json={
                 'contents': [{'parts': [{'text': prompt}]}],
                 'generationConfig': {'temperature': 0, 'maxOutputTokens': 32},

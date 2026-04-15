@@ -421,6 +421,8 @@ def _chat_grok(text: str, db: Session) -> None:
         ]
 
         # Tool-calling loop (up to 3 rounds)
+        _grok_in_tok = 0
+        _grok_out_tok = 0
         for _round in range(3):
             payload = {
                 "model": "grok-3-mini",
@@ -437,7 +439,11 @@ def _chat_grok(text: str, db: Session) -> None:
                 timeout=45,
             )
             resp.raise_for_status()
-            choice = resp.json()["choices"][0]
+            resp_data = resp.json()
+            _usage = resp_data.get("usage", {})
+            _grok_in_tok += _usage.get("prompt_tokens", 0)
+            _grok_out_tok += _usage.get("completion_tokens", 0)
+            choice = resp_data["choices"][0]
             msg = choice["message"]
             finish = choice.get("finish_reason", "")
 
@@ -463,6 +469,11 @@ def _chat_grok(text: str, db: Session) -> None:
             reply = "לא הצלחתי לקבל תשובה סופית מגרוק."
 
         _session["_grok_had_exchange"] = True
+        try:
+            from app.services.cost_tracker import track_usage as _track_usage
+            _track_usage(agent_name="grok", model_name="grok-3-mini", input_tokens=_grok_in_tok, output_tokens=_grok_out_tok, stage="whatsapp_admin")
+        except Exception:
+            pass
         _send(f"🧠 *Grok:*\n{reply}")
         _session["blackboard"] = f"Grok: {reply[:200]}"
     except Exception as exc:
@@ -489,6 +500,8 @@ def _chat_claude(text: str, db: Session) -> None:
         client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
 
         # Tool-calling loop (up to 3 rounds)
+        _claude_in_tok = 0
+        _claude_out_tok = 0
         for _round in range(3):
             response = client.messages.create(
                 model="claude-opus-4-5",
@@ -497,6 +510,8 @@ def _chat_claude(text: str, db: Session) -> None:
                 tools=TOOLS_SCHEMA_ANTHROPIC,
                 messages=_session["claude_history"],
             )
+            _claude_in_tok += getattr(response.usage, 'input_tokens', 0) or 0
+            _claude_out_tok += getattr(response.usage, 'output_tokens', 0) or 0
 
             if response.stop_reason == "tool_use":
                 # Append assistant message with tool_use blocks
@@ -525,6 +540,11 @@ def _chat_claude(text: str, db: Session) -> None:
             reply = "לא הצלחתי לקבל תשובה סופית מקלוד."
 
         _session["claude_history"].append({"role": "assistant", "content": reply})
+        try:
+            from app.services.cost_tracker import track_usage as _track_usage
+            _track_usage(agent_name="claude", model_name="claude-opus-4-5", input_tokens=_claude_in_tok, output_tokens=_claude_out_tok, stage="whatsapp_admin")
+        except Exception:
+            pass
         _send(f"🤖 *Claude:*\n{reply}")
         _session["blackboard"] = f"Claude: {reply[:200]}"
     except Exception as exc:
@@ -571,6 +591,14 @@ def _chat_gemini(text: str, db: Session) -> None:
         response = chat.send_message(first_text)
         reply = response.text
 
+        try:
+            from app.services.cost_tracker import track_usage as _track_usage
+            _meta = getattr(response, 'usage_metadata', None)
+            _in_tok = getattr(_meta, 'prompt_token_count', 0) or 0
+            _out_tok = getattr(_meta, 'candidates_token_count', 0) or 0
+            _track_usage(agent_name="gemini", model_name="gemini-1.5-flash", input_tokens=_in_tok, output_tokens=_out_tok, stage="whatsapp_admin")
+        except Exception:
+            pass
         _session["gemini_history"].append({"role": "user", "parts": [text]})
         _session["gemini_history"].append({"role": "model", "parts": [reply]})
         _send(f"💎 *Gemini:*\n{reply}")
@@ -599,6 +627,8 @@ def _chat_gpt(text: str, db: Session) -> None:
         client = openai.OpenAI(api_key=settings.openai_api_key)
 
         # Tool-calling loop (up to 3 rounds)
+        _gpt_in_tok = 0
+        _gpt_out_tok = 0
         loop_messages = [{"role": "system", "content": GPT_SYSTEM_PROMPT}, *_session["gpt_history"]]
         for _round in range(3):
             response = client.chat.completions.create(
@@ -608,6 +638,8 @@ def _chat_gpt(text: str, db: Session) -> None:
                 tool_choice="auto",
                 messages=loop_messages,
             )
+            _gpt_in_tok += getattr(response.usage, 'prompt_tokens', 0) or 0
+            _gpt_out_tok += getattr(response.usage, 'completion_tokens', 0) or 0
             choice = response.choices[0]
             msg = choice.message
 
@@ -631,6 +663,11 @@ def _chat_gpt(text: str, db: Session) -> None:
             reply = "לא הצלחתי לקבל תשובה סופית מ-GPT."
 
         _session["gpt_history"].append({"role": "assistant", "content": reply})
+        try:
+            from app.services.cost_tracker import track_usage as _track_usage
+            _track_usage(agent_name="gpt", model_name="gpt-4o-mini", input_tokens=_gpt_in_tok, output_tokens=_gpt_out_tok, stage="whatsapp_admin")
+        except Exception:
+            pass
         _send(f"🟢 *ChatGPT:*\n{reply}")
         _session["blackboard"] = f"ChatGPT: {reply[:200]}"
     except Exception as exc:

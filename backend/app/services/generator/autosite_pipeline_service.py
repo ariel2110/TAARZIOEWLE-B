@@ -331,9 +331,11 @@ class AutoSitePipelineService:
         result.content           # ContentBundle with all structured data
     """
 
-    def run(self, raw_maps_data: str, *, enrichment: dict | None = None, regeneration_note: str | None = None) -> PipelineResult | None:
+    def run(self, raw_maps_data: str, *, enrichment: dict | None = None, regeneration_note: str | None = None, draft_site_id: int | None = None, business_id: int | None = None) -> PipelineResult | None:
         logger.info("[Pipeline] Starting 5-stage AutoSite generation")
         enrichment = enrichment or {}
+        self._track_draft_site_id = draft_site_id
+        self._track_business_id = business_id
         try:
             design: DesignConfig = DesignConfig()
             content: ContentBundle | None = None
@@ -479,12 +481,15 @@ class AutoSitePipelineService:
                 if easy_services:
                     user_msg += f"\n\n=== SERVICES FROM EASY DIRECTORY ===\nשירותים מאומתים מ-Easy:\n"
                     user_msg += "\n".join(f'- {s}' for s in easy_services)
-            response = LLMRouterService().call(
+            response = LLMRouterService().call_tracked(
                 "generate_site_copy",
                 user_msg,
                 system=_CONTENT_AGENT_SYSTEM,
                 max_tokens=1200,
                 json_mode=True,
+                draft_site_id=getattr(self, '_track_draft_site_id', None),
+                business_id=getattr(self, '_track_business_id', None),
+                stage="stage1a_content",
             )
             data = _parse_json(response or "")
             if not data:
@@ -528,13 +533,16 @@ class AutoSitePipelineService:
         try:
             from app.services.llm.router_service import LLMRouterService
             logger.info("[Stage 1b] Gemini Style Director — generating design JSON")
-            response = LLMRouterService().call(
+            response = LLMRouterService().call_tracked(
                 "analyze_business_data",
                 f"Business description for design analysis:\n{raw}",
                 system=_GEMINI_DESIGN_SYSTEM,
                 model="gemini-2.5-flash",
                 max_tokens=400,
                 json_mode=True,
+                draft_site_id=getattr(self, '_track_draft_site_id', None),
+                business_id=getattr(self, '_track_business_id', None),
+                stage="stage1b_design",
             )
             data = _parse_json(response or "")
             if data:
@@ -629,12 +637,15 @@ class AutoSitePipelineService:
                 f"DESIGN INSTRUCTIONS JSON:\n{design_json}"
             )
 
-            response = LLMRouterService().call(
+            response = LLMRouterService().call_tracked(
                 "build_site_html",
                 prompt,
                 system=_CLAUDE_BUILDER_SYSTEM_V2 if variant == 2 else _CLAUDE_BUILDER_SYSTEM,
                 model="claude-sonnet-4-6",
                 max_tokens=8000,
+                draft_site_id=getattr(self, '_track_draft_site_id', None),
+                business_id=getattr(self, '_track_business_id', None),
+                stage="stage2_build_html",
             )
             if not response:
                 return None

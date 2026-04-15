@@ -206,7 +206,7 @@ class CEOReportService:
                 "המלץ בשורה אחת אם כדאי לשנות את הקמפיין הנוכחי (Pivot) או להמשיך לאחוז בו. "
                 "התמקד בסיכונים, הזדמנויות והפעולה החשובה ביותר. ללא נקודות תבליט."
             )
-            return LLMRouterService().call("generate_site_copy", prompt)
+            return LLMRouterService().call_tracked("generate_site_copy", prompt, stage="ceo_summary")
         except Exception:
             return None
 

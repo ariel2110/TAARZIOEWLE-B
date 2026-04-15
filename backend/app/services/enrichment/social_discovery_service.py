@@ -317,12 +317,13 @@ class SocialDiscoveryService:
                 '  "reason": "<1 sentence Hebrew explanation>"\n'
                 "}"
             )
-            resp = LLMRouterService().call(
+            resp = LLMRouterService().call_tracked(
                 "analyze_business_data",
                 prompt,
                 model="gemini-2.5-flash",
                 max_tokens=300,
                 json_mode=True,
+                stage="social_discovery",
             )
             if not resp:
                 return

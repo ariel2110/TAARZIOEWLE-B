@@ -115,7 +115,7 @@ class FeedbackService:
                 "2. תגובה מומלצת / תכנית פעולה (1-2 משפטים בעברית)\n\n"
                 "ללא טקסט נוסף, רק שני הפסקאות מופרדות ב-|||."
             )
-            raw = LLMRouterService().call("review_generated_copy", prompt)
+            raw = LLMRouterService().call_tracked("review_generated_copy", prompt, stage="feedback_analysis")
             if not raw or "|||" not in raw:
                 return None
             parts = raw.split("|||", 1)

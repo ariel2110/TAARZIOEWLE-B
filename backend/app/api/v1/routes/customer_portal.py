@@ -196,7 +196,7 @@ def customer_ai_edit(
     )
 
     llm = LLMRouterService()
-    raw = llm.call('generate_site_copy', user_prompt, system=system_prompt, max_tokens=600, json_mode=True)
+    raw = llm.call_tracked('generate_site_copy', user_prompt, system=system_prompt, max_tokens=600, json_mode=True, business_id=account.business_id, stage="ai_edit")
 
     if not raw:
         raise HTTPException(status_code=503, detail='שירות ה-AI אינו זמין כרגע. נסה שוב עוד רגע.')

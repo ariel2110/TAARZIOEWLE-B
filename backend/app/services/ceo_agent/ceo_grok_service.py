@@ -169,6 +169,14 @@ class CEOGrokService:
                 json_mode=True,
             )
             # _call_xai returns (text, model_name, in_tokens, out_tokens)
+            if isinstance(result, tuple) and result[0] is not None:
+                text, model_used, in_tok, out_tok = result
+                try:
+                    from app.services.cost_tracker import track_usage
+                    track_usage(agent_name="grok", model_name=model_used, input_tokens=in_tok, output_tokens=out_tok, stage="ceo_grok_analysis")
+                except Exception:
+                    pass
+                return text
             return result[0] if isinstance(result, tuple) else result
         except Exception:
             logger.exception("CEOGrokService._call_grok failed")

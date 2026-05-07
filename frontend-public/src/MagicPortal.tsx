@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-const API = import.meta.env.VITE_API_BASE_URL || 'https://api.sitenest.site/api/v1';
+const API = import.meta.env.VITE_API_BASE_URL || 'https://api.tazo-web.com/api/v1';
 const WHATSAPP_NUMBER = import.meta.env.VITE_SITENEST_WA_PHONE || '972546363350';
 const SCARCITY_MINUTES = 15;
 
@@ -69,10 +69,25 @@ export default function MagicPortal() {
     const [phone, setPhone] = useState('');
     const [phoneSaved, setPhoneSaved] = useState(false);
     const [showWall, setShowWall] = useState(false);
+    const [phoneForSite, setPhoneForSite] = useState(true);
+    const [extraInstagram, setExtraInstagram] = useState('');
+    const [extraFacebook, setExtraFacebook] = useState('');
+    const [extraTiktok, setExtraTiktok] = useState('');
+    const [extraNote, setExtraNote] = useState('');
+    // Refs so polling closure can access latest values
+    const phoneSavedRef = useRef(false);
+    const phoneRef = useRef('');
+    // Track if build finished while wall was still open
+    const [buildComplete, setBuildComplete] = useState(false);
 
     // Demo
     const [previewUrl, setPreviewUrl] = useState<string>('');
     const [publicUrl, setPublicUrl] = useState<string>('');
+
+    // Revision request
+    const [showRevision, setShowRevision] = useState(false);
+    const [revisionNote, setRevisionNote] = useState('');
+    const [revisionSent, setRevisionSent] = useState(false);
 
     const { display: countdown, expired: countdownExpired } = useCountdown(SCARCITY_MINUTES);
 
@@ -116,7 +131,7 @@ export default function MagicPortal() {
             if (data.task_id) {
                 setTaskId(data.task_id);
                 setBusinessId(data.business_id);
-                startPolling(data.task_id);
+                startPolling(data.task_id, p.structured_formatting?.main_text || p.description);
             } else {
                 setPhase('error');
             }
@@ -137,7 +152,7 @@ export default function MagicPortal() {
     }
 
     // ── Polling ──────────────────────────────────────────────────────────────────
-    function startPolling(tid: string) {
+    function startPolling(tid: string, bName: string) {
         clearInterval(pollRef.current);
         pollRef.current = setInterval(async () => {
             try {
@@ -153,7 +168,24 @@ export default function MagicPortal() {
                     setPreviewUrl(status.preview_url);
                     setPublicUrl(status.public_url || '');
                     setDisplayStep(PROGRESS_STEPS.length - 1);
-                    setTimeout(() => setPhase('done'), 1200);
+                    // Auto-send demo link via WhatsApp if phone was already provided
+                    if (phoneSavedRef.current && phoneRef.current) {
+                        const demoUrl = status.public_url || `https://api.tazo-web.com${status.preview_url}`;
+                        fetch(`${API}/public/send-demo-link`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                phone: phoneRef.current,
+                                business_name: bName,
+                                demo_url: demoUrl,
+                            }),
+                        }).catch(() => {});
+                        setTimeout(() => setPhase('done'), 1200);
+                    } else {
+                        // Build complete but wall not yet submitted — show wall and wait
+                        setShowWall(true);
+                        setBuildComplete(true);
+                    }
                 } else if (status.state === 'FAILURE') {
                     clearInterval(pollRef.current);
                     setPhase('error');
@@ -175,11 +207,31 @@ export default function MagicPortal() {
             await fetch(`${API}/public/capture-phone`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ business_id: businessId, phone }),
+                body: JSON.stringify({
+                    business_id: businessId,
+                    phone,
+                    phone_for_site: phoneForSite,
+                    instagram_url: extraInstagram || undefined,
+                    facebook_url: extraFacebook || undefined,
+                    tiktok_url: extraTiktok || undefined,
+                    extra_note: extraNote || undefined,
+                }),
             });
-            setPhoneSaved(true);
-            setShowWall(false);
-        } catch { setPhoneSaved(true); setShowWall(false); }
+        } catch { /* save anyway */ }
+        phoneSavedRef.current = true;
+        phoneRef.current = phone;
+        setPhoneSaved(true);
+        setShowWall(false);
+        // If build already finished while wall was open, go to done now
+        if (buildComplete) {
+            const demoUrl = publicUrl || `https://api.tazo-web.com${previewUrl}`;
+            fetch(`${API}/public/send-demo-link`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone, business_name: businessName, demo_url: demoUrl }),
+            }).catch(() => {});
+            setTimeout(() => setPhase('done'), 800);
+        }
     }
 
     // ── WA upgrade link ──────────────────────────────────────────────────────────
@@ -220,11 +272,7 @@ export default function MagicPortal() {
                 <div className="mp-search-page">
                     {/* Top nav */}
                     <nav className="mp-topnav">
-                        <span className="mp-topnav-logo">SiteNest ✦</span>
-                        <a href="https://admin.sitenest.site" className="mp-topnav-login">
-                            <span className="mp-topnav-login-icon">👤</span>
-                            כניסה לניהול
-                        </a>
+                        <span className="mp-topnav-logo">tazo-web ✦</span>
                     </nav>
                     <div className="mp-hero">
                         <h1 className="mp-headline">
@@ -267,11 +315,11 @@ export default function MagicPortal() {
                         </div>
                         <div className="mp-how">
                             <div className="mp-how-step"><span className="mp-how-num">1</span><span>בחר עסק</span></div>
-                            <div className="mp-how-arrow">→</div>
+                            <div className="mp-how-arrow">←</div>
                             <div className="mp-how-step"><span className="mp-how-num">2</span><span>ה-AI עובד</span></div>
-                            <div className="mp-how-arrow">→</div>
+                            <div className="mp-how-arrow">←</div>
                             <div className="mp-how-step"><span className="mp-how-num">3</span><span>ראה את האתר</span></div>
-                            <div className="mp-how-arrow">→</div>
+                            <div className="mp-how-arrow">←</div>
                             <div className="mp-how-step"><span className="mp-how-num">4</span><span>קנה דומיין</span></div>
                         </div>
                     </div>
@@ -318,36 +366,110 @@ export default function MagicPortal() {
                         </div>
                     </div>
 
-                    {/* Phone wall overlay */}
-                    {showWall && !phoneSaved && (
+                    {/* Enrichment wall overlay — managed globally */}
+                    {false && (
                         <div className="mp-wall-overlay">
-                            <div className="mp-wall-card">
-                                <div className="mp-wall-icon">📲</div>
-                                <h2 className="mp-wall-title">מצאנו את כל החומרים!</h2>
-                                <p className="mp-wall-sub">
-                                    לאן לשלוח לך את הלינק לאתר כשהוא יהיה מוכן?<br />
-                                    <strong>נשאר {countdown} לפני שהמבצע נסגר</strong>
-                                </p>
-                                <form className="mp-wall-form" onSubmit={handlePhoneSubmit}>
-                                    <input
-                                        className="mp-wall-input"
-                                        type="tel"
-                                        placeholder="מספר וואטסאפ (05X-XXXXXXX)"
-                                        value={phone}
-                                        onChange={e => setPhone(e.target.value)}
-                                        required
-                                        pattern="^0\d{9}$|^972\d{9}$"
+                            <div className="mp-wall-card mp-enrich-card">
+                                {/* Header */}
+                                <div className="mp-enrich-header">
+                                    <div className="mp-wall-icon">🎯</div>
+                                    <h2 className="mp-wall-title">מצאנו את {businessName}!</h2>
+                                    <p className="mp-wall-sub">
+                                        ה-AI ממשיך לבנות — בינתיים עזור לנו לשפר את האתר שלך
+                                    </p>
+                                </div>
+
+                                {/* Found-data badges */}
+                                <div className="mp-enrich-found">
+                                    <div className="mp-enrich-found-title">✦ מה אספנו עד כה</div>
+                                    <div className="mp-enrich-badges">
+                                        <span className="mp-enrich-badge mp-enrich-badge--ok">✅ גוגל מפות</span>
+                                        <span className="mp-enrich-badge mp-enrich-badge--scan">🔍 אינסטגרם</span>
+                                        <span className="mp-enrich-badge mp-enrich-badge--scan">🔍 טיקטוק</span>
+                                        <span className="mp-enrich-badge mp-enrich-badge--miss">📘 פייסבוק</span>
+                                    </div>
+                                    <p className="mp-enrich-hint">
+                                        אין לך חשבון, או שלא מצאנו? הוסף קישור ישירות:
+                                    </p>
+                                </div>
+
+                                <form className="mp-wall-form mp-enrich-form" onSubmit={handlePhoneSubmit}>
+                                    {/* Social links */}
+                                    <div className="mp-enrich-socials">
+                                        <input
+                                            className="mp-wall-input mp-enrich-social-input"
+                                            type="text"
+                                            placeholder="📸 Instagram — instagram.com/שם-העסק (אופציונלי)"
+                                            value={extraInstagram}
+                                            onChange={e => setExtraInstagram(e.target.value)}
+                                            dir="ltr"
+                                        />
+                                        <input
+                                            className="mp-wall-input mp-enrich-social-input"
+                                            type="text"
+                                            placeholder="📘 Facebook — facebook.com/שם-העסק (אופציונלי)"
+                                            value={extraFacebook}
+                                            onChange={e => setExtraFacebook(e.target.value)}
+                                            dir="ltr"
+                                        />
+                                        <input
+                                            className="mp-wall-input mp-enrich-social-input"
+                                            type="text"
+                                            placeholder="🎵 TikTok — tiktok.com/@שם-העסק (אופציונלי)"
+                                            value={extraTiktok}
+                                            onChange={e => setExtraTiktok(e.target.value)}
+                                            dir="ltr"
+                                        />
+                                    </div>
+
+                                    {/* Extra description */}
+                                    <textarea
+                                        className="mp-wall-input mp-enrich-textarea"
+                                        placeholder="✍️ מידע נוסף לאתר: שירותים, מחירים, אזור פעילות, שעות... (אופציונלי)"
+                                        value={extraNote}
+                                        onChange={e => setExtraNote(e.target.value)}
+                                        rows={3}
                                     />
+
+                                    {/* Phone section */}
+                                    <div className="mp-enrich-phone-section">
+                                        <div className="mp-enrich-phone-label">
+                                            📲 לאן לשלוח את הדמו?
+                                        </div>
+                                        <input
+                                            className="mp-wall-input"
+                                            type="tel"
+                                            placeholder="מספר וואטסאפ (05X-XXXXXXX)"
+                                            value={phone}
+                                            onChange={e => setPhone(e.target.value)}
+                                            required
+                                            pattern="^0\d{9}$|^972\d{9}$"
+                                        />
+                                        <label className="mp-enrich-checkbox">
+                                            <input
+                                                type="checkbox"
+                                                checked={phoneForSite}
+                                                onChange={e => setPhoneForSite(e.target.checked)}
+                                            />
+                                            <span>השתמש במספר זה גם כטלפון הצור-קשר באתר</span>
+                                        </label>
+                                    </div>
+
                                     <button className="mp-wall-btn" type="submit">
-                                        שלח לי את האתר ✦
+                                        המשך לבניית האתר ✦
                                     </button>
                                 </form>
-                                <p className="mp-wall-privacy">🔒 לא נשתמש במספר שלך לשום דבר אחר</p>
+
+                                <p className="mp-wall-sub" style={{ marginTop: 8, fontSize: '0.82rem' }}>
+                                    ⏱ נשאר: <strong>{countdown}</strong> לסיום ההצעה
+                                </p>
+                                <p className="mp-wall-privacy">🔒 לא נשתמש בפרטיך לשום דבר אחר</p>
                             </div>
                         </div>
                     )}
                 </div>
             )}
+            {/* global placeholder — actual wall is rendered below at mp-root level */}
 
             {/* ══════════════════════════════════════════════════════ DONE ══ */}
             {phase === 'done' && (
@@ -359,21 +481,19 @@ export default function MagicPortal() {
                             &nbsp;·&nbsp; מוכן לעלות לאוויר!
                         </div>
                         <div className="mp-sticky-actions">
-                            <a href={waLink} target="_blank" rel="noopener noreferrer" className="mp-btn-gold">
-                                ✦ אני רוצה את האתר הזה!
-                            </a>
-                            <a
-                                href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent('היי, ראיתי את האתר שנבנה לעסק שלי ואשמח לדבר!')}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="mp-btn-outline"
-                                style={{ display: 'inline-block', textDecoration: 'none', textAlign: 'center' }}
-                            >
-                                💬 דברו איתנו בוואטסאפ
+                            <a href="https://mrng.to/Afe6Dg21q0" target="_blank" rel="noopener noreferrer" className="mp-btn-gold">
+                                ✦ קבל את האתר הזה — 39₪/חודש
                             </a>
                             <button
+                                className="mp-btn-outline"
+                                onClick={() => setShowRevision(v => !v)}
+                                style={{ cursor: 'pointer' }}
+                            >
+                                ✏️ בקש תיקון
+                            </button>
+                            <button
                                 className="mp-btn-restart"
-                                onClick={() => { setPhase('search'); setQuery(''); setPreviewUrl(''); setPublicUrl(''); setPhoneSaved(false); }}
+                                onClick={() => { setPhase('search'); setQuery(''); setPreviewUrl(''); setPublicUrl(''); setPhoneSaved(false); setShowRevision(false); setRevisionSent(false); setRevisionNote(''); }}
                                 title="בנה אתר לעסק אחר"
                             >
                                 🔄 עסק אחר
@@ -381,13 +501,44 @@ export default function MagicPortal() {
                         </div>
                     </div>
 
+                    {/* Revision panel */}
+                    {showRevision && !revisionSent && (
+                        <div style={{ background: '#1e293b', padding: '16px 20px', display: 'flex', gap: 10, alignItems: 'flex-start', flexWrap: 'wrap', borderBottom: '1px solid #334155' }}>
+                            <textarea
+                                placeholder="מה תרצה לשנות? לדוגמה: שנה את הצבע לירוק, הוסף שירות חדש, שנה את הטקסט של ה-hero..."
+                                value={revisionNote}
+                                onChange={e => setRevisionNote(e.target.value)}
+                                rows={2}
+                                style={{ flex: 1, minWidth: 220, padding: '10px 14px', borderRadius: 10, border: '1px solid #475569', background: '#0f172a', color: '#f1f5f9', fontSize: 14, resize: 'vertical', fontFamily: 'Heebo, sans-serif', direction: 'rtl' }}
+                            />
+                            <button
+                                onClick={async () => {
+                                    if (!revisionNote.trim()) return;
+                                    const waText = encodeURIComponent(`בקשת תיקון לאתר ${businessName}:\n${revisionNote.trim()}`);
+                                    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${waText}`, '_blank');
+                                    setRevisionSent(true);
+                                    setShowRevision(false);
+                                }}
+                                disabled={!revisionNote.trim()}
+                                style={{ padding: '10px 20px', borderRadius: 10, background: revisionNote.trim() ? '#3b82f6' : '#334155', color: '#fff', border: 'none', cursor: revisionNote.trim() ? 'pointer' : 'default', fontWeight: 700, fontSize: 14, whiteSpace: 'nowrap' }}
+                            >
+                                שלח בקשה ✓
+                            </button>
+                        </div>
+                    )}
+                    {revisionSent && (
+                        <div style={{ background: '#064e3b', color: '#6ee7b7', padding: '10px 20px', fontSize: 13, textAlign: 'center' }}>
+                            ✅ הבקשה נשלחה! ניצור איתך קשר בהקדם.
+                        </div>
+                    )}
+
                     {/* Demo iframe (gated if no phone) */}
                     {phoneSaved || true /* show demo regardless */ ? (
                         <iframe
                             className="mp-iframe"
-                            src={publicUrl || `https://api.sitenest.site${previewUrl}`}
+                            src={publicUrl || `https://api.tazo-web.com${previewUrl}`}
                             title={`אתר הדמו — ${businessName}`}
-                            sandbox="allow-same-origin allow-scripts"
+                            sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-top-navigation-by-user-activation"
                         />
                     ) : (
                         <div className="mp-gate">
@@ -416,7 +567,7 @@ export default function MagicPortal() {
             {phase === 'error' && (
                 <div className="mp-search-page">
                     <div className="mp-hero">
-                        <div className="mp-logo">SiteNest ✦</div>
+                        <div className="mp-logo">tazo-web ✦</div>
                         <div className="mp-error-card">
                             <div style={{ fontSize: 48 }}>😕</div>
                             <h2>משהו השתבש</h2>
@@ -425,6 +576,106 @@ export default function MagicPortal() {
                                 נסה שוב
                             </button>
                         </div>
+                    </div>
+                </div>
+            )}
+            {/* ══ Global enrichment wall — shown during building OR build-complete-but-no-phone ══ */}
+            {showWall && !phoneSaved && phase !== 'search' && (
+                <div className="mp-wall-overlay">
+                    <div className="mp-wall-card mp-enrich-card">
+                        <div className="mp-enrich-header">
+                            <div className="mp-wall-icon">{buildComplete ? '🎉' : '🎯'}</div>
+                            <h2 className="mp-wall-title">
+                                {buildComplete ? `האתר של ${businessName} מוכן!` : `מצאנו את ${businessName}!`}
+                            </h2>
+                            <p className="mp-wall-sub">
+                                {buildComplete
+                                    ? 'השאר פרטים כדי לצפות ולקבל את הקישור לוואטסאפ'
+                                    : 'ה-AI ממשיך לבנות — בינתיים עזור לנו לשפר את האתר שלך'}
+                            </p>
+                        </div>
+
+                        <div className="mp-enrich-found">
+                            <div className="mp-enrich-found-title">✦ מה אספנו עד כה</div>
+                            <div className="mp-enrich-badges">
+                                <span className="mp-enrich-badge mp-enrich-badge--ok">✅ גוגל מפות</span>
+                                <span className="mp-enrich-badge mp-enrich-badge--scan">🔍 אינסטגרם</span>
+                                <span className="mp-enrich-badge mp-enrich-badge--scan">🔍 טיקטוק</span>
+                                <span className="mp-enrich-badge mp-enrich-badge--miss">📘 פייסבוק</span>
+                            </div>
+                            <p className="mp-enrich-hint">
+                                אין לך חשבון, או שלא מצאנו? הוסף קישור ישירות:
+                            </p>
+                        </div>
+
+                        <form className="mp-wall-form mp-enrich-form" onSubmit={handlePhoneSubmit}>
+                            <div className="mp-enrich-socials">
+                                <input
+                                    className="mp-wall-input mp-enrich-social-input"
+                                    type="text"
+                                    placeholder="📸 Instagram — instagram.com/שם-העסק (אופציונלי)"
+                                    value={extraInstagram}
+                                    onChange={e => setExtraInstagram(e.target.value)}
+                                    dir="ltr"
+                                />
+                                <input
+                                    className="mp-wall-input mp-enrich-social-input"
+                                    type="text"
+                                    placeholder="📘 Facebook — facebook.com/שם-העסק (אופציונלי)"
+                                    value={extraFacebook}
+                                    onChange={e => setExtraFacebook(e.target.value)}
+                                    dir="ltr"
+                                />
+                                <input
+                                    className="mp-wall-input mp-enrich-social-input"
+                                    type="text"
+                                    placeholder="🎵 TikTok — tiktok.com/@שם-העסק (אופציונלי)"
+                                    value={extraTiktok}
+                                    onChange={e => setExtraTiktok(e.target.value)}
+                                    dir="ltr"
+                                />
+                            </div>
+
+                            <textarea
+                                className="mp-wall-input mp-enrich-textarea"
+                                placeholder="✍️ מידע נוסף לאתר: שירותים, מחירים, אזור פעילות, שעות... (אופציונלי)"
+                                value={extraNote}
+                                onChange={e => setExtraNote(e.target.value)}
+                                rows={3}
+                            />
+
+                            <div className="mp-enrich-phone-section">
+                                <div className="mp-enrich-phone-label">📲 לאן לשלוח את הדמו?</div>
+                                <input
+                                    className="mp-wall-input"
+                                    type="tel"
+                                    placeholder="מספר וואטסאפ (05X-XXXXXXX)"
+                                    value={phone}
+                                    onChange={e => setPhone(e.target.value)}
+                                    required
+                                    pattern="^0\d{9}$|^972\d{9}$"
+                                />
+                                <label className="mp-enrich-checkbox">
+                                    <input
+                                        type="checkbox"
+                                        checked={phoneForSite}
+                                        onChange={e => setPhoneForSite(e.target.checked)}
+                                    />
+                                    <span>השתמש במספר זה גם כטלפון הצור-קשר באתר</span>
+                                </label>
+                            </div>
+
+                            <button className="mp-wall-btn" type="submit">
+                                {buildComplete ? 'הצג לי את האתר ✦' : 'המשך לבניית האתר ✦'}
+                            </button>
+                        </form>
+
+                        {!buildComplete && (
+                            <p className="mp-wall-sub" style={{ marginTop: 8, fontSize: '0.82rem' }}>
+                                ⏱ נשאר: <strong>{countdown}</strong> לסיום ההצעה
+                            </p>
+                        )}
+                        <p className="mp-wall-privacy">🔒 לא נשתמש בפרטיך לשום דבר אחר</p>
                     </div>
                 </div>
             )}

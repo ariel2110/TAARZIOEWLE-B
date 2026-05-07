@@ -275,12 +275,20 @@ export type AgentGlobalStats = {
 };
 export type AgentStatusItem = {
   agent: string; label: string; emoji: string; color: string;
-  configured: boolean; model: string;
+  configured: boolean; is_enabled: boolean; build_roles: string[]; model: string;
   pricing_input_per_1m: number | string; pricing_output_per_1m: number | string;
   cost_ils_all_time: number; calls_all_time: number;
   cost_ils_this_month: number; calls_this_month: number;
   avg_input_tokens: number; avg_output_tokens: number;
   projected_cost_per_call_ils: number;
+};
+
+export type AgentBuildConfig = {
+  enabled_agents: string[];
+  available_agents: string[];
+  roles: Record<string, string>;   // { content: 'gpt', design: 'gemini', html: 'claude' }
+  role_labels: Record<string, string>;
+  provider_map: Record<string, string>;
 };
 export type AgentRunLog = {
   id: number; created_at: string; agent_name: string; model_name: string | null;
@@ -290,10 +298,25 @@ export type AgentRunLog = {
 };
 
 export const getAgentGlobalStats = () => apiGet<AgentGlobalStats>('/admin/analytics/agent-global-stats');
-export const getAgentStatus = () => apiGet<{ agents: AgentStatusItem[]; usd_to_ils: number }>('/admin/analytics/agent-status');
+export const getAgentStatus = () => apiGet<{ agents: AgentStatusItem[]; usd_to_ils: number; build_config: AgentBuildConfig }>('/admin/analytics/agent-status');
 export const getAgentRecentRuns = (agent?: string) =>
   apiGet<AgentRunLog[]>(`/admin/analytics/agent-recent-runs${agent ? `?agent_name=${agent}` : ''}`);
+export const getAgentBuildConfig = () => apiGet<AgentBuildConfig>('/admin/agents/build-config');
+export const toggleAgent = (agentName: string, enabled: boolean) =>
+  apiPost<{ toggle: { agent_name: string; is_enabled: boolean }; build_config: AgentBuildConfig }>(
+    `/admin/agents/toggle/${agentName}`, { enabled }
+  );
 
+export type AgentConnectionResult = {
+  agent: string; ok: boolean; latency_ms: number; detail: string;
+  extra?: Record<string, unknown>;
+};
+export type AgentConnectionTestResponse = {
+  all_ok: boolean; tested_at: string; test_business: string;
+  results: AgentConnectionResult[];
+};
+export const testAgentConnections = () =>
+  apiGet<AgentConnectionTestResponse>('/admin/agents/connection-test');
 // ── API Keys Management ──────────────────────────────────────────────────────
 export type ApiKeyItem = {
   key: string; label: string; env_var: string; role: string; manage_url: string;
@@ -322,3 +345,24 @@ export const triggerFacebookTokenRefresh = () =>
     '/admin/social/facebook-refresh-token', {}
   );
 
+
+// ── Domain Purchase Approvals ────────────────────────────────────────────────
+export type DomainApprovalItem = {
+  intake_id: number;
+  business_name: string;
+  phone: string;
+  domain: string;
+  price_usd: number | null;
+  approval_status: string | null;
+  payment_status: string;
+  token_prefix: string;
+};
+
+export const getDomainApprovals = () =>
+  apiGet<DomainApprovalItem[]>('/admin/domain-approvals');
+
+export const approveDomain = (intakeId: number, note?: string) =>
+  apiPost<{ status: string; message: string }>(`/admin/domain-approvals/${intakeId}/approve`, { note: note || null });
+
+export const rejectDomain = (intakeId: number, note?: string) =>
+  apiPost<{ status: string; message: string }>(`/admin/domain-approvals/${intakeId}/reject`, { note: note || null });

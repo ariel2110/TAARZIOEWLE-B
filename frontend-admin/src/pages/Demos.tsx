@@ -6,7 +6,7 @@ function buildDemoUrl(demo: DemoRecord): string {
     if (demo.public_url) {
         return demo.public_url;
     }
-    return `https://${demo.slug}.sitenest.site`;
+    return `https://${demo.slug}.tazo-web.com`;
 }
 
 const STATUS_LABELS: Record<string, { label: string; bg: string; color: string }> = {
@@ -37,7 +37,7 @@ function buildWhatsApp(demo: DemoRecord): string {
         `✅ כפתור חיוג ישיר\n` +
         `✅ מיקום בגוגל מפות\n\n` +
         `אם תרצו להמשיך לאתר אמיתי — נשמח לדבר 😊\n` +
-        `— צוות *SiteNest*`
+        `— צוות *tazo-web*`
     );
     return `https://wa.me/${cleanPhone(demo.phone)}?text=${msg}`;
 }

@@ -554,7 +554,137 @@ input {
   margin-top: 12px;
 }
 
-/* ── Done Page ──────────────────────────────────────────────────────────────── */
+/* ── Enrichment card (extended phone wall) ──────────────────────────────────── */
+.mp-enrich-card {
+  max-width: 500px;
+  padding: 32px 28px;
+  max-height: 90vh;
+  overflow-y: auto;
+  text-align: right;
+}
+
+.mp-enrich-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.mp-enrich-found {
+  background: #0d1526;
+  border: 1px solid #2d3748;
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+.mp-enrich-found-title {
+  font-size: .8rem;
+  font-weight: 700;
+  color: #f5c842;
+  letter-spacing: .04em;
+  margin-bottom: 10px;
+}
+
+.mp-enrich-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.mp-enrich-badge {
+  font-size: .78rem;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-weight: 600;
+}
+
+.mp-enrich-badge--ok {
+  background: rgba(72, 187, 120, .15);
+  color: #48bb78;
+  border: 1px solid rgba(72, 187, 120, .3);
+}
+
+.mp-enrich-badge--scan {
+  background: rgba(245, 200, 66, .1);
+  color: #f5c842;
+  border: 1px solid rgba(245, 200, 66, .25);
+}
+
+.mp-enrich-badge--miss {
+  background: rgba(160, 174, 192, .1);
+  color: #718096;
+  border: 1px solid rgba(160, 174, 192, .2);
+}
+
+.mp-enrich-hint {
+  font-size: .78rem;
+  color: #718096;
+  margin: 0;
+}
+
+.mp-enrich-form {
+  gap: 10px;
+}
+
+.mp-enrich-socials {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mp-enrich-social-input {
+  font-size: .85rem !important;
+  padding: 11px 14px !important;
+}
+
+.mp-enrich-textarea {
+  resize: vertical;
+  font-size: .9rem;
+  line-height: 1.5;
+  font-family: inherit;
+}
+
+.mp-enrich-phone-section {
+  background: rgba(245, 200, 66, .06);
+  border: 1px solid rgba(245, 200, 66, .2);
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mp-enrich-phone-label {
+  font-size: .85rem;
+  font-weight: 700;
+  color: #f5c842;
+}
+
+.mp-enrich-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: .82rem;
+  color: #a0aec0;
+  direction: rtl;
+}
+
+.mp-enrich-checkbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #f5c842;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+@media (max-width: 540px) {
+  .mp-enrich-card {
+    padding: 24px 16px;
+  }
+}
+
+
 .mp-done-page {
   display: flex;
   flex-direction: column;
@@ -1182,6 +1312,42 @@ input {
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 20px;
   padding: 32px 24px;
+}
+
+.if-plan-badge {
+  border-radius: 12px;
+  padding: 14px 18px;
+  font-size: 0.95rem;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.if-plan-badge--paid {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+}
+
+.if-plan-badge--ai {
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  border: 1px solid #334155;
+  color: #e2e8f0;
+}
+
+.if-plan-badge-name {
+  font-size: 1.05rem;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+
+.if-plan-badge-price {
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+
+.if-plan-badge-note {
+  font-size: 0.82rem;
+  opacity: 0.85;
 }
 
 .if-sidebar-title {
@@ -1891,6 +2057,32 @@ input {
   color: #94a3b8;
   margin: 0;
   font-size: 0.9rem;
+}
+
+.ss-plan-info {
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 18px;
+  text-align: center;
+}
+
+.ss-plan-info--paid {
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  color: #a5b4fc;
+}
+
+.ss-plan-info--ai {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid #334155;
+  color: #94a3b8;
+}
+
+.ss-plan-info-note {
+  opacity: 0.8;
+  font-weight: 400;
 }
 
 .ss-checkout-features {

@@ -1,11 +1,12 @@
 import { useRef, useState, useEffect } from 'react';
 
-const API = import.meta.env.VITE_API_BASE_URL || 'https://api.sitenest.site/api/v1';
+const API = import.meta.env.VITE_API_BASE_URL || 'https://api.tazo-web.com/api/v1';
 const WA = '972546363350';
 
 interface Props {
     onSubmitted: (token: string) => void;
     onBack: () => void;
+    selectedPlan?: string;
 }
 
 const MAX_IMAGES = 5;
@@ -41,7 +42,7 @@ function isValidUrl(v: string) {
     }
 }
 
-export default function IntakeForm({ onSubmitted, onBack }: Props) {
+export default function IntakeForm({ onSubmitted, onBack, selectedPlan }: Props) {
     const [businessName, setBusinessName] = useState('');
     const [phone, setPhone] = useState('');
     const [facebook, setFacebook] = useState('');
@@ -177,6 +178,7 @@ export default function IntakeForm({ onSubmitted, onBack }: Props) {
                 fd.append('google_place_id', selectedPlace.place_id);
                 fd.append('google_enrichment_json', JSON.stringify(selectedPlace));
             }
+            fd.append('selected_plan', selectedPlan || 'ai_basic');
 
             const res = await fetch(`${API}/public/intake`, {
                 method: 'POST',
@@ -204,17 +206,40 @@ export default function IntakeForm({ onSubmitted, onBack }: Props) {
                 <button className="if-back-btn" onClick={onBack} aria-label="חזור">
                     ← חזור
                 </button>
-                <div className="if-header-logo">SiteNest ✦</div>
+                <div className="if-header-logo">tazo-web ✦</div>
             </div>
 
             <div className="if-wrap">
                 {/* Sidebar info */}
                 <div className="if-sidebar">
+                    {(() => {
+                        const planPrices: Record<string, string> = {
+                            'מתחיל': '299 ₪/חודש',
+                            'צמיחה': '699 ₪/חודש',
+                            'מקצועי': '1,299 ₪/חודש',
+                        };
+                        if (selectedPlan) {
+                            return (
+                                <div className="if-plan-badge if-plan-badge--paid">
+                                    <div className="if-plan-badge-name">✦ תוכנית {selectedPlan}</div>
+                                    <div className="if-plan-badge-price">{planPrices[selectedPlan] ?? ''}</div>
+                                    <div className="if-plan-badge-note">✅ כולל ליווי צמוד לאורך כל הדרך</div>
+                                </div>
+                            );
+                        }
+                        return (
+                            <div className="if-plan-badge if-plan-badge--ai">
+                                <div className="if-plan-badge-name">🤖 AI בלבד</div>
+                                <div className="if-plan-badge-price">39 ₪/חודש</div>
+                                <div className="if-plan-badge-note">בניית אתר אוטומטית · ללא ליווי אנושי</div>
+                            </div>
+                        );
+                    })()}
                     <h2 className="if-sidebar-title">
                         ✦ בנה את האתר שלך
                     </h2>
                     <p className="if-sidebar-sub">
-                        מלא את הטופס — ה-AI יבנה לך אתר מקצועי תוך שעות ספורות, מבוסס בדיוק על העסק שלך.
+                        מלא את הטופס — ה-AI יבנה לך אתר מקצועי תוך דקות ספורות, מבוסס בדיוק על העסק שלך.
                     </p>
                     <div className="if-sidebar-benefits">
                         {[

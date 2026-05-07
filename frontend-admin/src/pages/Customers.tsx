@@ -129,7 +129,7 @@ export default function CustomersPage() {
                         <span>דמו #{c.draft_site_id}</span>
                         {c.draft_status && <span style={{ marginRight: 4, background: '#f1f5f9', padding: '1px 6px', borderRadius: 4 }}>{c.draft_status}</span>}
                         {c.draft_preview_url && (
-                          <a href={`https://api.sitenest.site${c.draft_preview_url}`} target="_blank" rel="noopener noreferrer" style={{ marginRight: 6, color: '#6366f1', fontSize: 11 }}>
+                          <a href={`https://api.tazo-web.com${c.draft_preview_url}`} target="_blank" rel="noopener noreferrer" style={{ marginRight: 6, color: '#6366f1', fontSize: 11 }}>
                             👁️ צפה בדמו
                           </a>
                         )}

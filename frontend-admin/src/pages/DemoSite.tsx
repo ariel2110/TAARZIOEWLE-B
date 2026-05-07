@@ -108,7 +108,7 @@ export default function DemoSitePage() {
             {/* ── Demo banner ── */}
             <div style={{ background: '#fef3c7', borderBottom: '2px solid #f59e0b', padding: '9px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, position: 'sticky', top: 0, zIndex: 100 }}>
                 <span style={{ fontSize: 13, color: '#78350f', fontWeight: 600 }}>
-                    🎬 זהו <strong>אתר דמו חינמי</strong> שנבנה עבור <strong>{data.business_name}</strong> ע"י SiteNest
+                    🎬 זהו <strong>אתר דמו חינמי</strong> שנבנה עבור <strong>{data.business_name}</strong> ע"י tazo-web
                 </span>
                 <a href={`https://wa.me/${(import.meta.env.VITE_SITENEST_WA_PHONE || '972523456789') as string}?text=${encodeURIComponent(`שלום! ראיתי את הדמו של "${data.business_name}" ואשמח לדבר על בניית האתר 😊`)}`}
                     target="_blank" rel="noopener noreferrer"
@@ -236,7 +236,7 @@ export default function DemoSitePage() {
                         🚀 רוצים אתר אמיתי לעסק שלכם?
                     </h2>
                     <p style={{ fontSize: 16, opacity: 0.9, marginBottom: 28, maxWidth: 500, margin: '0 auto 28px' }}>
-                        SiteNest בונה אתרים מקצועיים לעסקים קטנים — תוך 48 שעות, בצורה פשוטה, ובמחיר שמתאים לכם.
+                        tazo-web בונה אתרים מקצועיים לעסקים קטנים — תוך 48 שעות, בצורה פשוטה, ובמחיר שמתאים לכם.
                     </p>
                     <WaBtnAdmin bizName={data.business_name} />
                 </section>
@@ -244,8 +244,8 @@ export default function DemoSitePage() {
 
             {/* ── Footer ── */}
             <div style={{ textAlign: 'center', padding: '20px', borderTop: '1px solid #e5e7eb', color: '#9ca3af', fontSize: 12 }}>
-                האתר נבנה ע"י <strong>SiteNest</strong> · אתרים לעסקים קטנים ·
-                <a href="https://admin.sitenest.site" style={{ color: '#6b7280', marginRight: 4 }}>admin.sitenest.site</a>
+                האתר נבנה ע"י <strong>tazo-web</strong> · אתרים לעסקים קטנים ·
+                <a href="https://admin.tazo-web.com" style={{ color: '#6b7280', marginRight: 4 }}>admin.tazo-web.com</a>
             </div>
         </div>
     );

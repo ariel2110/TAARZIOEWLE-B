@@ -19,6 +19,7 @@ import DemosPage from './pages/Demos';
 import DemoSitePage from './pages/DemoSite';
 import WhatsAppPage from './pages/WhatsApp';
 import AgentsDashboard from './pages/AgentsDashboard';
+import DomainApprovalsPage from './pages/DomainApprovals';
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem('admin_access_token');
@@ -51,6 +52,7 @@ export default function App() {
               <Route path="security" element={<SecurityMonitoring />} />
               <Route path="whatsapp" element={<WhatsAppPage />} />
               <Route path="agents" element={<AgentsDashboard />} />
+              <Route path="domain-approvals" element={<DomainApprovalsPage />} />
             </Routes>
           </Shell>
         </RequireAuth>

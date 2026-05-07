@@ -23,7 +23,7 @@ const WORKFLOW_STEPS_OUTBOUND = [
         steps: [
             { who: 'מנהל', action: 'כנס ל"לידים" → לחץ "כשר" → העסק עובר לעמוד "עסקים"' },
             { who: 'מנהל', action: 'בעמוד "עסקים" לחץ "בנה אתר" → הצינור מופעל' },
-            { who: 'AI Pipeline', action: 'Grok כותב תוכן שיווקי → Claude בונה HTML → אתר עולה ב-sitenest.site' },
+            { who: 'AI Pipeline', action: 'Grok כותב תוכן שיווקי → Claude בונה HTML → אתר עולה ב-tazo-web.com' },
             { who: 'מנהל', action: 'כנס ל"אתרי דמו" → אשר ושלח קישור ל-WhatsApp של הלקוח' },
         ],
     },
@@ -41,11 +41,11 @@ const WORKFLOW_STEPS_OUTBOUND = [
 
 const WORKFLOW_STEPS_INBOUND = [
     {
-        phase: 'שלב 1 — הגשת טופס (sitenest.site)',
+        phase: 'שלב 1 — הגשת טופס (tazo-web.com)',
         icon: '📋',
         color: '#10b981',
         steps: [
-            { who: 'לקוח', action: 'נכנס ל-sitenest.site → מזין שם עסק, טלפון, תיאור, קישורי סושיאל' },
+            { who: 'לקוח', action: 'נכנס ל-tazo-web.com → מזין שם עסק, טלפון, תיאור, קישורי סושיאל' },
             { who: 'מערכת', action: 'שומרת בקשה + מריצה את צינור ה-AI בברקע (עד 3 דקות)' },
             { who: 'לקוח', action: 'מקבל token — יכול לעקוב אחרי הסטטוס בזמן אמת' },
         ],
@@ -65,7 +65,7 @@ const WORKFLOW_STEPS_INBOUND = [
         icon: '🌐',
         color: '#f59e0b',
         steps: [
-            { who: 'לקוח', action: 'רואה דמו ומחליט לקנות → בוחר שם לדומיין (xxx.sitenest.site)' },
+            { who: 'לקוח', action: 'רואה דמו ומחליט לקנות → בוחר שם לדומיין (xxx.tazo-web.com)' },
             { who: 'מערכת', action: 'מאמתת שהדומיין חוקי ולא בשימוש (Hostinger API)' },
         ],
     },
@@ -86,7 +86,7 @@ const WORKFLOW_STEPS_INBOUND = [
         steps: [
             { who: 'מערכת', action: 'רוכשת דומיין דרך Hostinger API + מגדירה DNS + מפרסת HTML' },
             { who: 'מערכת', action: 'יוצרת nginx vhost + מנפיקה SSL דרך Certbot — אתר פעיל' },
-            { who: 'לקוח', action: 'מקבל WhatsApp: "🎉 האתר שלך כבר באוויר! https://[דומיין].sitenest.site"' },
+            { who: 'לקוח', action: 'מקבל WhatsApp: "🎉 האתר שלך כבר באוויר! https://[דומיין].tazo-web.com"' },
         ],
     },
 ];
@@ -101,7 +101,7 @@ const CUSTOMER_PLANS = [
         tag: 'הכי מהיר',
         features: [
             'אתר אחד — מופעל אוטומטית',
-            'דומיין xxx.sitenest.site',
+            'דומיין xxx.tazo-web.com',
             'SSL + אחסון מנוהל',
             'AI בנייה מלאה (ללא מגע ידיים)',
             'הפעלה תוך ~5 דקות מהתשלום',
@@ -119,7 +119,7 @@ const CUSTOMER_PLANS = [
         tag: 'הכי פופולרי',
         features: [
             'אתר אחד מקצועי',
-            'דומיין בחירתך (xxx.sitenest.site)',
+            'דומיין בחירתך (xxx.tazo-web.com)',
             'SSL + אחסון מנוהל',
             '2 תיקונים לחודש',
             'תמיכה בוואטסאפ',
@@ -128,7 +128,7 @@ const CUSTOMER_PLANS = [
         paid_flow: 'Morning שולח Webhook → נוצר רשומת pro_lead → מגיעה אליך הודעת WhatsApp עם פרטי הלקוח.',
         admin_actions: [
             '📞 צור קשר עם הלקוח תוך שעה',
-            '🌐 הגדר לו תת-דומיין ב-sitenest.site',
+            '🌐 הגדר לו תת-דומיין ב-tazo-web.com',
             '🤖 הפעל את צינור ה-AI ב"עסקים" → "בנה אתר"',
             '✅ אשר את האתר ושלח קישור פעיל',
             '📅 תזמן 2 תיקונים לחודש בלוח השנה',
@@ -204,11 +204,11 @@ const FAQ_ITEMS = [
     },
     {
         q: 'מה ההבדל בין Auto (39 ₪) ל-Starter (299 ₪)?',
-        a: 'Auto = הכל אוטומטי, דומיין xxx.sitenest.site, ללא תמיכה אישית. Starter = אתה מלווה את הלקוח ידנית, הוא מקבל 2 תיקונים לחודש + תמיכה ב-WhatsApp + עדכון תכנים חודשי.',
+        a: 'Auto = הכל אוטומטי, דומיין xxx.tazo-web.com, ללא תמיכה אישית. Starter = אתה מלווה את הלקוח ידנית, הוא מקבל 2 תיקונים לחודש + תמיכה ב-WhatsApp + עדכון תכנים חודשי.',
     },
     {
         q: 'האם הלקוח מקבל כתובת מותאמת אישית?',
-        a: 'Auto ו-Starter: xxx.sitenest.site (subdomain חינמי). Growth ו-Pro: דומיין עצמאי (.co.il / .com) שנרכש דרך Hostinger API.',
+        a: 'Auto ו-Starter: xxx.tazo-web.com (subdomain חינמי). Growth ו-Pro: דומיין עצמאי (.co.il / .com) שנרכש דרך Hostinger API.',
     },
     {
         q: 'מה זה CEO Agent?',
@@ -228,7 +228,7 @@ const FAQ_ITEMS = [
     },
     {
         q: 'האם יש תמיכה ב-SSL בכל הכתובות?',
-        a: 'כן. כל *.sitenest.site מכוסה ב-Wildcard SSL עם חידוש אוטומטי (Let\'s Encrypt + Hostinger API).',
+        a: 'כן. כל *.tazo-web.com מכוסה ב-Wildcard SSL עם חידוש אוטומטי (Let\'s Encrypt + Hostinger API).',
     },
 ];
 
@@ -405,7 +405,7 @@ export function HelpPanel() {
                                     borderRight: '4px solid #10b981',
                                 }}>
                                     <div style={{ fontWeight: 700, fontSize: 14, color: '#065f46', marginBottom: 4 }}>📥 מסלול B — נכנס (לקוח מזדמן · Auto 39 ₪)</div>
-                                    <div style={{ fontSize: 13, color: '#047857' }}>לקוח נכנס ל-sitenest.site → ממלא טופס → משלם ← הכל אוטומטי</div>
+                                    <div style={{ fontSize: 13, color: '#047857' }}>לקוח נכנס ל-tazo-web.com → ממלא טופס → משלם ← הכל אוטומטי</div>
                                 </div>
                                 {WORKFLOW_STEPS_INBOUND.map((phase, pi) => (
                                     <div key={pi} style={{ marginBottom: 20 }}>
@@ -586,7 +586,7 @@ export function HelpPanel() {
                                 <div style={{ marginTop: 20, padding: 16, background: '#f0fdf4', borderRadius: 12, border: '1px solid #bbf7d0' }}>
                                     <div style={{ fontSize: 14, fontWeight: 700, color: '#15803d', marginBottom: 4 }}>💬 לא מצאת תשובה?</div>
                                     <div style={{ fontSize: 13, color: '#166534' }}>
-                                        פנה למנכ"ל AI דרך <strong>מרכז מנכ"ל</strong> בתפריט הצדדי, או שלח מייל ל-admin@sitenest.site
+                                        פנה למנכ"ל AI דרך <strong>מרכז מנכ"ל</strong> בתפריט הצדדי, או שלח מייל ל-admin@tazo-web.com
                                     </div>
                                 </div>
                             </div>
@@ -601,7 +601,7 @@ export function HelpPanel() {
                         color: 'var(--text-muted, #9ca3af)',
                         textAlign: 'center',
                     }}>
-                        SiteNest Admin Panel · v27 · כל הזכויות שמורות
+                        tazo-web Admin Panel · v27 · כל הזכויות שמורות
                     </div>
                 </div>
             )}

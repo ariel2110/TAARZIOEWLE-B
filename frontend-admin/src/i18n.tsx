@@ -86,7 +86,7 @@ const T = {
     analyze: { he: 'נתח', en: 'Analyze' },
     preference_candidate: { he: 'מועמד להעדפה', en: 'Preference candidate' },
     // ── Login ─────────────────────────────────────────────────────────
-    admin_title: { he: 'SiteNest Admin', en: 'SiteNest Admin' },
+    admin_title: { he: 'tazo-web Admin', en: 'tazo-web Admin' },
     // ── Lang toggle ───────────────────────────────────────────────────
     switch_lang: { he: 'English', en: 'עברית' },
 } as const;

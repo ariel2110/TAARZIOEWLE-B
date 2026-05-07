@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip as ReTooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Card, SectionTitle, InfoTip } from '../components/ui';
 import { useLang } from '../i18n';
-import { Digest, Health, Snapshot, Business, Approval, getSnapshot, getDigest, getHealth, getBusinesses, getApprovals, Notification, getNotifications } from '../services/queries';
+import { Digest, Health, Snapshot, Business, Approval, getSnapshot, getDigest, getHealth, getBusinesses, getApprovals, Notification, getNotifications, DomainApprovalItem, getDomainApprovals } from '../services/queries';
 
 const CHART_COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#3b82f6', '#ef4444', '#8b5cf6'];
 
@@ -22,13 +22,14 @@ export default function OverviewPage() {
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [approvals, setApprovals] = useState<Approval[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [domainApprovals, setDomainApprovals] = useState<DomainApprovalItem[]>([]);
   const [loading, setLoading] = useState(true);
   const { t } = useLang();
 
   useEffect(() => {
     setLoading(true);
-    Promise.all([getSnapshot(), getDigest(), getHealth(), getBusinesses(), getApprovals(), getNotifications(10)]).then(([s, d, h, b, a, n]) => {
-      setSnapshot(s); setDigest(d); setHealth(h); setBusinesses(b); setApprovals(a); setNotifications(n);
+    Promise.all([getSnapshot(), getDigest(), getHealth(), getBusinesses(), getApprovals(), getNotifications(10), getDomainApprovals()]).then(([s, d, h, b, a, n, da]) => {
+      setSnapshot(s); setDigest(d); setHealth(h); setBusinesses(b); setApprovals(a); setNotifications(n); setDomainApprovals(da);
     }).catch(console.error).finally(() => setLoading(false));
   }, []);
 
@@ -36,6 +37,40 @@ export default function OverviewPage() {
 
   return (
     <div className="grid">
+      {/* ── Domain Purchase Approval Alert ────────── */}
+      {domainApprovals.filter(d => d.approval_status === 'pending_admin').length > 0 && (
+        <div style={{
+          background: '#fee2e2',
+          border: '2px solid #ef4444',
+          borderRadius: 12,
+          padding: '16px 20px',
+          marginBottom: 4,
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+            <div>
+              <span style={{ fontSize: 20, marginLeft: 8 }}>🚨</span>
+              <strong style={{ fontSize: 15, color: '#991b1b' }}>
+                {domainApprovals.filter(d => d.approval_status === 'pending_admin').length} דומיין ממתין לאישור רכישה
+              </strong>
+            </div>
+            <a href="#/domain-approvals" style={{ background: '#ef4444', color: '#fff', borderRadius: 8, padding: '6px 14px', fontWeight: 700, fontSize: 13, textDecoration: 'none' }}>
+              לאישור ←
+            </a>
+          </div>
+          <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {domainApprovals.filter(d => d.approval_status === 'pending_admin').map(d => (
+              <div key={d.intake_id} style={{ fontSize: 13, color: '#b91c1c', background: '#fecaca', borderRadius: 6, padding: '4px 10px', display: 'flex', justifyContent: 'space-between' }}>
+                <span><strong>{d.domain}</strong> — {d.business_name}</span>
+                <span style={{ fontWeight: 700 }}>${d.price_usd?.toFixed(2)}/שנה ⚠️</span>
+              </div>
+            ))}
+          </div>
+          <p style={{ fontSize: 12, color: '#dc2626', marginTop: 8, marginBottom: 0 }}>
+            💡 המלצה: עבור לעמוד "אישורי דומיין", בדוק את המחיר ואשר/דחה — המערכת תמשיך אוטומטית לאחר אישורך.
+          </p>
+        </div>
+      )}
+
       {/* ── KPI Cards ─────────────────────────────── */}
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>

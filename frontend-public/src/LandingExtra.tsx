@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 interface Props {
-    onStartIntake: () => void;
+    onStartIntake: (planName?: string) => void;
 }
 
 const FEATURES = [
@@ -26,7 +26,7 @@ const PLANS = [
         recommended: false,
         features: [
             'אתר אחד מקצועי',
-            'דומיין בחירתך (xxx.sitenest.site)',
+            'דומיין בחירתך (xxx.tazo-web.com)',
             'SSL + אחסון מנוהל',
             '2 תיקונים לחודש',
             'תמיכה בוואטסאפ',
@@ -80,11 +80,19 @@ const PLANS = [
 const FAQS = [
     {
         q: 'כמה זמן לוקח לבנות את האתר שלי?',
-        a: 'תהליך הבנייה האוטומטית לוקח 3–5 דקות. לאחר שתמלא את טופס הפרטים, תקבל דמו של האתר שלך תוך שעות ספורות. האתר הסופי מוכן תוך 24–48 שעות.',
+        a: 'תמלא טופס קצר → ה-AI בונה את האתר תוך 3–5 דקות → תראה דמו ותאשר → תקבל קישור תשלום והאתר עולה לאוויר. האתר הסופי מוכן תוך 24–48 שעות לאחר האישור.',
+    },
+    {
+        q: 'מה קורה אחרי שאני רואה ומאשר את הדמו?',
+        a: 'לאחר שתאשר את הדמו תקבל קישור תשלום — תבחר דומיין, תשלם, והאתר עולה לאוויר. אפשר לבקש עד 3 תיקונים חינם לפני התשלום.',
+    },
+    {
+        q: 'מה ההבדל בין AI בלבד (39 ₪) לתוכניות עם ליווי?',
+        a: 'תוכנית ה-AI בלבד (39 ₪/חודש) בונה לך אתר אוטומטית — ללא ליווי אנושי. התוכניות הכוללות ליווי (מתחיל 299₪, צמיחה 699₪) כוללות תמיכה צמודה של צוות אנושי לאורך כל הדרך: מהבנייה, דרך השינויים, ועד שהאתר עולה לאוויר בזמן הקצוב.',
     },
     {
         q: 'מה אני מקבל בתוכנית ה-Starter?',
-        a: 'אתר מקצועי מלא הכולל: עמוד ראשי, שירותים, גלריה, ביקורות גוגל, צור קשר, כפתורי וואטסאפ ואינסטגרם. אחסון ו-SSL ללא הגבלה. 2 תיקונים חינם לחודש.',
+        a: 'אתר מקצועי מלא הכולל: עמוד ראשי, שירותים, גלריה, ביקורות גוגל, צור קשר, כפתורי וואטסאפ ואינסטגרם. אחסון ו-SSL ללא הגבלה. 2 תיקונים חינם לחודש. בניגוד ל-AI בלבד — כוללת ליווי אנושי צמוד לכל אורך הדרך.',
     },
     {
         q: 'האם אני צריך ידע טכני?',
@@ -112,7 +120,7 @@ const FAQS = [
     },
     {
         q: 'אני עסק קטן מאוד, זה מתאים לי?',
-        a: 'בדיוק לזה בנינו את SiteNest. אנחנו עובדים עם מספרות, מסעדות, מאפיות, קלינאים, מורים פרטיים ועוד — כולם עסקים קטנים שמקבלים אתר מקצועי שנראה כמו של חברה גדולה.',
+        a: 'בדיוק לזה בנינו את tazo-web. אנחנו עובדים עם מספרות, מסעדות, מאפיות, קלינאים, מורים פרטיים ועוד — כולם עסקים קטנים שמקבלים אתר מקצועי שנראה כמו של חברה גדולה.',
     },
     {
         q: 'מה אם אני לא מרוצה מהתוצאה?',
@@ -134,7 +142,7 @@ export default function LandingExtra({ onStartIntake }: Props) {
                     <div className="le-section-badge">✦ מה כלול</div>
                     <h2 className="le-heading">אתר אחד שעושה הכל</h2>
                     <p className="le-subheading">
-                        כל לקוח מקבל אתר מקצועי מלא — לא תבנית, לא דמו. אתר עובד, מוכן לגוגל, מוכן ললקוחות שלך.
+                        כל לקוח מקבל אתר מקצועי מלא — לא תבנית, לא דמו. אתר עובד, מוכן לגוגל, מוכן ללקוחות שלך.
                     </p>
                     <div className="le-features-grid">
                         {FEATURES.map((f, i) => (
@@ -183,7 +191,7 @@ export default function LandingExtra({ onStartIntake }: Props) {
                                 {plan.ctaAction === 'whatsapp' ? (
                                     <a
                                         className="le-plan-btn"
-                                        href={`https://wa.me/972546363350?text=${encodeURIComponent('היי! אני מעוניין בתוכנית ה-Pro של SiteNest. אשמח לשמוע פרטים.')}`}
+                                        href={`https://wa.me/972546363350?text=${encodeURIComponent('היי! אני מעוניין בתוכנית ה-Pro של tazo-web. אשמח לשמוע פרטים.')}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                     >
@@ -192,7 +200,7 @@ export default function LandingExtra({ onStartIntake }: Props) {
                                 ) : (
                                     <button
                                         className="le-plan-btn"
-                                        onClick={onStartIntake}
+                                        onClick={() => onStartIntake(plan.nameHe)}
                                     >
                                         {plan.cta}
                                     </button>
@@ -261,14 +269,14 @@ export default function LandingExtra({ onStartIntake }: Props) {
                 <div className="le-container le-cta-content">
                     <h2 className="le-cta-heading">מוכן לקבל אתר מקצועי?</h2>
                     <p className="le-cta-sub">
-                        מלא טופס קצר עם פרטי העסק שלך — ה-AI יבנה לך אתר תוך שעות.
+                        מלא טופס קצר עם פרטי העסק שלך — ה-AI יבנה לך אתר תוך דקות.
                     </p>
                     <div className="le-cta-buttons">
-                        <button className="le-cta-btn-primary" onClick={onStartIntake}>
+                        <button className="le-cta-btn-primary" onClick={() => onStartIntake()}>
                             ✦ בנה את האתר שלי עכשיו
                         </button>
                         <a
-                            href={`https://wa.me/972546363350?text=${encodeURIComponent('היי! אני רוצה לשמוע עוד על בניית אתר עם SiteNest')}`}
+                            href={`https://wa.me/972546363350?text=${encodeURIComponent('היי! אני רוצה לשמוע עוד על בניית אתר עם tazo-web')}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="le-cta-btn-wa"
@@ -285,16 +293,16 @@ export default function LandingExtra({ onStartIntake }: Props) {
             {/* ══════════════════════════ FOOTER ═══════════════════════════════ */}
             <footer className="le-footer">
                 <div className="le-container">
-                    <div className="le-footer-logo">SiteNest ✦</div>
+                    <div className="le-footer-logo">tazo-web ✦</div>
                     <p className="le-footer-tagline">בניית אתרים מבוססת AI לעסקים קטנים</p>
                     <div className="le-footer-links">
-                        <a href="https://admin.sitenest.site" target="_blank" rel="noopener noreferrer">כניסה למנהל</a>
+                        <a href="https://admin.tazo-web.com" target="_blank" rel="noopener noreferrer">כניסה למנהל</a>
                         <span>·</span>
                         <a href={`https://wa.me/972546363350`} target="_blank" rel="noopener noreferrer">וואטסאפ</a>
                         <span>·</span>
-                        <a href="mailto:admin@sitenest.site">מייל</a>
+                        <a href="mailto:admin@tazo-web.com">מייל</a>
                     </div>
-                    <p className="le-footer-copy">© 2026 SiteNest. כל הזכויות שמורות.</p>
+                    <p className="le-footer-copy">© 2026 tazo-web. כל הזכויות שמורות.</p>
                 </div>
             </footer>
         </div>

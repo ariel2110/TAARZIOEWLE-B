@@ -35,6 +35,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { to: '/draft-sites', icon: '📝', label: 'דראפטים', tip: 'אתרים שנוצרו ומחכים לתשלום — תצוגה מקדימה ועדכון' },
       { to: '/payments', icon: '💳', label: 'תשלומים', tip: 'עקוב אחר תשלומים ממתינים ואשר הפעלה של אתרים' },
+      { to: '/domain-approvals', icon: '🌐', label: 'אישורי דומיין', tip: 'אשר/דחה רכישת דומיין — מניעת הוצאות מעל $3 ללא אישור' },
     ],
   },
   {
@@ -81,7 +82,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         {/* Logo + close button (mobile) */}
         <div style={{ padding: '4px 0 16px', borderBottom: '1px solid var(--border)', marginBottom: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
-            <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: -0.5 }}>🏙️ SiteNest</div>
+            <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: -0.5 }}>� tazo-web</div>
             <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>לוח בקרה · v27</div>
           </div>
           <button
@@ -115,7 +116,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 {(group.items.length === 1 || isOpen) && (
                   <div className={`nav-group-items${group.items.length > 1 ? ' indented' : ''}`}>
                     {group.items.map(item => (
-                      <Tooltip key={item.to} text={item.tip} position="right">
+                      <Tooltip key={item.to} text={item.tip} position={lang === 'he' ? 'left' : 'right'}>
                         <NavLink
                           to={item.to}
                           end={item.end}
@@ -187,7 +188,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           >
             <span /><span /><span />
           </button>
-          <span style={{ fontWeight: 700, fontSize: 18 }}>🏙️ SiteNest</span>
+          <span style={{ fontWeight: 700, fontSize: 18 }}>� tazo-web</span>
           <span />
         </div>
         {children}

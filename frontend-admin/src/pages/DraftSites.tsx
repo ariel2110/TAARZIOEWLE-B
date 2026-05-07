@@ -19,9 +19,15 @@ const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/ap
     .replace(/\/api\/v\d+\/?$/, '');
 
 function previewUrl(draft: DraftSite): string {
-    if (!draft.preview_url) return '';
-    // turn /static/... into absolute URL
-    return draft.preview_url.startsWith('http') ? draft.preview_url : `${API_BASE}${draft.preview_url}`;
+    if (draft.preview_url) {
+        // turn /static/... into absolute URL using the main domain (has /static/ proxy)
+        return draft.preview_url.startsWith('http') ? draft.preview_url : `${API_BASE}${draft.preview_url}`;
+    }
+    // Fallback: subdomain URL works via nginx wildcard + backend middleware
+    if (draft.status === 'published_preview' || draft.status === 'preview_ready') {
+        return `https://draft-${draft.id}.tazo-web.com`;
+    }
+    return '';
 }
 
 function statusLabel(status: string) {
@@ -45,6 +51,8 @@ export default function DraftSitesPage() {
     // Per-business regeneration note (shown inline when expanding)
     const [noteOpen, setNoteOpen] = useState<Record<number, boolean>>({});
     const [notes, setNotes] = useState<Record<number, string>>({});;
+    // Per-business inline preview toggle
+    const [previewOpen, setPreviewOpen] = useState<Record<number, boolean>>({});
 
     const load = useCallback(() => {
         Promise.all([getBusinesses(), getDraftSites(0, 500)]).then(([biz, dr]) => {
@@ -61,7 +69,12 @@ export default function DraftSitesPage() {
         return () => { Object.values(intervals).forEach(clearInterval); };
     }, []);
 
-    const draftByBiz = (bizId: number) => drafts.find(d => d.business_id === bizId);
+    // Prefer the draft that has already been generated (has preview_url or status != 'draft'),
+    // so a newer empty draft doesn't hide the published one.
+    const draftByBiz = (bizId: number) => {
+        const all = drafts.filter(d => d.business_id === bizId);
+        return all.find(d => d.preview_url) || all.find(d => d.status !== 'draft') || all[0];
+    };
 
     const setLoaderFor = (bizId: number, val: boolean) =>
         setLoading(prev => ({ ...prev, [bizId]: val }));
@@ -224,11 +237,21 @@ export default function DraftSitesPage() {
                                 ) : (
                                     <>
                                         {previewUrl(draft) && (
-                                            <Tooltip text="פתח תצוגה מקדימה של האתר">
-                                                <a href={previewUrl(draft)} target="_blank" rel="noopener noreferrer">
-                                                    <Button>👁️ צפה באתר</Button>
-                                                </a>
-                                            </Tooltip>
+                                            <>
+                                                <Tooltip text="פתח את האתר המלא בטאב חדש">
+                                                    <a href={previewUrl(draft)} target="_blank" rel="noopener noreferrer">
+                                                        <Button style={{ background: '#0f172a', color: '#fff' }}>🔗 פתח בטאב חדש</Button>
+                                                    </a>
+                                                </Tooltip>
+                                                <Tooltip text="הצג / הסתר תצוגה מקדימה מוטבעת">
+                                                    <Button
+                                                        onClick={() => setPreviewOpen(prev => ({ ...prev, [biz.id]: !prev[biz.id] }))}
+                                                        style={{ background: previewOpen[biz.id] ? '#dbeafe' : '#f0f9ff', color: '#1d4ed8', border: '1px solid #3b82f6' }}
+                                                    >
+                                                        {previewOpen[biz.id] ? '🙈 הסתר תצוגה' : '👁️ צפה באתר'}
+                                                    </Button>
+                                                </Tooltip>
+                                            </>
                                         )}
                                         <Tooltip text="בנה מחדש ב-background — ה-AI יחדש את התוכן">
                                             <Button onClick={() => handleAsyncGenerate(biz.id)} disabled={busy}>
@@ -289,6 +312,41 @@ export default function DraftSitesPage() {
                                             ✕ ביטול
                                         </button>
                                     </div>
+                                </div>
+                            )}
+
+                            {/* ── Inline iframe preview panel ───────────────── */}
+                            {draft && previewOpen[biz.id] && previewUrl(draft) && (
+                                <div style={{ width: '100%', marginTop: 10, borderRadius: 12, overflow: 'hidden', border: '2px solid #3b82f6', boxShadow: '0 8px 32px rgba(59,130,246,0.15)' }}>
+                                    {/* Header bar */}
+                                    <div style={{ background: '#0f172a', padding: '8px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                                        <span style={{ fontSize: 12, color: '#94a3b8', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+                                            🌐 {previewUrl(draft)}
+                                        </span>
+                                        <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                                            <a
+                                                href={previewUrl(draft)}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                style={{ background: '#1e40af', color: '#fff', textDecoration: 'none', borderRadius: 6, padding: '3px 10px', fontSize: 11, fontWeight: 600 }}
+                                            >
+                                                ↗ פתח בטאב
+                                            </a>
+                                            <button
+                                                onClick={() => setPreviewOpen(prev => ({ ...prev, [biz.id]: false }))}
+                                                style={{ background: '#374151', border: 'none', color: '#9ca3af', cursor: 'pointer', borderRadius: 6, padding: '3px 8px', fontSize: 11 }}
+                                            >
+                                                ✕
+                                            </button>
+                                        </div>
+                                    </div>
+                                    {/* iframe */}
+                                    <iframe
+                                        src={previewUrl(draft)}
+                                        style={{ width: '100%', height: 700, border: 'none', display: 'block', background: '#fff' }}
+                                        title={`תצוגה מקדימה: ${biz.name}`}
+                                        sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+                                    />
                                 </div>
                             )}
                         </div>

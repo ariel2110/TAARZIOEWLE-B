@@ -8,3 +8,4 @@ build/
 .idea/
 *.sqlite3
 *.db
+.env.production

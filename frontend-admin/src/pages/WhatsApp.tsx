@@ -203,7 +203,7 @@ export default function WhatsAppPage() {
               )}
               <div>
                 <div style={{ fontWeight: 700, fontSize: 17 }}>
-                  {waStatus?.profile_name || 'SiteNest WhatsApp'}
+                  {waStatus?.profile_name || 'tazo-web WhatsApp'}
                   <StatusDot status={waStatus?.status ?? 'unknown'} />
                 </div>
                 <div style={{ color: '#9ca3af', fontSize: 13, marginTop: 2 }}>

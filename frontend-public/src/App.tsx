@@ -18,9 +18,11 @@ export default function App() {
     if (hash.startsWith('#/status/')) return hash.replace('#/status/', '');
     return '';
   });
+  const [selectedPlan, setSelectedPlan] = useState<string | undefined>(undefined);
 
-  function goToIntake() {
+  function goToIntake(planName?: string) {
     window.location.hash = '#/start';
+    setSelectedPlan(planName);
     setPage('intake');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -39,11 +41,11 @@ export default function App() {
   }
 
   if (page === 'status') {
-    return <SubmissionStatus token={statusToken} onBack={goHome} />;
+    return <SubmissionStatus token={statusToken} onBack={goHome} selectedPlan={selectedPlan} />;
   }
 
   if (page === 'intake') {
-    return <IntakeForm onSubmitted={goToStatus} onBack={goHome} />;
+    return <IntakeForm onSubmitted={goToStatus} onBack={goHome} selectedPlan={selectedPlan} />;
   }
 
   return (

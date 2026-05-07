@@ -22,7 +22,7 @@ export default function LoginPage() {
                 <Card>
                     <div style={{ textAlign: 'center', marginBottom: 24 }}>
                         <div style={{ fontSize: 40 }}>🏢</div>
-                        <SectionTitle>SiteNest Admin</SectionTitle>
+                        <SectionTitle>tazo-web Admin</SectionTitle>
                         <p style={{ color: '#666', marginTop: 4 }}>כניסה לממשק ניהול</p>
                     </div>
                     {error && <p style={{ color: '#c00', marginBottom: 16, textAlign: 'center' }}>{error}</p>}
@@ -30,7 +30,6 @@ export default function LoginPage() {
                         <GoogleLogin
                             onSuccess={handleSuccess}
                             onError={() => setError('Google login נכשל. נסה שוב.')}
-                            useOneTap
                         />
                     </div>
                 </Card>

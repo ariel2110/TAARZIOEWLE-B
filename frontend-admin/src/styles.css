@@ -48,14 +48,27 @@ button {
 .app-shell {
   display: grid;
   grid-template-columns: 260px 1fr;
+  grid-template-areas: "sidebar main";
   min-height: 100vh
 }
 
+/* RTL (Hebrew): sidebar explicitly on the right */
+.app-shell[dir="rtl"] {
+  grid-template-columns: 1fr 260px;
+  grid-template-areas: "main sidebar";
+}
+
 .sidebar {
+  grid-area: sidebar;
   padding: 16px;
-  border-right: 1px solid var(--border);
+  border-inline-end: 1px solid var(--border);
   background: var(--bg-sidebar);
-  transition: background 0.2s
+  overflow-y: auto;
+  transition: background 0.2s;
+  /* Fixed height so sidebar scrolls independently */
+  position: sticky;
+  top: 0;
+  height: 100vh
 }
 
 .sidebar h1 {
@@ -81,9 +94,11 @@ button {
 }
 
 .main {
+  grid-area: main;
   padding: 24px;
   background: var(--bg);
   min-height: 100vh;
+  min-width: 0; /* prevent grid blowout */
   transition: background 0.2s
 }
 
@@ -126,29 +141,72 @@ button {
   gap: 16px
 }
 
-@media(max-width:900px) {
+/* ── Large screens (TV / wide monitor ≥ 1600px) ───────────────────────── */
+@media(min-width:1600px) {
   .app-shell {
+    grid-template-columns: 300px 1fr;
+  }
+  .app-shell[dir="rtl"] {
+    grid-template-columns: 1fr 300px;
+  }
+  .main {
+    padding: 32px 40px;
+  }
+}
+
+/* ── Tablet (900px – 1600px): slightly narrower sidebar ──────────────── */
+@media(max-width:1100px) and (min-width:901px) {
+  .app-shell {
+    grid-template-columns: 220px 1fr;
+  }
+  .app-shell[dir="rtl"] {
+    grid-template-columns: 1fr 220px;
+  }
+}
+
+/* ── Mobile (≤ 900px): single column, sidebar as overlay ──────────────── */
+@media(max-width:900px) {
+  .app-shell,
+  .app-shell[dir="rtl"] {
     grid-template-columns: 1fr;
+    grid-template-areas: "main";
     grid-template-rows: auto 1fr;
   }
 
-  /* Sidebar hidden off-screen on mobile */
+  /* Sidebar hidden off-screen */
   .sidebar {
     position: fixed;
     top: 0;
-    right: 0;
-    width: 280px;
+    width: min(280px, 85vw);
     height: 100vh;
     overflow-y: auto;
     z-index: 300;
-    box-shadow: -4px 0 20px rgba(0, 0, 0, .18);
-    transform: translateX(100%);
     transition: transform 0.25s ease;
-    border-right: none;
+    border-inline-end: none;
     border-bottom: none;
   }
 
-  .sidebar.sidebar-open {
+  /* RTL: slides in from the right */
+  .app-shell[dir="rtl"] .sidebar {
+    right: 0;
+    left: auto;
+    box-shadow: -4px 0 20px rgba(0, 0, 0, .22);
+    transform: translateX(100%);
+  }
+  .app-shell[dir="rtl"] .sidebar.sidebar-open {
+    transform: translateX(0);
+  }
+
+  /* LTR: slides in from the left */
+  .app-shell[dir="ltr"] .sidebar,
+  .app-shell:not([dir]) .sidebar {
+    left: 0;
+    right: auto;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, .22);
+    transform: translateX(-100%);
+  }
+  .app-shell[dir="ltr"] .sidebar.sidebar-open,
+  .app-shell:not([dir]) .sidebar.sidebar-open {
     transform: translateX(0);
   }
 
@@ -166,6 +224,26 @@ button {
 
   .main {
     padding: 12px;
+  }
+
+  /* Smaller font sizes on very small screens */
+  .card {
+    border-radius: 12px;
+    padding: 12px;
+  }
+
+  .cards {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* ── Very small phones (< 400px) ──────────────────────────────────────── */
+@media(max-width:400px) {
+  .main {
+    padding: 8px;
+  }
+  .cards {
+    grid-template-columns: 1fr;
   }
 }
 

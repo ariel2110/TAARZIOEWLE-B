@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import './styles.css';
 
-const API = import.meta.env.VITE_API_BASE_URL || 'https://api.sitenest.site/api/v1';
+const API = import.meta.env.VITE_API_BASE_URL || 'https://api.tazo-web.com/api/v1';
 
 // ── Types ──────────────────────────────────────────────────────────
 interface Me {
@@ -74,7 +74,7 @@ function LoginPage({ onLogin }: { onLogin: (token: string, me: Me) => void }) {
       <div className="login-card">
         <div className="login-logo">🏪</div>
         <div className="login-title">פורטל לקוחות</div>
-        <div className="login-subtitle">SiteNest — כניסה לניהול האתר שלך</div>
+        <div className="login-subtitle">tazo-web — כניסה לניהול האתר שלך</div>
         {err && <div className="alert alert-error" style={{ marginBottom: 16 }}>{err}</div>}
         <form onSubmit={submit}>
           <label>מספר טלפון</label>
@@ -460,7 +460,7 @@ function AIEditorTab({ token }: { token: string }) {
         {siteContent?.site_preview_url && (
           <a
             className="ai-preview-link"
-            href={`https://api.sitenest.site${siteContent.site_preview_url}`}
+            href={`https://api.tazo-web.com${siteContent.site_preview_url}`}
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -604,7 +604,7 @@ export default function App() {
   return (
     <div className="app-layout">
       <header className="topbar">
-        <div className="topbar-brand">🏪 SiteNest</div>
+        <div className="topbar-brand">� tazo-web</div>
         <div className="topbar-right">
           <span className="user-pill">{me.contact_name || me.phone}</span>
           {me.package_name && <span className="pkg-badge">{me.package_name}</span>}

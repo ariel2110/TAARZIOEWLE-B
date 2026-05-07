@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-const API = import.meta.env.VITE_API_BASE_URL || 'https://api.sitenest.site/api/v1';
+const API = import.meta.env.VITE_API_BASE_URL || 'https://api.tazo-web.com/api/v1';
 const WA = '972546363350';
 const MAX_CORRECTIONS = 3;
 
@@ -31,6 +31,7 @@ interface IntakeStatus {
 interface Props {
     token: string;
     onBack: () => void;
+    selectedPlan?: string;
 }
 
 const STATUS_LABELS: Record<string, { label: string; color: string; icon: string }> = {
@@ -41,7 +42,7 @@ const STATUS_LABELS: Record<string, { label: string; color: string; icon: string
     cancelled: { label: 'בוטל', color: '#ef4444', icon: '❌' },
 };
 
-export default function SubmissionStatus({ token, onBack }: Props) {
+export default function SubmissionStatus({ token, onBack, selectedPlan }: Props) {
     const [data, setData] = useState<IntakeStatus | null>(null);
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState('');
@@ -128,7 +129,7 @@ export default function SubmissionStatus({ token, onBack }: Props) {
 
     const waMessage = data
         ? encodeURIComponent(`היי! שלחתי בקשה לאתר עבור "${data.business_name}" ואני צריך עזרה`)
-        : encodeURIComponent('היי! יש לי שאלה על הבקשה שלי ב-SiteNest');
+        : encodeURIComponent('היי! יש לי שאלה על הבקשה שלי ב-tazo-web');
 
     // ── Loading ──
     if (loading) {
@@ -213,7 +214,7 @@ export default function SubmissionStatus({ token, onBack }: Props) {
                 <button className="if-back-btn" onClick={onBack}>
                     ← דף הבית
                 </button>
-                <div className="if-header-logo">SiteNest ✦</div>
+                <div className="if-header-logo">tazo-web ✦</div>
             </div>
 
             <div className="ss-wrap">
@@ -264,10 +265,22 @@ export default function SubmissionStatus({ token, onBack }: Props) {
                         <div className="ss-checkout-header">
                             <span className="ss-checkout-icon">🚀</span>
                             <div>
-                                <h2 className="ss-checkout-title">האתר שלך מוכן — הפעל עכשיו!</h2>
+                                <h2 className="ss-checkout-title">ראית ואישרת את הדמו — עכשיו הפעל את האתר!</h2>
                                 <p className="ss-checkout-sub">בחר דומיין ותפעיל את האתר שלך בדקות ספורות</p>
                             </div>
                         </div>
+
+                        {selectedPlan ? (
+                            <div className="ss-plan-info ss-plan-info--paid">
+                                <span>✦ תוכנית {selectedPlan}</span>
+                                <span className="ss-plan-info-note"> · כולל ליווי צמוד לאורך כל הדרך</span>
+                            </div>
+                        ) : (
+                            <div className="ss-plan-info ss-plan-info--ai">
+                                <span>🤖 AI בלבד — 39 ₪/חודש</span>
+                                <span className="ss-plan-info-note"> · בנייה אוטומטית ללא ליווי אנושי</span>
+                            </div>
+                        )}
 
                         <div className="ss-checkout-features">
                             <div className="ss-checkout-feature">🌐 <span>דומיין .co.il / .com</span></div>
@@ -337,7 +350,7 @@ export default function SubmissionStatus({ token, onBack }: Props) {
                             {activeVariant === 1 && (
                                 <iframe
                                     key="v1"
-                                    src={`https://api.sitenest.site${data.generated_preview_url}`}
+                                    src={`https://api.tazo-web.com${data.generated_preview_url}`}
                                     className="ss-preview-iframe"
                                     title="עיצוב 1"
                                     sandbox="allow-same-origin allow-scripts"
@@ -346,7 +359,7 @@ export default function SubmissionStatus({ token, onBack }: Props) {
                             {activeVariant === 2 && data.generated_preview_url_v2 && (
                                 <iframe
                                     key="v2"
-                                    src={`https://api.sitenest.site${data.generated_preview_url_v2}`}
+                                    src={`https://api.tazo-web.com${data.generated_preview_url_v2}`}
                                     className="ss-preview-iframe"
                                     title="עיצוב 2"
                                     sandbox="allow-same-origin allow-scripts"
@@ -361,7 +374,7 @@ export default function SubmissionStatus({ token, onBack }: Props) {
                         </div>
                         <div className="ss-preview-links">
                             <a
-                                href={`https://api.sitenest.site${data.generated_preview_url}`}
+                                href={`https://api.tazo-web.com${data.generated_preview_url}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="ss-preview-open-btn"
@@ -370,7 +383,7 @@ export default function SubmissionStatus({ token, onBack }: Props) {
                             </a>
                             {data.generated_preview_url_v2 && (
                                 <a
-                                    href={`https://api.sitenest.site${data.generated_preview_url_v2}`}
+                                    href={`https://api.tazo-web.com${data.generated_preview_url_v2}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="ss-preview-open-btn ss-preview-open-v2"
@@ -559,7 +572,7 @@ export default function SubmissionStatus({ token, onBack }: Props) {
                             {data.image_urls.map((url, i) => (
                                 <div key={i} className="if-image-thumb">
                                     <img
-                                        src={`https://api.sitenest.site${url}`}
+                                        src={`https://api.tazo-web.com${url}`}
                                         alt={`תמונה ${i + 1}`}
                                         loading="lazy"
                                     />

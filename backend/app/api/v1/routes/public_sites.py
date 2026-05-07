@@ -32,7 +32,7 @@ def _render_demo_html(demo: DemoSite) -> str:
 <head>
   <meta charset=\"UTF-8\" />
   <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />
-  <title>{business_name} | SiteNest Demo</title>
+  <title>{business_name} | tazo-web Demo</title>
   <script src=\"https://cdn.tailwindcss.com\"></script>
   <link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">
   <link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>
@@ -42,23 +42,23 @@ def _render_demo_html(demo: DemoSite) -> str:
 <body class=\"bg-slate-950 text-white\">
   <section class=\"min-h-screen bg-gradient-to-b from-slate-900 to-slate-950\">
     <div class=\"max-w-5xl mx-auto px-6 py-14\">
-      <div class=\"inline-flex bg-amber-400 text-slate-900 px-3 py-1 rounded-full text-sm font-bold\">SiteNest Demo</div>
+      <div class=\"inline-flex bg-amber-400 text-slate-900 px-3 py-1 rounded-full text-sm font-bold\">tazo-web Demo</div>
       <h1 class=\"text-4xl md:text-6xl font-extrabold mt-5 leading-tight\">{business_name}</h1>
       <p class=\"text-xl text-slate-300 mt-4\">{tagline}</p>
       <div class=\"mt-8 flex flex-wrap gap-3\">
         <span class=\"bg-white/10 rounded-full px-4 py-2\">⭐ {rating} ({reviews_count} ביקורות)</span>
-        {f'<span class=\"bg-white/10 rounded-full px-4 py-2\">📍 {city}</span>' if city else ''}
-        {f'<span class=\"bg-white/10 rounded-full px-4 py-2\">📞 {phone}</span>' if phone else ''}
+        {f'<span class="bg-white/10 rounded-full px-4 py-2">📍 {city}</span>' if city else ''}
+        {f'<span class="bg-white/10 rounded-full px-4 py-2">📞 {phone}</span>' if phone else ''}
       </div>
       <div class=\"mt-8 bg-white text-slate-900 rounded-2xl p-6 shadow-2xl\">
         <div class=\"text-xl font-bold mb-2\">מה לקוחות אומרים</div>
         <p class=\"leading-8\">\"{top_review}\"</p>
       </div>
       <div class=\"mt-10 flex flex-wrap gap-3\">
-        {f'<a href=\"tel:{phone}\" class=\"bg-emerald-500 hover:bg-emerald-400 text-slate-900 px-5 py-3 rounded-xl font-bold\">חייגו עכשיו</a>' if phone else ''}
+        {f'<a href="tel:{phone}" class="bg-emerald-500 hover:bg-emerald-400 text-slate-900 px-5 py-3 rounded-xl font-bold">חייגו עכשיו</a>' if phone else ''}
         <a href=\"{maps}\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"bg-amber-400 hover:bg-amber-300 text-slate-900 px-5 py-3 rounded-xl font-bold\">ניווט בגוגל מפות</a>
       </div>
-      {f'<p class=\"text-slate-400 mt-8\">{address}</p>' if address else ''}
+      {f'<p class="text-slate-400 mt-8">{address}</p>' if address else ''}
     </div>
   </section>
 </body>
@@ -88,6 +88,17 @@ def site_by_host(request: Request, db: Session = Depends(get_db)):
           demo = item
           break
     if demo:
+        # Try to find and serve the full AI-generated draft HTML
+        from app.models.business import Business
+        from sqlalchemy import desc
+        biz = db.query(Business).filter(Business.name == demo.business_name).order_by(desc(Business.id)).first()
+        if biz:
+            draft = db.query(DraftSite).filter(DraftSite.business_id == biz.id).order_by(desc(DraftSite.id)).first()
+            if draft:
+                html_path = _draft_html_path(draft)
+                if html_path.exists():
+                    return HTMLResponse(html_path.read_text(encoding='utf-8'))
+        # Fallback to basic placeholder only if no draft HTML found
         return HTMLResponse(_render_demo_html(demo))
 
     # 2) Draft site lookup by id suffix in subdomain label, e.g. my-biz-19

@@ -10,6 +10,9 @@ _PROVIDER_TO_AGENT: dict[str, str] = {
     "openai":    "gpt",
     "gemini":    "gemini",
     "xai":       "grok",
+    "deepseek":  "deepseek",
+    "mistral":   "mistral",
+    "cohere":    "cohere",
 }
 
 
@@ -34,6 +37,27 @@ class LLMRouterService:
     }
 
     def route(self, task_type: str) -> str:
+        """Route task to primary provider. Uses dynamic build config (agent toggles) when available."""
+        task_to_stage = {
+            "generate_site_copy":    "content",
+            "build_site_html":       "html",
+            "analyze_business_data": "design",
+        }
+        stage = task_to_stage.get(task_type)
+        if stage:
+            try:
+                from app.services.agent_toggle_service import get_build_config, AGENT_TO_PROVIDER
+                from app.db.session import SessionLocal
+                db = SessionLocal()
+                try:
+                    config = get_build_config(db)
+                    agent = config["roles"].get(stage)
+                    if agent:
+                        return AGENT_TO_PROVIDER.get(agent, self.TASK_PROVIDER_MAP.get(task_type, "openai"))
+                finally:
+                    db.close()
+            except Exception:
+                pass
         return self.TASK_PROVIDER_MAP.get(task_type, "openai")
 
     def call(
@@ -106,17 +130,35 @@ class LLMRouterService:
         Returns (text, provider_used, model_used, (input_tokens, output_tokens)).
         """
         from app.core.config import settings
+        from app.services.agent_toggle_service import get_enabled_providers_from_db
 
         primary = self.route(task_type)
 
         all_providers = [
             ("openai",    getattr(settings, "openai_api_key", None)),
             ("xai",       getattr(settings, "xai_api_key", None)),
+            ("deepseek",  getattr(settings, "deepseek_api_key", None)),
+            ("mistral",   getattr(settings, "mistral_api_key", None)),
+            ("cohere",    getattr(settings, "cohere_api_key", None)),
             ("gemini",    getattr(settings, "gemini_api_key", None)),
             ("anthropic", getattr(settings, "anthropic_api_key", None)),
         ]
         ordered = [(p, k) for p, k in all_providers if p == primary] + \
                   [(p, k) for p, k in all_providers if p != primary]
+
+        # Filter by agent toggle config (skip disabled providers)
+        enabled_providers = get_enabled_providers_from_db()
+        if enabled_providers is not None:
+            filtered = [(p, k) for p, k in ordered if p in enabled_providers]
+            # Safety: never leave ordered empty — if filtering removes everything,
+            # fall back to whatever has an API key configured
+            if filtered:
+                ordered = filtered
+            else:
+                logger.warning(
+                    "LLMRouterService: all enabled providers have no API key — "
+                    "ignoring toggle filter for task=%s", task_type
+                )
 
         for provider, key in ordered:
             if not key:
@@ -127,6 +169,24 @@ class LLMRouterService:
                 result = self._call_xai(
                     prompt, key,
                     model=effective_model or "grok-3-mini",
+                    system=system, max_tokens=max_tokens, json_mode=json_mode,
+                )
+            elif provider == "deepseek":
+                result = self._call_deepseek(
+                    prompt, key,
+                    model=effective_model or "deepseek-chat",
+                    system=system, max_tokens=max_tokens, json_mode=json_mode,
+                )
+            elif provider == "mistral":
+                result = self._call_mistral(
+                    prompt, key,
+                    model=effective_model or "mistral-large-latest",
+                    system=system, max_tokens=max_tokens, json_mode=json_mode,
+                )
+            elif provider == "cohere":
+                result = self._call_cohere(
+                    prompt, key,
+                    model=effective_model or "command-r-plus",
                     system=system, max_tokens=max_tokens, json_mode=json_mode,
                 )
             elif provider == "gemini":
@@ -188,6 +248,84 @@ class LLMRouterService:
             return resp.choices[0].message.content, model, in_tok, out_tok
         except Exception:
             logger.exception("LLMRouterService._call_xai failed")
+            return None, model, 0, 0
+
+    def _call_deepseek(
+        self, prompt: str, api_key: str, *,
+        model: str = "deepseek-chat",
+        system: str | None = None,
+        max_tokens: int = 1200,
+        json_mode: bool = False,
+    ) -> tuple[str | None, str, int, int]:
+        """DeepSeek — OpenAI-compatible API at https://api.deepseek.com"""
+        try:
+            from openai import OpenAI
+            client = OpenAI(api_key=api_key, base_url="https://api.deepseek.com")
+            messages: list[dict] = []
+            if system:
+                messages.append({"role": "system", "content": system})
+            messages.append({"role": "user", "content": prompt})
+            kwargs: dict[str, Any] = dict(model=model, messages=messages, max_tokens=max_tokens, temperature=0.7)
+            if json_mode:
+                kwargs["response_format"] = {"type": "json_object"}
+            resp = client.chat.completions.create(**kwargs)
+            in_tok  = getattr(resp.usage, 'prompt_tokens', 0) or 0
+            out_tok = getattr(resp.usage, 'completion_tokens', 0) or 0
+            return resp.choices[0].message.content, model, in_tok, out_tok
+        except Exception:
+            logger.exception("LLMRouterService._call_deepseek failed")
+            return None, model, 0, 0
+
+    def _call_mistral(
+        self, prompt: str, api_key: str, *,
+        model: str = "mistral-large-latest",
+        system: str | None = None,
+        max_tokens: int = 1200,
+        json_mode: bool = False,
+    ) -> tuple[str | None, str, int, int]:
+        """Mistral — OpenAI-compatible API at https://api.mistral.ai/v1"""
+        try:
+            from openai import OpenAI
+            client = OpenAI(api_key=api_key, base_url="https://api.mistral.ai/v1")
+            messages: list[dict] = []
+            if system:
+                messages.append({"role": "system", "content": system})
+            messages.append({"role": "user", "content": prompt})
+            kwargs: dict[str, Any] = dict(model=model, messages=messages, max_tokens=max_tokens, temperature=0.7)
+            if json_mode:
+                kwargs["response_format"] = {"type": "json_object"}
+            resp = client.chat.completions.create(**kwargs)
+            in_tok  = getattr(resp.usage, 'prompt_tokens', 0) or 0
+            out_tok = getattr(resp.usage, 'completion_tokens', 0) or 0
+            return resp.choices[0].message.content, model, in_tok, out_tok
+        except Exception:
+            logger.exception("LLMRouterService._call_mistral failed")
+            return None, model, 0, 0
+
+    def _call_cohere(
+        self, prompt: str, api_key: str, *,
+        model: str = "command-a-03-2025",
+        system: str | None = None,
+        max_tokens: int = 1200,
+        json_mode: bool = False,
+    ) -> tuple[str | None, str, int, int]:
+        """Cohere — OpenAI-compatible API at https://api.cohere.com/compatibility/v1"""
+        try:
+            from openai import OpenAI
+            messages: list[dict[str, str]] = []
+            if system:
+                messages.append({"role": "system", "content": system})
+            messages.append({"role": "user", "content": prompt})
+            client = OpenAI(api_key=api_key, base_url="https://api.cohere.com/compatibility/v1")
+            kwargs: dict[str, Any] = dict(model=model, messages=messages, max_tokens=max_tokens, temperature=0.7)
+            if json_mode:
+                kwargs["response_format"] = {"type": "json_object"}
+            resp = client.chat.completions.create(**kwargs)
+            in_tok  = getattr(resp.usage, 'prompt_tokens', 0) or 0
+            out_tok = getattr(resp.usage, 'completion_tokens', 0) or 0
+            return resp.choices[0].message.content, model, in_tok, out_tok
+        except Exception:
+            logger.exception("LLMRouterService._call_cohere failed")
             return None, model, 0, 0
 
     def _call_openai(

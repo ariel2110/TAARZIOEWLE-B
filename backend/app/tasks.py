@@ -1,5 +1,5 @@
 """
-tasks.py — Celery background tasks for SiteNest.
+tasks.py — Celery background tasks for tazo-web.
 
 All heavy AI operations and scheduled maintenance that would block the API
 server (or should run periodically) live here:
@@ -40,6 +40,8 @@ class _BaseTask(Task):
     name='app.tasks.generate_site_task',
     max_retries=2,
     default_retry_delay=30,
+    time_limit=720,          # 12 min: Stage0(~60s) + Stage1-parallel(~90s) + Stage2-Claude16K(~120s) + buffer
+    soft_time_limit=660,
 )
 def generate_site_task(self: Task, business_id: int) -> dict:
     """
@@ -270,7 +272,7 @@ def inbound_build_task(self: Task, business_id: int) -> dict:
                 'step': 'scouting', 'percent': 8,
                 'label': 'שואב דירוגים וביקורות מגוגל מפות...',
             })
-            existing = db.query(DraftSite).filter(DraftSite.business_id == business_id).first()
+            existing = db.query(DraftSite).filter(DraftSite.business_id == business_id).order_by(DraftSite.id.desc()).first()
             draft = existing or svc.create_for_business(db, business_id)
             if not draft:
                 return {'status': 'error', 'business_id': business_id, 'message': 'Could not create draft'}
@@ -314,19 +316,57 @@ def inbound_build_task(self: Task, business_id: int) -> dict:
 
             content = pipeline._stage1a_content(raw_str, social=social)
 
-            # ── Stage 1b: Gemini design ───────────────────────────────────────
+            # ── Stage 1b-1f: Parallel enrichment ─────────────────────────────
             self.update_state(state='PROGRESS', meta={
                 'step': 'designing', 'percent': 68,
-                'label': 'מעצב לפי צבעי המותג שלך...',
+                'label': 'מעצב לפי צבעי המותג וסוכני AI מקבילים...',
             })
-            design = pipeline._stage1b_design(raw_str)
+            from concurrent.futures import ThreadPoolExecutor
+            design = None
+            deepseek_enrichment: dict = {}
+            mistral_seo: dict = {}
+            cohere_cro: dict = {}
+            grok_social: dict = {}
+            with ThreadPoolExecutor(max_workers=5) as pool:
+                f_design   = pool.submit(pipeline._stage1b_design, raw_str)
+                f_deepseek = pool.submit(pipeline._stage1c_deepseek_enrich, raw_str, enrichment)
+                f_mistral  = pool.submit(pipeline._stage1d_mistral_seo, raw_str, enrichment)
+                f_cohere   = pool.submit(pipeline._stage1e_cohere_cro, raw_str, enrichment)
+                f_grok     = pool.submit(pipeline._stage1f_grok_social, raw_str, enrichment)
+                try:
+                    design = f_design.result(timeout=30)
+                except Exception:
+                    from app.services.generator.autosite_pipeline_service import DesignConfig
+                    design = DesignConfig()
+                try:
+                    deepseek_enrichment = f_deepseek.result(timeout=60) or {}
+                except Exception:
+                    deepseek_enrichment = {}
+                try:
+                    mistral_seo = f_mistral.result(timeout=60) or {}
+                except Exception:
+                    mistral_seo = {}
+                try:
+                    cohere_cro = f_cohere.result(timeout=60) or {}
+                except Exception:
+                    cohere_cro = {}
+                try:
+                    grok_social = f_grok.result(timeout=60) or {}
+                except Exception:
+                    grok_social = {}
 
             # ── Stage 2: Claude HTML ──────────────────────────────────────────
             self.update_state(state='PROGRESS', meta={
                 'step': 'building', 'percent': 80,
                 'label': 'ה-AI בונה כעת את האתר שלך...',
             })
-            html = pipeline._stage2_build(content, design, enrichment) if content else None
+            html = pipeline._stage2_build(
+                content, design, enrichment,
+                deepseek_enrichment=deepseek_enrichment,
+                mistral_seo=mistral_seo,
+                cohere_cro=cohere_cro,
+                grok_social=grok_social,
+            ) if content else None
 
             if not html:
                 # Fallback to standard DraftSiteService if custom pipeline failed
@@ -354,16 +394,16 @@ def inbound_build_task(self: Task, business_id: int) -> dict:
                 'label': '🎉 האתר מוכן!',
             })
 
-            from app.services.public.site_domain_service import build_draft_public_url
+            from app.services.public.site_domain_service import build_demo_public_url
             from app.models.demo_site import DemoSite
             from app.utils.string_utils import generate_secure_slug
             from sqlalchemy import select as _select
-            public_url = build_draft_public_url(result_draft.id, business.name)
 
             # Keep /admin/demos in sync with inbound-created draft sites.
             # Slug is looked up by business name so re-runs preserve the existing
             # URL instead of regenerating it.  New demos get a cryptographically
             # random suffix so the URL cannot be guessed by incrementing an ID.
+            demo_slug = None
             try:
                 demo = db.execute(
                     _select(DemoSite)
@@ -395,7 +435,15 @@ def inbound_build_task(self: Task, business_id: int) -> dict:
             except Exception:
                 logger.exception('[inbound_build_task] failed to sync demo row for draft_id=%d', result_draft.id)
 
-            logger.info('[inbound_build_task] done — business_id=%d draft_id=%d', business_id, result_draft.id)
+            # Public URL uses the clean slug-based subdomain (e.g. bishul-yosi-a7f9b2.tazo-web.com)
+            # Fallback to draft-id based URL if DemoSite slug creation failed
+            if demo_slug:
+                public_url = build_demo_public_url(demo_slug)
+            else:
+                from app.services.public.site_domain_service import build_draft_public_url
+                public_url = build_draft_public_url(result_draft.id, business.name)
+
+            logger.info('[inbound_build_task] done — business_id=%d draft_id=%d public_url=%s', business_id, result_draft.id, public_url)
             return {
                 'status': 'success',
                 'business_id': business_id,
@@ -482,7 +530,7 @@ def finalize_deployment_task(self: Task, token: str) -> dict:
     try:
         from app.db.session import SessionLocal
         from app.models.public_intake import PublicIntake
-        from app.services.hostinger_service import HostingerService
+        from app.services.hostinger_service import HostingerService, MAX_DOMAIN_PRICE_USD
         from app.services.communications.evolution_whatsapp_service import EvolutionWhatsAppService
         from app.core.config import settings
 
@@ -513,6 +561,57 @@ def finalize_deployment_task(self: Task, token: str) -> dict:
 
             business_name = intake.business_name or ''
             phone = intake.phone or ''
+
+            # ── Domain price approval gate ─────────────────────────────────
+            domain_approval = intake.domain_approval_status
+            domain_price = intake.domain_price_usd
+
+            # If already rejected by admin — stop
+            if domain_approval == 'rejected':
+                logger.info('[finalize_deployment_task] Domain rejected by admin: %s', domain)
+                return {'status': 'rejected', 'message': 'domain purchase rejected by admin', 'token': token[:8]}
+
+            # If not yet checked / not yet approved — check price and pause
+            if domain_approval != 'approved':
+                svc = HostingerService()
+                price = svc.get_domain_price(domain)
+                domain_price = price
+
+                # Persist the price regardless
+                intake.domain_price_usd = price
+                db.commit()
+
+                if price > MAX_DOMAIN_PRICE_USD:
+                    if domain_approval != 'pending_admin':
+                        intake.domain_approval_status = 'pending_admin'
+                        db.commit()
+
+                        # Notify admin via WhatsApp
+                        _admin_phone = getattr(settings, 'whatsapp_owner_phone', '')
+                        if _admin_phone:
+                            EvolutionWhatsAppService().send_text(
+                                _admin_phone,
+                                f"🚨 *tazo-web — אישור רכישת דומיין נדרש*\n\n"
+                                f"לקוח: {intake.business_name}\n"
+                                f"דומיין: {domain}\n"
+                                f"מחיר משוער: ${price:.2f}/שנה\n"
+                                f"⛔ מעל הגבול של ${MAX_DOMAIN_PRICE_USD:.0f}\n\n"
+                                f"כדי לאשר: POST /api/v1/admin/domain-approvals/{intake.id}/approve\n"
+                                f"כדי לדחות: POST /api/v1/admin/domain-approvals/{intake.id}/reject\n\n"
+                                f"📋 הדשבורד: https://admin.tazo-web.com",
+                            )
+
+                    logger.warning(
+                        '[finalize_deployment_task] Domain price $%.2f > $%.2f limit — pausing for admin approval: %s',
+                        price, MAX_DOMAIN_PRICE_USD, domain,
+                    )
+                    return {
+                        'status': 'pending_approval',
+                        'domain': domain,
+                        'price_usd': price,
+                        'message': f'Domain price ${price:.2f} exceeds ${MAX_DOMAIN_PRICE_USD:.0f} limit — awaiting admin approval',
+                        'token': token[:8],
+                    }
         finally:
             db.close()
 
@@ -540,7 +639,7 @@ def finalize_deployment_task(self: Task, token: str) -> dict:
                 f"🎉 מזל טוב {business_name}!\n\n"
                 f"האתר שלך באוויר בכתובת החדשה:\n{live_url}\n\n"
                 f"💳 המנוי שלך הוא 39 ₪/חודש — כולל אחסון, תחזוקה ועדכונים.\n\n"
-                f"שנצליח ביחד 🚀\n_צוות SiteNest_"
+                f"שנצליח ביחד 🚀\n_צוות tazo-web_"
             )
             EvolutionWhatsAppService().send_text(phone, message)
             logger.info(
@@ -554,7 +653,7 @@ def finalize_deployment_task(self: Task, token: str) -> dict:
             if _admin_phone:
                 EvolutionWhatsAppService().send_text(
                     _admin_phone,
-                    f"⚠️ *SiteNest — הפעלת אתר נכשלה*\n\n"
+                    f"⚠️ *tazo-web — הפעלת אתר נכשלה*\n\n"
                     f"Token: `{token[:12]}...`\n"
                     f"Domain: {domain}\n"
                     f"Error: {live_url}\n\n"
@@ -708,7 +807,7 @@ def _build_recovery_message(client_name: str) -> str:
 
             prompt = (
                 f"Write a short, warm, conversational WhatsApp message in Hebrew "
-                f"to someone named {first_name} who started building a website on SiteNest "
+                f"to someone named {first_name} who started building a website on tazo-web "
                 f"but didn't complete payment. "
                 f"The message should feel personal, not salesy. "
                 f"Maximum 3 sentences. No emojis at the start. End with one relevant emoji. "
@@ -823,7 +922,7 @@ def facebook_token_refresh_task(self: Task) -> dict:
 
     if not app_id or not app_secret:
         msg = (
-            '⚠️ SiteNest — רענון טוקן פייסבוק נכשל!\n'
+            '⚠️ tazo-web — רענון טוקן פייסבוק נכשל!\n'
             'חסרים FACEBOOK_APP_ID או FACEBOOK_APP_SECRET ב-.env\n'
             'נא להוסיף אותם ולהפעיל מחדש.'
         )
@@ -833,7 +932,7 @@ def facebook_token_refresh_task(self: Task) -> dict:
 
     if not current_token:
         msg = (
-            '⚠️ SiteNest — רענון טוקן פייסבוק נכשל!\n'
+            '⚠️ tazo-web — רענון טוקן פייסבוק נכשל!\n'
             'אין FACEBOOK_ACCESS_TOKEN ב-.env להחלפה.\n'
             'נא להגדיר טוקן בפעם הראשונה ידנית.'
         )
@@ -857,7 +956,7 @@ def facebook_token_refresh_task(self: Task) -> dict:
     except httpx.RequestError as exc:
         logger.error('[fb_token_refresh] Network error calling Meta API: %s', type(exc).__name__)
         msg = (
-            '🔴 SiteNest — רענון טוקן פייסבוק נכשל! (שגיאת רשת)\n'
+            '🔴 tazo-web — רענון טוקן פייסבוק נכשל! (שגיאת רשת)\n'
             f'סוג שגיאה: {type(exc).__name__}\n'
             'הטוקן הנוכחי עדיין פעיל — נסיון חידוש יתבצע שוב בקרוב.'
         )
@@ -867,7 +966,7 @@ def facebook_token_refresh_task(self: Task) -> dict:
     if resp.status_code == 401:
         logger.error('[fb_token_refresh] Meta API returned 401 — current token may be expired')
         msg = (
-            '🔴 SiteNest — רענון טוקן פייסבוק נכשל!\n'
+            '🔴 tazo-web — רענון טוקן פייסבוק נכשל!\n'
             'שגיאה 401: הטוקן הנוכחי פג תוקף.\n'
             'נדרש חידוש ידני ב: https://developers.facebook.com/tools/accesstoken/'
         )
@@ -877,7 +976,7 @@ def facebook_token_refresh_task(self: Task) -> dict:
     if not resp.is_success:
         logger.error('[fb_token_refresh] Meta API returned HTTP %d', resp.status_code)
         msg = (
-            f'🔴 SiteNest — רענון טוקן פייסבוק נכשל! (HTTP {resp.status_code})\n'
+            f'🔴 tazo-web — רענון טוקן פייסבוק נכשל! (HTTP {resp.status_code})\n'
             'נדרש בדיקה ידנית ב: https://developers.facebook.com/tools/accesstoken/'
         )
         _send_owner_whatsapp(msg)
@@ -892,7 +991,7 @@ def facebook_token_refresh_task(self: Task) -> dict:
         if code == 190:
             logger.error('[fb_token_refresh] OAuthException code 190 — token invalid/expired')
             msg = (
-                '🔴 SiteNest — רענון טוקן פייסבוק נכשל! (OAuthException)\n'
+                '🔴 tazo-web — רענון טוקן פייסבוק נכשל! (OAuthException)\n'
                 'הטוקן לא תקין או פג תוקף.\n'
                 'נדרש חידוש ידני ב: https://developers.facebook.com/tools/accesstoken/'
             )
@@ -901,7 +1000,7 @@ def facebook_token_refresh_task(self: Task) -> dict:
                 '[fb_token_refresh] Meta API error code=%s type=%s', code, err.get('type')
             )
             msg = (
-                f'🔴 SiteNest — רענון טוקן פייסבוק נכשל! (קוד שגיאה {code})\n'
+                f'🔴 tazo-web — רענון טוקן פייסבוק נכשל! (קוד שגיאה {code})\n'
                 f'{err.get("message", "")}\n'
                 'נדרש בדיקה ידנית.'
             )
@@ -912,7 +1011,7 @@ def facebook_token_refresh_task(self: Task) -> dict:
     if not new_token:
         logger.error('[fb_token_refresh] Meta API response missing access_token field')
         _send_owner_whatsapp(
-            '🔴 SiteNest — רענון טוקן פייסבוק נכשל!\n'
+            '🔴 tazo-web — רענון טוקן פייסבוק נכשל!\n'
             'התגובה מ-Meta חסרה את השדה access_token.\n'
             'נא לבדוק ידנית.'
         )
@@ -929,7 +1028,7 @@ def facebook_token_refresh_task(self: Task) -> dict:
     except Exception as exc:
         logger.error('[fb_token_refresh] Failed to write new token to .env: %s', exc)
         _send_owner_whatsapp(
-            '⚠️ SiteNest — טוקן פייסבוק חודש בהצלחה מול Meta, '
+            '⚠️ tazo-web — טוקן פייסבוק חודש בהצלחה מול Meta, '
             'אבל השמירה לקובץ .env נכשלה!\n'
             f'שגיאה: {exc}\n'
             'נא לעדכן ידנית.'
@@ -939,7 +1038,7 @@ def facebook_token_refresh_task(self: Task) -> dict:
     # Success notification
     expires_days = round(data.get('expires_in', 0) / 86400)
     _send_owner_whatsapp(
-        f'✅ SiteNest — טוקן פייסבוק חודש בהצלחה!\n'
+        f'✅ tazo-web — טוקן פייסבוק חודש בהצלחה!\n'
         f'תוקף חדש: ~{expires_days} ימים.\n'
         f'הרענון הבא יתבצע אוטומטית בעוד 50 יום.'
     )

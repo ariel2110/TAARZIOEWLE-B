@@ -270,17 +270,19 @@ export default function MagicPortal() {
             {/* ══════════════════════════════════════════════════════ SEARCH ══ */}
             {phase === 'search' && (
                 <div className="mp-search-page">
+                    {/* background minimal injection */}
+                    <div style={{position:'absolute', top:0, left:0, right:0, bottom:0, background:'#030712', zIndex:-1}}>
+                      <div style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', width:'60vw', height:'60vw', background:'radial-gradient(circle, rgba(14,165,233,0.2) 0%, transparent 60%)', filter:'blur(80px)' }}></div>
+                    </div>
                     {/* Top nav */}
-                    <nav className="mp-topnav">
-                        <span className="mp-topnav-logo">tazo-web ✦</span>
+                    <nav className="mp-topnav" style={{display:'flex', justifyContent:'space-between', padding:'20px 32px', color:'#fff'}}>
+                        <span style={{fontSize:'1.3rem', fontWeight:900}}>TAZO<span style={{color:'#0ea5e9'}}>WEB</span></span>
+                        <span style={{fontSize:'1.3rem', cursor:'pointer'}}>☰</span>
                     </nav>
                     <div className="mp-hero">
-                        <h1 className="mp-headline">
-                            תוך 3 דקות<br />
-                            <span className="mp-accent">הפכנו את הידע שלך לאתר מקצועי</span>
-                        </h1>
-                        <p className="mp-subheadline">
-                            הקלד את שם העסק שלך — ה-AI יבנה לך אתר חינם, מבוסס על הביקורות, הרשתות החברתיות והזהות שלך
+                        <h1 className="mp-headline">הזהות הדיגיטלית שלך.</h1>
+                        <p className="mp-subheadline" style={{marginBottom:'32px'}}>
+                            TAZO-WEB הוא הבית של העסק שלך במינימום לחיצות.<br /> הקלד את שם העסק וה-AI יבנה את השאר, או בחר לאן להמשיך:
                         </p>
                         <div className="mp-search-wrap" style={{ position: 'relative' }}>
                             <div className="mp-search-box">

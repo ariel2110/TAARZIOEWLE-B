@@ -15,8 +15,56 @@
       .card{background:white;border-radius:16px;padding:20px;box-shadow:0 8px 24px rgba(0,0,0,.05)}
       @media(max-width:700px){.grid{grid-template-columns:1fr}}
     </style>
-  </head>
+  
+<!-- TAZO Odin SSO receiver -->
+<script>(function(){
+  var h=location.hash||'';
+  if(!h) return;
+  var m=h.match(/(?:^|[#&])odin_at=([^&]+)/);
+  if(!m) return;
+  try{
+    var t=decodeURIComponent(m[1]);
+    localStorage.setItem('tazo_access_token',t);
+    sessionStorage.setItem('tazo_access_token',t);
+    var clean=location.pathname+(location.search||'');
+    history.replaceState(null,'',clean);
+  }catch(e){}
+})();</script>
+</head>
   <body>
+<!-- TAZO Global Navigation Header -->
+<style>
+#tzg-nav{background:#161b22;border-bottom:2px solid #FF6B2B;padding:0;position:sticky;top:0;z-index:99999;font-family:'Heebo',system-ui,sans-serif}
+#tzg-inner{max-width:1280px;margin:0 auto;padding:0 20px;display:flex;align-items:center;height:52px;gap:12px}
+#tzg-logo{font-size:20px;font-weight:900;color:#e6edf3;text-decoration:none;letter-spacing:1.5px;flex-shrink:0}
+#tzg-logo span{color:#FF6B2B}
+#tzg-links{display:flex;gap:6px;margin-inline-end:auto}
+.tzg-btn{display:inline-flex;align-items:center;gap:5px;color:#8b949e;font-size:12px;font-weight:700;text-decoration:none;padding:5px 12px;border-radius:6px;border:1px solid #30363d;transition:all .2s;white-space:nowrap}
+.tzg-btn:hover,.tzg-btn.active{color:#FF6B2B;border-color:rgba(255,107,43,.4);background:rgba(255,107,43,.08)}
+.tzg-badge{background:#FF6B2B;color:#fff;font-size:10px;font-weight:900;padding:2px 8px;border-radius:4px;letter-spacing:.8px;flex-shrink:0}
+#tzg-token-dot{width:8px;height:8px;border-radius:50%;background:#8b949e;transition:background .3s;flex-shrink:0}
+#tzg-token-dot.live{background:#3fb950}
+@media(max-width:560px){.tzg-btn span.tzg-label{display:none}.tzg-btn{padding:5px 9px}}
+</style>
+<nav id="tzg-nav" role="navigation">
+  <div id="tzg-inner">
+    <a id="tzg-logo" href="http://187.127.229.152/">TAZO<span>.</span></a>
+    <div id="tzg-links">
+      <a class="tzg-btn active" href="http://76.13.48.23/" id="tzg-web">🛍️ <span class="tzg-label">Web</span></a>
+      <a class="tzg-btn" href="http://187.124.223.253/" id="tzg-go">🚗 <span class="tzg-label">Go</span></a>
+      <a class="tzg-btn" href="http://145.223.81.124/" id="tzg-sync">📦 <span class="tzg-label">Sync</span></a>
+      <a class="tzg-btn" href="http://187.127.229.152/" id="tzg-portal">🔐 <span class="tzg-label">Portal</span></a>
+    </div>
+    <div id="tzg-token-dot" title="SSO Token"></div>
+    <span class="tzg-badge">BETA</span>
+  </div>
+</nav>
+<script>
+(function(){
+  try{if(localStorage.getItem('tazo_access_token')){document.getElementById('tzg-token-dot').classList.add('live');}}catch(e){}
+})();
+</script>
+
     {% if is_demo %}
     <div class="banner">זהו עמוד הדגמה זמני לעסק. ניתן לבקש מחיקה או הפעלה מלאה.</div>
     {% endif %}

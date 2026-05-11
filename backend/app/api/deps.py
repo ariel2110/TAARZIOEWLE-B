@@ -7,6 +7,7 @@ from app.db.session import get_db
 from app.models.user import User
 from app.core.config import settings
 from app.core.security import decode_access_token
+from app.core.odin_auth import _decode_odin_token
 from app.services.auth.auth_service import AuthService
 
 bearer_scheme = HTTPBearer(auto_error=False)
@@ -29,9 +30,21 @@ def get_current_admin(
     # Preferred: bearer token auth skeleton
     if credentials and credentials.credentials:
         try:
-            payload = decode_access_token(credentials.credentials)
-            email = str(payload.get('sub', '')).strip()
-            role = str(payload.get('role', '')).strip()
+            # Check Odin SSO first
+            is_odin = False
+            try:
+                payload = _decode_odin_token(credentials.credentials)
+                email = str(payload.get('sub', '')) + '@odin.local'
+                role = 'admin' if str(payload.get('role', '')) in ('admin', 'merchant') else 'viewer'
+                is_odin = True
+            except Exception:
+                pass
+                
+            if not is_odin:
+                payload = decode_access_token(credentials.credentials)
+                email = str(payload.get('sub', '')).strip()
+                role = str(payload.get('role', '')).strip()
+
             if not email or role not in _ROLE_RANK:
                 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid bearer token')
             user = AuthService().get_or_create_admin(db=db, email=email, full_name='Admin User')

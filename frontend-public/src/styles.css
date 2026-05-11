@@ -13,8 +13,8 @@ html {
 
 body {
   font-family: 'Heebo', sans-serif;
-  background: #0b0f1a;
-  color: #f0f4ff;
+  background: #1A1A1A;
+  color: #F5F5F5;
   direction: rtl;
   text-align: right;
   -webkit-font-smoothing: antialiased;
@@ -47,8 +47,8 @@ input {
   left: 0;
   right: 0;
   z-index: 100;
-  background: linear-gradient(90deg, #c0392b, #e74c3c);
-  color: #fff;
+  background: linear-gradient(90deg, #FFD700, #E5C200);
+  color: #1A1A1A;
   text-align: center;
   padding: 8px 16px;
   font-size: 14px;
@@ -104,7 +104,7 @@ input {
   border-radius: 999px;
   background: rgba(22, 28, 46, 0.92);
   border: 1px solid rgba(245, 200, 66, 0.45);
-  color: #f0f4ff;
+  color: #F5F5F5;
   font-size: 0.9rem;
   font-weight: 700;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
@@ -133,7 +133,7 @@ input {
   font-size: clamp(2rem, 5vw, 3.2rem);
   font-weight: 900;
   line-height: 1.2;
-  color: #f0f4ff;
+  color: #F5F5F5;
   margin-bottom: 20px;
 }
 
@@ -185,7 +185,7 @@ input {
   border: none;
   outline: none;
   font-size: 1.05rem;
-  color: #f0f4ff;
+  color: #F5F5F5;
   font-weight: 500;
   direction: rtl;
 }
@@ -227,7 +227,7 @@ input {
 .mp-di-main {
   display: block;
   font-weight: 600;
-  color: #f0f4ff;
+  color: #F5F5F5;
 }
 
 .mp-di-sub {
@@ -388,7 +388,7 @@ input {
 .mp-factory-biz {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #f0f4ff;
+  color: #F5F5F5;
 }
 
 /* Progress bar */
@@ -500,7 +500,7 @@ input {
 .mp-wall-title {
   font-size: 1.6rem;
   font-weight: 800;
-  color: #f0f4ff;
+  color: #F5F5F5;
   margin-bottom: 12px;
 }
 
@@ -522,7 +522,7 @@ input {
   border-radius: 12px;
   border: 2px solid #2d3748;
   background: #1a2035;
-  color: #f0f4ff;
+  color: #F5F5F5;
   font-size: 1rem;
   direction: rtl;
   transition: border-color .2s;
@@ -826,7 +826,7 @@ input {
 ═══════════════════════════════════════════════════════════════════════════ */
 
 .le-root {
-  background: #0b0f1a;
+  background: #1A1A1A;
   direction: rtl;
 }
 
@@ -859,7 +859,7 @@ input {
 .le-heading {
   font-size: 2.2rem;
   font-weight: 800;
-  color: #f0f4ff;
+  color: #F5F5F5;
   margin-bottom: 12px;
   line-height: 1.25;
 }
@@ -906,7 +906,7 @@ input {
 .le-feature-title {
   font-size: 1rem;
   font-weight: 700;
-  color: #f0f4ff;
+  color: #F5F5F5;
   margin-bottom: 8px;
 }
 
@@ -982,7 +982,7 @@ input {
 .le-plan-price {
   font-size: 2.2rem;
   font-weight: 800;
-  color: #f0f4ff;
+  color: #F5F5F5;
   margin-bottom: 4px;
 }
 
@@ -1027,7 +1027,7 @@ input {
   font-size: 1rem;
   font-weight: 700;
   background: var(--plan-color, #6366f1);
-  color: #fff;
+  color: #1A1A1A;
   border: none;
   cursor: pointer;
   transition: opacity .2s;
@@ -1071,7 +1071,7 @@ input {
 .le-step-title {
   font-size: 1.05rem;
   font-weight: 700;
-  color: #f0f4ff;
+  color: #F5F5F5;
   margin-bottom: 8px;
 }
 
@@ -1114,7 +1114,7 @@ input {
   padding: 20px 24px;
   background: none;
   border: none;
-  color: #f0f4ff;
+  color: #F5F5F5;
   font-size: .95rem;
   font-weight: 600;
   font-family: inherit;
@@ -1152,7 +1152,7 @@ input {
 .le-cta-heading {
   font-size: 2.4rem;
   font-weight: 800;
-  color: #f0f4ff;
+  color: #F5F5F5;
   margin-bottom: 16px;
 }
 
@@ -1174,7 +1174,7 @@ input {
 .le-cta-btn-primary {
   padding: 16px 32px;
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  color: #fff;
+  color: #1A1A1A;
   font-size: 1.05rem;
   font-weight: 700;
   border-radius: 12px;
@@ -1188,7 +1188,7 @@ input {
 .le-cta-btn-wa {
   padding: 16px 28px;
   background: #25d366;
-  color: #fff;
+  color: #1A1A1A;
   font-size: 1rem;
   font-weight: 700;
   border-radius: 12px;
@@ -1254,7 +1254,7 @@ input {
 
 .if-root {
   min-height: 100vh;
-  background: #0b0f1a;
+  background: #1A1A1A;
   direction: rtl;
 }
 
@@ -1324,7 +1324,7 @@ input {
 
 .if-plan-badge--paid {
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  color: #fff;
+  color: #1A1A1A;
 }
 
 .if-plan-badge--ai {
@@ -1353,7 +1353,7 @@ input {
 .if-sidebar-title {
   font-size: 1.35rem;
   font-weight: 800;
-  color: #f0f4ff;
+  color: #F5F5F5;
   margin-bottom: 12px;
 }
 
@@ -1380,7 +1380,7 @@ input {
   display: block;
   text-align: center;
   background: #25d366;
-  color: #fff;
+  color: #1A1A1A;
   padding: 12px 20px;
   border-radius: 10px;
   font-size: .9rem;
@@ -1402,7 +1402,7 @@ input {
 .if-form-title {
   font-size: 1.6rem;
   font-weight: 800;
-  color: #f0f4ff;
+  color: #F5F5F5;
   margin-bottom: 8px;
 }
 
@@ -1434,7 +1434,7 @@ input {
   background: rgba(255,255,255,0.06);
   border: 1px solid rgba(255,255,255,0.12);
   border-radius: 10px;
-  color: #f0f4ff;
+  color: #F5F5F5;
   font-size: .95rem;
   font-family: inherit;
   transition: border-color .2s, box-shadow .2s;
@@ -1540,7 +1540,7 @@ input {
   top: 4px;
   left: 4px;
   background: rgba(0,0,0,0.7);
-  color: #fff;
+  color: #1A1A1A;
   border: none;
   border-radius: 50%;
   width: 22px;
@@ -1607,7 +1607,7 @@ input {
   width: 100%;
   padding: 18px;
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  color: #fff;
+  color: #1A1A1A;
   font-size: 1.1rem;
   font-weight: 700;
   border-radius: 12px;
@@ -1628,7 +1628,7 @@ input {
   width: 22px;
   height: 22px;
   border: 3px solid rgba(255,255,255,0.3);
-  border-top-color: #fff;
+  border-top-color: #1A1A1A;
   border-radius: 50%;
   animation: spin .8s linear infinite;
 }
@@ -1648,7 +1648,7 @@ input {
 
 .ss-root {
   min-height: 100vh;
-  background: #0b0f1a;
+  background: #1A1A1A;
   direction: rtl;
 }
 
@@ -1682,7 +1682,7 @@ input {
 
 .ss-error-icon { font-size: 3rem; margin-bottom: 12px; }
 
-.ss-error-card h2 { color: #f0f4ff; margin-bottom: 8px; }
+.ss-error-card h2 { color: #F5F5F5; margin-bottom: 8px; }
 
 .ss-error-card p { color: #94a3b8; margin-bottom: 24px; }
 
@@ -1708,13 +1708,13 @@ input {
 .ss-title {
   font-size: 1.6rem;
   font-weight: 800;
-  color: #f0f4ff;
+  color: #F5F5F5;
   margin-bottom: 16px;
 }
 
 .ss-status-badge {
   display: inline-block;
-  color: #fff;
+  color: #1A1A1A;
   padding: 6px 20px;
   border-radius: 99px;
   font-size: .9rem;
@@ -1760,7 +1760,7 @@ input {
 .ss-card-title {
   font-size: 1rem;
   font-weight: 700;
-  color: #f0f4ff;
+  color: #F5F5F5;
   margin-bottom: 20px;
 }
 
@@ -1887,7 +1887,7 @@ input {
 
 .ss-btn-help {
   background: #25d366;
-  color: #fff;
+  color: #1A1A1A;
 }
 
 .ss-btn-secondary {
@@ -1937,7 +1937,7 @@ input {
 .ss-timeline-item.done .ss-timeline-dot {
   background: #10b981;
   border-color: #10b981;
-  color: #fff;
+  color: #1A1A1A;
 }
 
 /* ── Delete modal ── */
@@ -1968,7 +1968,7 @@ input {
 .ss-modal-title {
   font-size: 1.4rem;
   font-weight: 800;
-  color: #f0f4ff;
+  color: #F5F5F5;
   margin-bottom: 12px;
 }
 
@@ -2161,7 +2161,7 @@ input {
 .ss-activate-btn {
   width: 100%;
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  color: #fff;
+  color: #1A1A1A;
   border: none;
   border-radius: 12px;
   padding: 16px 24px;
@@ -2243,7 +2243,7 @@ input {
 .if-google-search-field { position: relative; }
 .if-google-label { display: flex; align-items: center; gap: 6px; }
 .if-badge-recommended {
-  background: #10b981; color: #fff; font-size: 0.65rem;
+  background: #10b981; color: #1A1A1A; font-size: 0.65rem;
   padding: 1px 7px; border-radius: 999px; font-weight: 700; letter-spacing: .02em;
 }
 .if-search-wrap { position: relative; display: flex; align-items: center; }
@@ -2292,7 +2292,7 @@ input {
 }
 .ss-variant-tab:hover { border-color: #6366f1; color: #6366f1; background: #ede9fe; }
 .ss-variant-tab.active {
-  border-color: #6366f1; background: #6366f1; color: #fff;
+  border-color: #6366f1; background: #6366f1; color: #1A1A1A;
   box-shadow: 0 4px 12px rgba(99,102,241,.35);
 }
 .ss-preview-frame-wrap {

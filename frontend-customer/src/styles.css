@@ -7,9 +7,9 @@
 }
 
 body {
-    font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
-    background: #f1f5f9;
-    color: #1e293b;
+    font-family: 'Heebo', 'Inter', system-ui, sans-serif;
+    background: #1A1A1A;
+    color: #F5F5F5;
     direction: rtl;
     min-height: 100vh;
 }
@@ -38,17 +38,17 @@ select {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%);
+    background: linear-gradient(135deg, #FFD700 0%, #E5C200 100%);
     padding: 24px;
 }
 
 .login-card {
-    background: white;
+    background: #242424;
     border-radius: 20px;
     padding: 40px 36px;
     width: 100%;
     max-width: 420px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
 }
 
 .login-logo {
@@ -75,7 +75,7 @@ select {
 .login-card label {
     font-size: 13px;
     font-weight: 600;
-    color: #374151;
+    color: #F5F5F5;
     display: block;
     margin-bottom: 4px;
 }
@@ -93,12 +93,12 @@ select {
 }
 
 .login-card input:focus {
-    border-color: #6366f1;
+    border-color: #FFD700;
 }
 
 .btn-primary {
     width: 100%;
-    background: linear-gradient(135deg, #6366f1, #0ea5e9);
+    background: linear-gradient(135deg, #FFD700, #0ea5e9);
     color: white;
     border: none;
     border-radius: 12px;
@@ -120,7 +120,7 @@ select {
 }
 
 .topbar {
-    background: white;
+    background: #242424;
     border-bottom: 1px solid #e2e8f0;
     padding: 0 24px;
     height: 60px;
@@ -135,7 +135,7 @@ select {
 .topbar-brand {
     font-size: 18px;
     font-weight: 800;
-    color: #6366f1;
+    color: #FFD700;
 }
 
 .topbar-right {
@@ -145,16 +145,16 @@ select {
 }
 
 .user-pill {
-    background: #f1f5f9;
+    background: #1A1A1A;
     border-radius: 20px;
     padding: 6px 14px;
     font-size: 13px;
     font-weight: 600;
-    color: #374151;
+    color: #F5F5F5;
 }
 
 .pkg-badge {
-    background: linear-gradient(135deg, #6366f1, #0ea5e9);
+    background: linear-gradient(135deg, #FFD700, #0ea5e9);
     color: white;
     border-radius: 20px;
     padding: 4px 12px;
@@ -174,7 +174,7 @@ select {
 
 /* ── Nav tabs ── */
 .nav-tabs {
-    background: white;
+    background: #242424;
     border-bottom: 1px solid #e2e8f0;
     display: flex;
     padding: 0 24px;
@@ -195,12 +195,12 @@ select {
 }
 
 .tab-btn.active {
-    color: #6366f1;
-    border-bottom-color: #6366f1;
+    color: #FFD700;
+    border-bottom-color: #FFD700;
 }
 
 .tab-btn:hover:not(.active) {
-    color: #1e293b;
+    color: #F5F5F5;
 }
 
 /* ── Main content ── */
@@ -213,7 +213,7 @@ select {
 
 /* ── Cards ── */
 .card {
-    background: white;
+    background: #242424;
     border-radius: 16px;
     padding: 22px 24px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
@@ -290,7 +290,7 @@ select {
 }
 
 .badge-gray {
-    background: #f1f5f9;
+    background: #1A1A1A;
     color: #475569;
 }
 
@@ -308,7 +308,7 @@ select {
 }
 
 .stat-box {
-    background: white;
+    background: #242424;
     border-radius: 14px;
     padding: 18px;
     text-align: center;
@@ -340,7 +340,7 @@ select {
 .form-group label {
     font-size: 13px;
     font-weight: 600;
-    color: #374151;
+    color: #F5F5F5;
     display: block;
     margin-bottom: 5px;
 }
@@ -355,13 +355,13 @@ select {
     font-size: 14px;
     outline: none;
     transition: border-color 0.2s;
-    background: white;
+    background: #242424;
 }
 
 .form-input:focus,
 .form-textarea:focus,
 .form-select:focus {
-    border-color: #6366f1;
+    border-color: #FFD700;
 }
 
 .form-textarea {
@@ -370,7 +370,7 @@ select {
 }
 
 .btn-submit {
-    background: #6366f1;
+    background: #FFD700;
     color: white;
     border: none;
     border-radius: 10px;
@@ -439,7 +439,7 @@ select {
     width: 10px;
     height: 10px;
     border-radius: 50%;
-    background: #6366f1;
+    background: #FFD700;
     margin-top: 5px;
     flex-shrink: 0;
 }
@@ -870,7 +870,7 @@ select {
     width: 7px;
     height: 7px;
     border-radius: 50%;
-    background: #6366f1;
+    background: #FFD700;
     animation: typing-bounce 1.2s infinite;
 }
 
@@ -911,7 +911,7 @@ select {
 
 .ai-input:focus {
     outline: none;
-    border-color: #6366f1;
+    border-color: #FFD700;
 }
 
 .ai-input::placeholder { color: #475569; }
@@ -920,7 +920,7 @@ select {
 .ai-send-btn {
     width: 44px;
     height: 44px;
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    background: linear-gradient(135deg, #FFD700, #8b5cf6);
     border: none;
     border-radius: 10px;
     color: #fff;
@@ -939,7 +939,7 @@ select {
 .ai-input-note {
     text-align: center;
     font-size: 11px;
-    color: #374151;
+    color: #F5F5F5;
     padding: 4px 20px 10px;
     flex-shrink: 0;
     background: #111827;

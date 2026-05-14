@@ -5,6 +5,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import { LangProvider, ThemeProvider } from './i18n';
 import App from './App';
 import { ScrollToTop } from './components/ScrollToTop';
+import './styles/tazo-tokens.css';
 import './styles.css';
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? '';

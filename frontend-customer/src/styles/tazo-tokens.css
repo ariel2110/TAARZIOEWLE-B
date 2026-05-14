@@ -1,0 +1,637 @@
+﻿/* ── TAZO Design System v1.1 (portable) — tokens + chrome primitives ─────────── */
+@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap');
+
+:root {
+  /* Brand — primary accent (coral; unified with header chrome) */
+  --tz-accent-1: #ff4500;
+  --tz-accent-2: #ff6b2b;
+  --tz-accent-gradient: linear-gradient(135deg, var(--tz-accent-1), var(--tz-accent-2));
+  --tz-accent-soft: rgba(255, 107, 43, 0.15);
+  --tz-accent-soft-2: rgba(255, 107, 43, 0.12);
+
+  /* Legacy “gold” CTA (buttons / primary actions in dark surfaces) */
+  --tz-orange: #ffd700;
+  --tz-orange-hover: #e5c200;
+  --tz-orange-dim: rgba(255, 215, 0, 0.12);
+
+  /* Surfaces (dark chrome) */
+  --tz-bg: #1a1a1a;
+  --tz-bg-deep: #111111;
+  --tz-surface: #242424;
+  --tz-surface-2: #2e2e2e;
+  --tz-surface-3: #3a3a3a;
+  --tz-surface-pill: #262626;
+  --tz-border: #3a3a3a;
+  --tz-border-subtle: #2d2d2d;
+  --tz-border-vertical: #252525;
+
+  /* Text */
+  --tz-text: #f5f5f5;
+  --tz-text-muted: #9ca3af;
+  --tz-text-subtle: #555555;
+  --tz-text-nav: #8b949e;
+  --tz-text-nav-hover: #e6edf3;
+  --tz-text-dim: #6b7280;
+
+  /* Semantic */
+  --tz-success: #22c55e;
+  --tz-warning: #f59e0b;
+  --tz-danger: #ef4444;
+  --tz-danger-ui: #f85149;
+  --tz-danger-ui-border: rgba(248, 81, 73, 0.3);
+  --tz-danger-ui-bg: rgba(248, 81, 73, 0.12);
+  --tz-info: #60a5fa;
+  --tz-info-link: #4299e1;
+  --tz-info-soft: #90cdf4;
+
+  /* Radius */
+  --tz-r-sm: 4px;
+  --tz-r-md: 8px;
+  --tz-r-lg: 12px;
+  --tz-r-xl: 16px;
+  --tz-r-pill: 999px;
+
+  /* Motion */
+  --tz-ease: 150ms ease;
+  --tz-ease-out: 180ms cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Elevation */
+  --tz-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.25);
+  --tz-shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.7);
+
+  /* Type */
+  --tz-font: 'Heebo', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --tz-text-2xs: 9px;
+  --tz-text-xs: 11px;
+  --tz-text-sm: 12px;
+  --tz-text-md: 13px;
+  --tz-text-base: 15px;
+  --tz-text-lg: 20px;
+  --tz-text-xl: 36px;
+  --tz-leading-tight: 1.4;
+  --tz-leading-body: 1.8;
+
+  /* Spacing scale */
+  --tz-space-1: 4px;
+  --tz-space-2: 8px;
+  --tz-space-3: 12px;
+  --tz-space-4: 16px;
+  --tz-space-5: 20px;
+  --tz-space-6: 24px;
+  --tz-space-8: 32px;
+
+  /* Layout */
+  --tz-header-h: 52px;
+  --tz-vertical-nav-h: 40px;
+
+  /* z-index */
+  --tz-z-vertical: 999;
+  --tz-z-header: 1000;
+  --tz-z-modal: 99999;
+
+  /* Focus (a11y) */
+  --tz-focus-ring: 0 0 0 2px var(--tz-bg), 0 0 0 4px var(--tz-orange);
+
+  /* Consumer funnel (light shell) — used outside dark header */
+  --tz-consumer-bg: linear-gradient(180deg, #eef3f9 0%, #f8fafc 50%, #eef2f7 100%);
+  --tz-consumer-text: #1e293b;
+  --tz-consumer-muted: #718096;
+  --tz-consumer-slate: #a0aec0;
+  --tz-consumer-card: #151929;
+  --tz-consumer-card-border: rgba(255, 255, 255, 0.06);
+
+  /* Landing (TazoSync — consumer search) */
+  --tz-landing-badge-bg: linear-gradient(120deg, #e8f3ff, #d9edff);
+  --tz-landing-badge-border: #b6dafd;
+  --tz-landing-badge-text: #1f5c93;
+  --tz-landing-hero-title: #163d69;
+  --tz-landing-hero-sub: #2f79bc;
+  --tz-landing-hero-desc: #5f7085;
+  --tz-landing-card-border: #dbe7f4;
+  --tz-landing-card-shadow: 0 12px 30px rgba(8, 34, 67, 0.12);
+  --tz-landing-card-shadow-soft: 0 10px 26px rgba(8, 34, 67, 0.09);
+  --tz-landing-input-border: #d6e2f0;
+  --tz-landing-input-bg: #fcfdff;
+  --tz-landing-input-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 2px 10px rgba(15, 45, 79, 0.05);
+  --tz-landing-dd-border: #dfe8f4;
+  --tz-landing-dd-shadow: 0 14px 34px rgba(10, 36, 66, 0.16);
+  --tz-landing-dd-row-border: #f0f4f8;
+  --tz-landing-highlight: #ebf8ff;
+  --tz-landing-surface: #fff;
+  --tz-landing-open-badge: #48bb78;
+  --tz-landing-closed-badge: #fc8181;
+  --tz-landing-rating-fg: #d69e2e;
+  --tz-landing-rating-bg: #fef9e7;
+  --tz-landing-navy: #1a365d;
+  --tz-landing-body: #4a5568;
+  --tz-landing-border-input-idle: #e2e8f0;
+  --tz-landing-admin-fg: #7a8ea5;
+  --tz-landing-admin-border: #d7e3f1;
+  --tz-landing-admin-bg: #f9fbfe;
+  --tz-landing-admin-shadow: 0 4px 10px rgba(20, 55, 95, 0.08);
+  --tz-landing-card-title: #2d3748;
+  /* Card gradient end-stops (Landing.js inline gradients) */
+  --tz-landing-card-gradient-end: #fbfdff;
+  --tz-landing-how-card-gradient-end: #f9fcff;
+
+  /* Admin dashboard (TazoSync) */
+  --tz-admin-page-bg: #f7f9fc;
+  --tz-admin-surface: #fff;
+  --tz-admin-border: #e2e8f0;
+  --tz-admin-tab-group-bg: #f8fafc;
+  --tz-admin-tab-inactive-bg: #edf2f7;
+  --tz-admin-tab-text: #4a5568;
+  --tz-admin-heading: #1a365d;
+  --tz-admin-card-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  --tz-admin-card-shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --tz-admin-pending-accent: #c05621;
+  --tz-admin-pending-bg: #fffbeb;
+  --tz-admin-pending-border: #f6ad55;
+  --tz-admin-row-muted-bg: #f7fafc;
+  --tz-admin-input-border-strong: #cbd5e0;
+  --tz-admin-info-bg: #ebf8ff;
+  --tz-admin-info-border: #bee3f8;
+  --tz-admin-info-text: #2c5282;
+
+  /* Order / payment status chips (admin) */
+  --tz-status-created: #a0aec0;
+  --tz-status-matching: #4299e1;
+  --tz-status-sent: #ed8936;
+  --tz-status-sent-regional: #dd6b20;
+  --tz-status-accepted: #48bb78;
+  --tz-status-on-way: #38b2ac;
+  --tz-status-tracking: #38b2ac;
+  --tz-status-delivered: #805ad5;
+  --tz-status-payment-held: #e53e3e;
+  --tz-status-payment-released: #48bb78;
+  --tz-status-dispute: #e53e3e;
+  --tz-status-completed: #276749;
+  --tz-status-cancelled: #718096;
+  --tz-pay-pending: #a0aec0;
+  --tz-pay-held: #ed8936;
+  --tz-pay-released: #48bb78;
+  --tz-pay-refunded: #9f7aea;
+
+  /* Admin — panels, push pipeline, credits table */
+  --tz-push-read: #2b6cb0;
+  --tz-push-replied-yes: #38a169;
+  --tz-admin-success-panel-bg: #f0fff4;
+  --tz-admin-success-panel-border: #9ae6b4;
+  --tz-admin-success-heading: #276749;
+  --tz-admin-success-muted: #48bb78;
+  --tz-admin-error-panel-bg: #fff5f5;
+  --tz-admin-error-panel-border: #fed7d7;
+  --tz-admin-error-strong: #c53030;
+  --tz-admin-btn-green: #38a169;
+  --tz-admin-credits-minus-bg: #742a2a;
+  --tz-admin-code-header-bg: #1a202c;
+  --tz-admin-credit-positive: #68d391;
+  --tz-admin-credit-locked: #fc8181;
+  --tz-admin-whatsapp-green: #25d366;
+  --tz-admin-featured-gold: #f6c90e;
+  --tz-admin-featured-brown: #744210;
+  --tz-admin-teal-count-bg: #e6fffa;
+  --tz-admin-teal-count-fg: #2c7a7b;
+  --tz-admin-error-banner-bg: #742a2a;
+  --tz-admin-error-banner-fg: #feb2b2;
+  --tz-admin-editor-bg: #0d1117;
+  --tz-admin-navy-card-bg: #1a2744;
+  --tz-admin-dark-surface: #151929;
+  --tz-admin-warn-dark-bg: #2d1f00;
+  --tz-admin-warn-dark-border: #d69e2e;
+  --tz-admin-warn-dark-text: #f6e05e;
+  --tz-admin-link-blue: #63b3ed;
+  --tz-admin-btn-blue: #2b6cb0;
+  --tz-admin-blue-tint-bg: #f7faff;
+  --tz-admin-table-stripe: #fafbfd;
+  --tz-admin-match-yes-bg: #c6f6d5;
+
+  /* Regional business dashboard (dark shell — matches inline legacy palette) */
+  --tz-regional-page-bg: #0b0f1a;
+  --tz-regional-border: #2d3748;
+  --tz-regional-highlight: #1e3a5f;
+  --tz-regional-shift-open-bg: #0f2622;
+  --tz-regional-low-stock-bg: #3d1a00;
+  --tz-regional-low-stock-chip-bg: #7b341e;
+}
+
+/* ── Global baseline ─────────────────────────────────────────────────────── */
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--tz-font);
+}
+
+*:focus-visible {
+  outline: none;
+  box-shadow: var(--tz-focus-ring);
+}
+
+/* ── Consumer shell (main funnel + dashboards using light bg) ─────────────── */
+.tz-shell-consumer {
+  font-family: var(--tz-font);
+  background: var(--tz-consumer-bg);
+  color: var(--tz-consumer-text);
+  min-height: 100vh;
+  direction: rtl;
+}
+
+/* ── Utility: buttons / cards ─────────────────────────────────────────────── */
+.tz-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--tz-r-md);
+  border: none;
+  font: 600 0.875rem var(--tz-font);
+  cursor: pointer;
+  transition: background var(--tz-ease), transform var(--tz-ease), box-shadow var(--tz-ease);
+}
+
+.tz-btn:active {
+  transform: scale(0.97);
+}
+
+.tz-btn-primary {
+  background: var(--tz-orange);
+  color: #1a1a1a;
+}
+
+.tz-btn-primary:hover {
+  background: var(--tz-orange-hover);
+}
+
+.tz-btn-ghost {
+  background: transparent;
+  color: var(--tz-text-muted);
+  border: 1px solid var(--tz-border);
+}
+
+.tz-btn-ghost:hover {
+  background: var(--tz-surface-3);
+  color: var(--tz-text);
+}
+
+.tz-btn:disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.tz-card {
+  background: var(--tz-surface);
+  border: 1px solid var(--tz-border);
+  border-radius: var(--tz-r-lg);
+  padding: 1.25rem;
+}
+
+[dir='rtl'],
+.rtl {
+  direction: rtl;
+  text-align: right;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Global header + vertical nav (TazoGlobalHeader)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.tz-global-header {
+  height: var(--tz-header-h);
+  background: var(--tz-bg);
+  border-bottom: 1px solid var(--tz-border-subtle);
+  display: flex;
+  align-items: center;
+  padding: 0 var(--tz-space-4);
+  position: sticky;
+  top: 0;
+  z-index: var(--tz-z-header);
+  direction: rtl;
+  gap: var(--tz-space-2);
+  font-family: var(--tz-font);
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.tz-global-header__brand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.tz-global-header__brand a {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+}
+
+.tz-logo-badge {
+  background: var(--tz-accent-gradient);
+  color: #fff;
+  font-weight: 900;
+  font-size: var(--tz-text-md);
+  padding: 3px 9px;
+  border-radius: var(--tz-r-sm);
+  letter-spacing: 0.5px;
+  line-height: var(--tz-leading-tight);
+}
+
+.tz-badge-beta,
+.tz-badge-admin {
+  font-size: var(--tz-text-2xs);
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: var(--tz-r-pill);
+  letter-spacing: 0.08em;
+  line-height: 1.5;
+}
+
+.tz-badge-beta {
+  background: var(--tz-accent-soft);
+  color: var(--tz-accent-2);
+}
+
+.tz-badge-admin {
+  background: var(--tz-accent-soft-2);
+  color: var(--tz-accent-2);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 2px 7px;
+}
+
+.tz-global-header__nav {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  overflow: hidden;
+  justify-content: center;
+}
+
+.tz-header-refresh {
+  background: transparent;
+  border: none;
+  color: var(--tz-text-dim);
+  cursor: pointer;
+  font-size: var(--tz-text-sm);
+  font-weight: 600;
+  padding: var(--tz-space-1) 10px;
+  border-radius: var(--tz-r-sm);
+  font-family: inherit;
+  transition: color var(--tz-ease), background var(--tz-ease);
+}
+
+.tz-header-refresh:hover {
+  color: var(--tz-text-nav-hover);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.tz-header-navlink {
+  color: var(--tz-text-nav);
+  text-decoration: none;
+  font-size: var(--tz-text-sm);
+  font-weight: 600;
+  padding: var(--tz-space-1) 10px;
+  border-radius: var(--tz-r-sm);
+  white-space: nowrap;
+  transition: color var(--tz-ease);
+}
+
+.tz-header-navlink:hover {
+  color: var(--tz-text-nav-hover);
+}
+
+.tz-platform-switcher {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--tz-surface-pill);
+  border-radius: var(--tz-r-md);
+  padding: 3px;
+  flex-shrink: 0;
+}
+
+.tz-platform-link {
+  padding: var(--tz-space-1) 11px;
+  border-radius: var(--tz-r-sm);
+  font-size: var(--tz-text-xs);
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  background: transparent;
+  color: var(--tz-text-dim);
+  transition: color var(--tz-ease), background var(--tz-ease), transform var(--tz-ease);
+  letter-spacing: 0.02em;
+}
+
+.tz-platform-link:hover {
+  color: var(--tz-text-nav-hover);
+}
+
+.tz-platform-link--active {
+  background: var(--tz-accent-gradient);
+  color: #fff;
+}
+
+.tz-header-logout {
+  background: var(--tz-danger-ui-bg);
+  border: 1px solid var(--tz-danger-ui-border);
+  color: var(--tz-danger-ui);
+  padding: var(--tz-space-1) var(--tz-space-3);
+  border-radius: var(--tz-r-sm);
+  cursor: pointer;
+  font-size: var(--tz-text-sm);
+  font-weight: 600;
+  flex-shrink: 0;
+  font-family: inherit;
+  transition: background var(--tz-ease), border-color var(--tz-ease);
+}
+
+.tz-header-logout:hover {
+  background: rgba(248, 81, 73, 0.2);
+}
+
+.tz-vertical-nav {
+  position: sticky;
+  top: var(--tz-header-h);
+  z-index: var(--tz-z-vertical);
+  background: var(--tz-bg-deep);
+  border-bottom: 1px solid var(--tz-border-vertical);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  padding: 0 var(--tz-space-4);
+  height: var(--tz-vertical-nav-h);
+  direction: ltr;
+  box-sizing: border-box;
+}
+
+.tz-vertical-link {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px var(--tz-space-4);
+  border-radius: 20px;
+  font-size: var(--tz-text-sm);
+  font-weight: 700;
+  text-decoration: none;
+  transition: color var(--tz-ease), background var(--tz-ease), border-color var(--tz-ease);
+  border: 1px solid #2a2a2a;
+  color: var(--tz-text-dim);
+  background: transparent;
+}
+
+.tz-vertical-link:hover {
+  color: var(--tz-text-nav-hover);
+  border-color: var(--tz-border-subtle);
+}
+
+.tz-vertical-link--active {
+  background: var(--tz-accent-gradient);
+  color: #fff;
+  border-color: transparent;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ToS modal + step bar (App.js)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.tz-tos-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: var(--tz-z-modal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--tz-space-4);
+  direction: rtl;
+}
+
+.tz-tos-card {
+  background: var(--tz-consumer-card);
+  border-radius: var(--tz-r-xl);
+  padding: 28px var(--tz-space-6);
+  max-width: 480px;
+  width: 100%;
+  box-shadow: var(--tz-shadow-lg);
+  color: #e2e8f0;
+  max-height: 90vh;
+  overflow-y: auto;
+  border: 1px solid var(--tz-consumer-card-border);
+}
+
+.tz-tos-emoji {
+  font-size: var(--tz-text-xl);
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.tz-tos-title {
+  text-align: center;
+  margin: 0 0 var(--tz-space-4);
+  color: #fff;
+  font-size: var(--tz-text-lg);
+  font-weight: 800;
+}
+
+.tz-tos-body {
+  font-size: var(--tz-text-md);
+  color: var(--tz-consumer-slate);
+  line-height: var(--tz-leading-body);
+  margin-bottom: 18px;
+}
+
+.tz-tos-body p {
+  margin-top: 0;
+}
+
+.tz-tos-body p:last-child {
+  margin-bottom: 0;
+}
+
+.tz-tos-strong {
+  color: #e2e8f0;
+}
+
+.tz-tos-brand {
+  color: var(--tz-info-soft);
+}
+
+.tz-tos-accept {
+  width: 100%;
+  background: #276749;
+  color: #fff;
+  border: none;
+  border-radius: var(--tz-r-lg);
+  padding: 14px;
+  font-size: var(--tz-text-base);
+  font-weight: 800;
+  cursor: pointer;
+  font-family: var(--tz-font);
+  transition: filter var(--tz-ease), transform var(--tz-ease);
+}
+
+.tz-tos-accept:hover {
+  filter: brightness(1.06);
+}
+
+.tz-tos-accept:active {
+  transform: scale(0.99);
+}
+
+.tz-tos-foot {
+  font-size: var(--tz-text-xs);
+  color: #4a5568;
+  text-align: center;
+  margin-top: 10px;
+  margin-bottom: 0;
+}
+
+.tz-tos-foot a {
+  color: var(--tz-info-link);
+}
+
+.tz-stepbar {
+  display: flex;
+  padding: var(--tz-space-2) var(--tz-space-4);
+  background: #ebf8ff;
+  gap: var(--tz-space-1);
+  overflow-x: auto;
+  font-family: var(--tz-font);
+}
+
+.tz-stepbar__item {
+  flex: 1;
+  min-width: 52px;
+  text-align: center;
+  font-size: var(--tz-text-xs);
+  padding: var(--tz-space-1) 6px;
+  border-radius: var(--tz-r-sm);
+  white-space: nowrap;
+  transition: background var(--tz-ease), color var(--tz-ease);
+}
+
+.tz-stepbar__item--done {
+  font-weight: 700;
+  background: var(--tz-success);
+  color: #fff;
+}
+
+.tz-stepbar__item--current {
+  font-weight: 700;
+  background: #1a365d;
+  color: #fff;
+}
+
+.tz-stepbar__item--todo {
+  font-weight: 400;
+  background: #e2e8f0;
+  color: var(--tz-consumer-muted);
+}

@@ -390,8 +390,8 @@ def _order_paid_pro(ctx: dict, tier: str) -> dict:
 def _send_wa(phone: str, message: str, label: str) -> None:
     """Fire-and-forget WhatsApp send with error logging."""
     try:
-        from app.services.communications.evolution_whatsapp_service import EvolutionWhatsAppService
-        EvolutionWhatsAppService().send_text(phone, message)
+        from app.services.communications.meta_whatsapp_service import MetaWhatsAppService
+        MetaWhatsAppService().send_text(phone, message)
         logger.info('[MorningHandler][%s] WhatsApp alert sent', label)
     except Exception as exc:
         logger.warning('[MorningHandler][%s] WhatsApp send failed: %s', label, exc)

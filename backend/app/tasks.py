@@ -1,4 +1,4 @@
-"""
+﻿"""
 tasks.py — Celery background tasks for tazo-web.
 
 All heavy AI operations and scheduled maintenance that would block the API
@@ -531,7 +531,7 @@ def finalize_deployment_task(self: Task, token: str) -> dict:
         from app.db.session import SessionLocal
         from app.models.public_intake import PublicIntake
         from app.services.hostinger_service import HostingerService, MAX_DOMAIN_PRICE_USD
-        from app.services.communications.evolution_whatsapp_service import EvolutionWhatsAppService
+        from app.services.communications.meta_whatsapp_service import MetaWhatsAppService
         from app.core.config import settings
 
         db = SessionLocal()
@@ -589,7 +589,7 @@ def finalize_deployment_task(self: Task, token: str) -> dict:
                         # Notify admin via WhatsApp
                         _admin_phone = getattr(settings, 'whatsapp_owner_phone', '')
                         if _admin_phone:
-                            EvolutionWhatsAppService().send_text(
+                            MetaWhatsAppService().send_text(
                                 _admin_phone,
                                 f"🚨 *tazo-web — אישור רכישת דומיין נדרש*\n\n"
                                 f"לקוח: {intake.business_name}\n"
@@ -641,7 +641,7 @@ def finalize_deployment_task(self: Task, token: str) -> dict:
                 f"💳 המנוי שלך הוא 39 ₪/חודש — כולל אחסון, תחזוקה ועדכונים.\n\n"
                 f"שנצליח ביחד 🚀\n_צוות tazo-web_"
             )
-            EvolutionWhatsAppService().send_text(phone, message)
+            MetaWhatsAppService().send_text(phone, message)
             logger.info(
                 '[finalize_deployment_task] Done — domain=%s live_url=%s', domain, live_url
             )
@@ -651,7 +651,7 @@ def finalize_deployment_task(self: Task, token: str) -> dict:
             # Notify admin; retry will re-attempt the full activation
             _admin_phone = getattr(settings, 'whatsapp_owner_phone', '')
             if _admin_phone:
-                EvolutionWhatsAppService().send_text(
+                MetaWhatsAppService().send_text(
                     _admin_phone,
                     f"⚠️ *tazo-web — הפעלת אתר נכשלה*\n\n"
                     f"Token: `{token[:12]}...`\n"
@@ -776,9 +776,9 @@ def send_abandonment_recovery_task(self: Task, client_name: str, client_phone: s
     message = _build_recovery_message(client_name)
 
     # ── Send WhatsApp ──────────────────────────────────────────────────────
-    from app.services.communications.evolution_whatsapp_service import EvolutionWhatsAppService
+    from app.services.communications.meta_whatsapp_service import MetaWhatsAppService
 
-    sent = EvolutionWhatsAppService().send_text(client_phone, message)
+    sent = MetaWhatsAppService().send_text(client_phone, message)
     if sent:
         logger.info(
             '[abandonment_recovery] Recovery message sent to %s***', client_phone[:6]
@@ -883,13 +883,13 @@ def _send_owner_whatsapp(message: str) -> None:
     """Send a WhatsApp message to the owner (silent on failure)."""
     try:
         from app.core.config import settings
-        from app.services.communications.evolution_whatsapp_service import EvolutionWhatsAppService
+        from app.services.communications.meta_whatsapp_service import MetaWhatsAppService
 
         phone = getattr(settings, 'whatsapp_owner_phone', '')
         if not phone:
             logger.warning('[fb_token_refresh] whatsapp_owner_phone not set — cannot notify owner')
             return
-        EvolutionWhatsAppService().send_text(str(phone), message)
+        MetaWhatsAppService().send_text(str(phone), message)
     except Exception as exc:
         logger.error('[fb_token_refresh] Failed to send owner WhatsApp notification: %s', exc)
 

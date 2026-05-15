@@ -157,7 +157,7 @@ async def approve_message(token: str, body: ApproveBody = ApproveBody()):
     """Approve (and optionally edit) a pending WhatsApp message and send it to the lead."""
     from app.db.session import SessionLocal
     from app.models.public_intake import PublicIntake
-    from app.services.communications.evolution_whatsapp_service import EvolutionWhatsAppService
+    from app.services.communications.meta_whatsapp_service import MetaWhatsAppService
     db = SessionLocal()
     try:
         intake = db.query(PublicIntake).filter(PublicIntake.token == token).first()
@@ -168,7 +168,7 @@ async def approve_message(token: str, body: ApproveBody = ApproveBody()):
         final_msg = (body.message or '').strip() or intake.whatsapp_pending_message
         if not final_msg:
             raise HTTPException(400, 'No message to send')
-        sent = EvolutionWhatsAppService().send_text(intake.phone, final_msg)
+        sent = MetaWhatsAppService().send_text(intake.phone, final_msg)
         if not sent:
             raise HTTPException(502, 'Failed to send via Evolution API')
         intake.whatsapp_status = 'sent'

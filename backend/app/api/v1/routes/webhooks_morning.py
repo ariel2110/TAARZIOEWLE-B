@@ -283,8 +283,8 @@ def _notify_admin_pro_payment(
         f"🔗 ניהול: {admin_panel_url}"
     )
 
-    from app.services.communications.evolution_whatsapp_service import EvolutionWhatsAppService
-    EvolutionWhatsAppService().send_text(owner, msg)
+    from app.services.communications.meta_whatsapp_service import MetaWhatsAppService
+    MetaWhatsAppService().send_text(owner, msg)
     logger.info('[MorningWebhook][%s] Admin alert sent for client=%s', tier, client_name[:30])
 
 
@@ -301,8 +301,8 @@ def _send_pro_client_welcome(client_name: str, client_phone: str) -> None:
         f"תודה על האמון 🙏\n"
         f"_אריאל, TAZO_WEB_"
     )
-    from app.services.communications.evolution_whatsapp_service import EvolutionWhatsAppService
-    EvolutionWhatsAppService().send_text(client_phone, msg)
+    from app.services.communications.meta_whatsapp_service import MetaWhatsAppService
+    MetaWhatsAppService().send_text(client_phone, msg)
     logger.info('[MorningWebhook][pro] Personal welcome sent to client %s***', client_phone[:6])
 
 
@@ -357,7 +357,7 @@ def _activate_site_and_notify(
 
 def _send_auto_congrats(phone: str, business_name: str, live_url: str) -> None:
     """WhatsApp congratulations to the 39 NIS auto-tier client after site goes live."""
-    from app.services.communications.evolution_whatsapp_service import EvolutionWhatsAppService
+    from app.services.communications.meta_whatsapp_service import MetaWhatsAppService
     msg = (
         f"🎉 מזל טוב {business_name}!\n\n"
         f"האתר שלך כבר באוויר!\n\n"
@@ -365,7 +365,7 @@ def _send_auto_congrats(phone: str, business_name: str, live_url: str) -> None:
         f"💳 המנוי שלך הוא 39 ₪/חודש — כולל אחסון, תחזוקה, ועדכונים.\n\n"
         f"שנצליח ביחד 🚀\n_צוות TAZO_WEB_"
     )
-    EvolutionWhatsAppService().send_text(phone, msg)
+    MetaWhatsAppService().send_text(phone, msg)
     logger.info('[Activation] Congrats sent to %s***', phone[:6])
 
 
@@ -374,7 +374,7 @@ def _notify_admin_activation_failed(token: str, domain: str, error: str) -> None
     owner = settings.whatsapp_owner_phone
     if not owner:
         return
-    from app.services.communications.evolution_whatsapp_service import EvolutionWhatsAppService
+    from app.services.communications.meta_whatsapp_service import MetaWhatsAppService
     msg = (
         f"⚠️ *TAZO-WEB — הפעלת אתר נכשלה*\n\n"
         f"Token: `{token[:12]}...`\n"
@@ -382,4 +382,4 @@ def _notify_admin_activation_failed(token: str, domain: str, error: str) -> None
         f"Error: {error}\n\n"
         f"נדרשת פעולה ידנית."
     )
-    EvolutionWhatsAppService().send_text(owner, msg)
+    MetaWhatsAppService().send_text(owner, msg)

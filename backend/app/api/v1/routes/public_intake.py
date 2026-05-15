@@ -171,7 +171,7 @@ async def google_vip_login(payload: GoogleVipRequest) -> VipTokenResponse:
 # ── Admin approval notification helper ─────────────────────────────────────
 def _notify_admin_approval(token: str, business_name: str, phone: str, message: str) -> None:
     """Send the admin a WhatsApp notification with a link to approve/edit/reject the message."""
-    from app.services.communications.evolution_whatsapp_service import EvolutionWhatsAppService
+    from app.services.communications.meta_whatsapp_service import MetaWhatsAppService
     owner_phone = getattr(settings, 'whatsapp_owner_phone', '') or ''
     if not owner_phone:
         return
@@ -186,7 +186,7 @@ def _notify_admin_approval(token: str, business_name: str, phone: str, message: 
         f"─────────────────\n\n"
         f"🔗 לאישור / עריכה / דחייה:\n{approve_url}"
     )
-    EvolutionWhatsAppService().send_text(owner_phone, notification)
+    MetaWhatsAppService().send_text(owner_phone, notification)
 
 
 # ── Background task: run AI pipeline for public intake ──────────────────────
@@ -196,7 +196,7 @@ def _run_intake_pipeline(token: str) -> None:
     is configured, and updates intake status to 'in_review' when done.
     """
     from app.services.generator.autosite_pipeline_service import AutoSitePipelineService
-    from app.services.communications.evolution_whatsapp_service import EvolutionWhatsAppService
+    from app.services.communications.meta_whatsapp_service import MetaWhatsAppService
 
     db = None
     try:

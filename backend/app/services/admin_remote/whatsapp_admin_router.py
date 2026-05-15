@@ -37,7 +37,7 @@ import httpx
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.services.communications.evolution_whatsapp_service import EvolutionWhatsAppService
+from app.services.communications.meta_whatsapp_service import MetaWhatsAppService
 from app.services.admin_remote.agents_config import (
     GROK_SYSTEM_PROMPT,
     GEMINI_SYSTEM_PROMPT,
@@ -824,7 +824,7 @@ def _send(text: str) -> None:
         return
     logger.warning("[admin_wa] _send → phone=%r  text=%r", owner, text[:80])
     try:
-        ok = EvolutionWhatsAppService().send_text(owner, text)
+        ok = MetaWhatsAppService().send_text(owner, text)
         logger.warning("[admin_wa] _send result: %s", "OK" if ok else "FAILED")
     except Exception:
         logger.exception("[admin_wa] _send raised exception")

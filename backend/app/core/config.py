@@ -51,11 +51,15 @@ class Settings(BaseSettings):
     facebook_app_id: str | None = Field(default=None)           # Facebook App ID — required for token refresh
     facebook_app_secret: str | None = Field(default=None)       # Facebook App Secret — required for token refresh
 
-    # Evolution API (self-hosted WhatsApp gateway)
+    # Evolution API — DEPRECATED, kept for backward compat (use Meta API instead)
     evolution_api_url: str | None = Field(default=None)
     evolution_api_key: str | None = Field(default=None)
     evolution_instance: str | None = Field(default=None)
     whatsapp_owner_phone: str = Field(default='')
+
+    # Meta Cloud API (official WhatsApp Business API)
+    meta_wa_phone_number_id: str | None = Field(default=None)  # Phone Number ID from Meta Business Manager
+    meta_wa_access_token: str | None = Field(default=None)     # System User permanent token
 
     # Morning — Israeli payment processor (https://morning.co.il)
     morning_api_key: str | None = Field(default=None)

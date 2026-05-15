@@ -1,0 +1,47 @@
+2026-04-17T07:45:01.460502 Project directory: /docker/site-nest-platform
+2026-04-17T07:45:01.460760 Pulling project images
+2026-04-17T07:45:01.461250 ------------------------------
+2026-04-17T07:45:01.574586  backend Skipped No image to be pulled
+2026-04-17T07:45:01.574648  celery_worker Skipped No image to be pulled
+2026-04-17T07:45:01.574656  celery_beat Skipped No image to be pulled
+2026-04-17T07:45:01.574667  Image redis:alpine Pulling 
+2026-04-17T07:45:01.574968  Image postgres:16 Pulling 
+2026-04-17T07:45:02.523875  Image redis:alpine Pulled 
+2026-04-17T07:45:02.545518  Image postgres:16 Pulled 
+2026-04-17T07:45:02.597850 ------------------------------
+2026-04-17T07:45:02.597951 Deploying project
+2026-04-17T07:45:02.598453 ------------------------------
+2026-04-17T07:45:02.740358  Container localbiz-redis Recreate 
+2026-04-17T07:45:02.740581  Container localbiz-postgres Recreate 
+2026-04-17T07:45:03.015857  Container localbiz-postgres Recreated 
+2026-04-17T07:45:03.041121  Container localbiz-redis Recreated 
+2026-04-17T07:45:03.041157  Container localbiz-celery Recreate 
+2026-04-17T07:45:03.041165  Container localbiz-celery-beat Recreate 
+2026-04-17T07:45:03.041172  Container localbiz-backend Recreate 
+2026-04-17T07:45:03.105099  Container localbiz-backend Recreated 
+2026-04-17T07:45:03.243048  Container localbiz-celery-beat Recreated 
+2026-04-17T07:45:05.570902  Container localbiz-celery Recreated 
+2026-04-17T07:45:05.601125  Container site-nest-platform-redis-1 Starting 
+2026-04-17T07:45:05.601176  Container site-nest-platform-postgres-1 Starting 
+2026-04-17T07:45:05.761870  Container site-nest-platform-postgres-1 Started 
+2026-04-17T07:45:05.780299  Container site-nest-platform-redis-1 Started 
+2026-04-17T07:45:05.780337  Container site-nest-platform-postgres-1 Waiting 
+2026-04-17T07:45:05.780344  Container site-nest-platform-redis-1 Waiting 
+2026-04-17T07:45:05.780351  Container site-nest-platform-redis-1 Waiting 
+2026-04-17T07:45:05.780357  Container site-nest-platform-postgres-1 Waiting 
+2026-04-17T07:45:05.780363  Container site-nest-platform-redis-1 Waiting 
+2026-04-17T07:45:05.780370  Container site-nest-platform-postgres-1 Waiting 
+2026-04-17T07:45:11.282229  Container site-nest-platform-postgres-1 Healthy 
+2026-04-17T07:45:11.282290  Container site-nest-platform-redis-1 Healthy 
+2026-04-17T07:45:11.282300  Container site-nest-platform-celery_beat-1 Starting 
+2026-04-17T07:45:11.282309  Container site-nest-platform-postgres-1 Healthy 
+2026-04-17T07:45:11.282324  Container site-nest-platform-postgres-1 Healthy 
+2026-04-17T07:45:11.283412  Container site-nest-platform-redis-1 Healthy 
+2026-04-17T07:45:11.283550  Container site-nest-platform-celery_worker-1 Starting 
+2026-04-17T07:45:11.283994  Container site-nest-platform-redis-1 Healthy 
+2026-04-17T07:45:11.284014  Container site-nest-platform-backend-1 Starting 
+2026-04-17T07:45:11.528938  Container site-nest-platform-backend-1 Started 
+2026-04-17T07:45:11.533224  Container site-nest-platform-celery_beat-1 Started 
+2026-04-17T07:45:11.544893  Container site-nest-platform-celery_worker-1 Started 
+2026-04-17T07:45:11.554920 ------------------------------
+2026-04-17T07:45:11.554966 Project deployed successfully

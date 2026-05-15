@@ -1,17 +1,19 @@
 import { useState } from 'react';
+import Marketplace from './Marketplace';
 import MagicPortal from './MagicPortal';
 import LandingExtra from './LandingExtra';
 import IntakeForm from './IntakeForm';
 import SubmissionStatus from './SubmissionStatus';
 import './styles.css';
 
-export type AppPage = 'home' | 'intake' | 'status';
+export type AppPage = 'marketplace' | 'home' | 'intake' | 'status';
 
 export default function App() {
   const [page, setPage] = useState<AppPage>(() => {
     if (window.location.hash.startsWith('#/status/')) return 'status';
     if (window.location.hash === '#/start') return 'intake';
-    return 'home';
+    if (window.location.hash === '#/business') return 'home';
+    return 'marketplace';
   });
   const [statusToken, setStatusToken] = useState<string>(() => {
     const hash = window.location.hash;
@@ -36,6 +38,12 @@ export default function App() {
 
   function goHome() {
     window.location.hash = '';
+    setPage('marketplace');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function goToBusinessLanding() {
+    window.location.hash = '#/business';
     setPage('home');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -48,10 +56,15 @@ export default function App() {
     return <IntakeForm onSubmitted={goToStatus} onBack={goHome} selectedPlan={selectedPlan} />;
   }
 
-  return (
-    <>
-      <MagicPortal />
-      <LandingExtra onStartIntake={goToIntake} />
-    </>
-  );
+  if (page === 'home') {
+    return (
+      <>
+        <MagicPortal />
+        <LandingExtra onStartIntake={goToIntake} />
+      </>
+    );
+  }
+
+  // Default: Marketplace
+  return <Marketplace onJoin={goToBusinessLanding} />;
 }

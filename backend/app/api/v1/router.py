@@ -36,6 +36,9 @@ from app.api.v1.routes.webhooks_morning import router as webhooks_morning_router
 from app.api.v1.routes.admin_api_keys import router as admin_api_keys_router
 from app.api.v1.routes.admin_social import router as admin_social_router
 
+from app.api.v1.routes.admin_domain_approvals import router as admin_domain_approvals_router
+from app.api.v1.routes.admin_agent_connections import router as admin_agent_connections_router
+
 api_router = APIRouter()
 api_router.include_router(health_router)
 api_router.include_router(auth_router)
@@ -76,3 +79,10 @@ api_router.include_router(internal_whatsapp_router)
 api_router.include_router(admin_whatsapp_router)
 api_router.include_router(admin_api_keys_router)
 api_router.include_router(admin_social_router)
+api_router.include_router(admin_domain_approvals_router)
+api_router.include_router(admin_agent_connections_router)
+from app.api.v1.routes.public_mall import router as public_mall_router
+api_router.include_router(public_mall_router)
+
+from app.api.v1.routes.public_site_orders import router as public_site_orders_router
+api_router.include_router(public_site_orders_router)

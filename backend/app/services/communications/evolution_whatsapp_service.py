@@ -1,4 +1,4 @@
-"""Evolution API WhatsApp Service
+﻿"""Evolution API WhatsApp Service
 =================================
 Sends WhatsApp messages via a self-hosted Evolution API instance.
 Falls back gracefully when not configured — no exceptions propagate.
@@ -8,7 +8,7 @@ Evolution API docs: https://doc.evolution-api.com/
 Setup (in .env):
     EVOLUTION_API_URL=http://localhost:8080
     EVOLUTION_API_KEY=your-api-key
-    EVOLUTION_INSTANCE=sitenest          # the instance name you created
+    EVOLUTION_INSTANCE=TAZO-WEB          # the instance name you created
 
 The service auto-normalises Israeli phone numbers:
   052-123-4567 → 972521234567@s.whatsapp.net

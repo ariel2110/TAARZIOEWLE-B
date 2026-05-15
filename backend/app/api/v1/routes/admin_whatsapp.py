@@ -1,4 +1,4 @@
-"""Admin WhatsApp management — connect, disconnect, QR, pending messages.
+﻿"""Admin WhatsApp management — connect, disconnect, QR, pending messages.
 
 All endpoints require a valid admin JWT (Bearer token).
 Proxies to the self-hosted Evolution API instance.
@@ -23,7 +23,7 @@ router = APIRouter(
 
 _EVO_URL = lambda: (settings.evolution_api_url or 'http://127.0.0.1:8181').rstrip('/')
 _EVO_KEY = lambda: settings.evolution_api_key or ''
-_EVO_INST = lambda: settings.evolution_instance or 'sitenest'
+_EVO_INST = lambda: settings.evolution_instance or 'TAZO-WEB'
 _HEADERS = lambda: {'apikey': _EVO_KEY(), 'Content-Type': 'application/json'}
 _TIMEOUT = 15
 

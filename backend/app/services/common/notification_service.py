@@ -1,4 +1,4 @@
-"""
+﻿"""
 notification_service.py — Admin notification service.
 
 Persists admin notifications (demo viewed, payment confirmed, etc.) in the
@@ -68,8 +68,8 @@ class NotificationService:
             if not hasattr(settings, 'notification_email') or not settings.notification_email:
                 return
             msg = EmailMessage()
-            msg['Subject'] = f'[SiteNest] {event}'
-            msg['From'] = 'noreply@sitenest.site'
+            msg['Subject'] = f'[TAZO-WEB] {event}'
+            msg['From'] = 'noreply@TAZO-WEB.site'
             msg['To'] = settings.notification_email  # type: ignore[attr-defined]
             body_lines = [f'Event: {event}', f'Details: {summary}']
             for k, v in extra.items():

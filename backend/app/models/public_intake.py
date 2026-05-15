@@ -1,4 +1,4 @@
-from datetime import datetime
+﻿from datetime import datetime
 from sqlalchemy import String, Integer, Text, DateTime
 from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base
@@ -6,7 +6,7 @@ from app.models.mixins import TimestampMixin
 
 
 class PublicIntake(Base, TimestampMixin):
-    """Stores intake form submissions from potential customers on sitenest.site."""
+    """Stores intake form submissions from potential customers on TAZO-WEB.site."""
     __tablename__ = 'public_intakes'
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)

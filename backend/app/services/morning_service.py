@@ -1,4 +1,4 @@
-"""Morning.co.il payment service
+﻿"""Morning.co.il payment service
 ================================
 Creates subscription payment links and verifies incoming webhooks.
 
@@ -119,7 +119,7 @@ class MorningService:
             logger.info('[Morning] API not configured — using fixed payment URL')
             return settings.morning_fixed_payment_url
 
-        description = f'SiteNest — אתר חודשי · {business_name}'
+        description = f'TAZO-WEB — אתר חודשי · {business_name}'
         if domain:
             description += f' · {domain}'
 

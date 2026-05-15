@@ -1,22 +1,22 @@
-"""
+﻿"""
 ceo_digest_worker.py — Generates and caches the daily CEO digest.
 
 This worker is designed to be run periodically (e.g., every 6 hours)
 via a cron job or systemd timer:
 
-    # /etc/systemd/system/sitenest-ceo-digest.timer
+    # /etc/systemd/system/TAZO-WEB-ceo-digest.timer
     [Timer]
     OnCalendar=*-*-* 06:00:00
     Persistent=true
 
-    # /etc/systemd/system/sitenest-ceo-digest.service
+    # /etc/systemd/system/TAZO-WEB-ceo-digest.service
     [Service]
     Type=oneshot
-    WorkingDirectory=/home/site-nest-platform/backend
+    WorkingDirectory=/home/tazo-web-platform/backend
     ExecStart=.venv/bin/python -m app.workers.ceo_digest_worker
 
 Or via cron:
-    0 6,12,18,0 * * * cd /home/site-nest-platform/backend && .venv/bin/python -m app.workers.ceo_digest_worker
+    0 6,12,18,0 * * * cd /home/tazo-web-platform/backend && .venv/bin/python -m app.workers.ceo_digest_worker
 
 Usage:
     python -m app.workers.ceo_digest_worker

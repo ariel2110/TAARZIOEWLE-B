@@ -1,9 +1,9 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import re
 import unicodedata
 
-PUBLIC_SITE_ROOT = 'sitenest.site'
+PUBLIC_SITE_ROOT = 'TAZO-WEB.site'
 RESERVED_SUBDOMAINS = {'www', 'api', 'admin', 'customer'}
 
 

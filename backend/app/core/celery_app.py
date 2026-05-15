@@ -1,10 +1,10 @@
-"""
-celery_app.py — Celery application instance for SiteNest.
+﻿"""
+celery_app.py — Celery application instance for TAZO-WEB.
 
 Workers run heavy AI tasks (site generation, batch outreach) asynchronously
 so the FastAPI server can return immediately and stay responsive.
 
-Queue: 'sitenest' — all tasks use this single queue.
+Queue: 'TAZO-WEB' — all tasks use this single queue.
 Broker/Backend: Redis (configured via env vars CELERY_BROKER_URL / CELERY_RESULT_BACKEND).
 
 Fallback when Redis is unavailable:
@@ -21,7 +21,7 @@ _BROKER = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0')
 _BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
 
 celery_app = Celery(
-    'sitenest_tasks',
+    'TAZO_WEB_tasks',
     broker=_BROKER,
     backend=_BACKEND,
     include=['app.tasks'],          # auto-discover tasks module
@@ -33,8 +33,8 @@ celery_app.conf.update(
     result_serializer='json',
     timezone='Asia/Jerusalem',
     enable_utc=True,
-    task_default_queue='sitenest',
-    task_routes={'app.tasks.*': {'queue': 'sitenest'}},
+    task_default_queue='TAZO-WEB',
+    task_routes={'app.tasks.*': {'queue': 'TAZO-WEB'}},
     # Keep results for 24 hours so the frontend can poll
     result_expires=86_400,
     # Retry tasks on connection error (Redis temporarily unavailable)
@@ -54,12 +54,12 @@ celery_app.conf.update(
         'followup-daily-9am': {
             'task': 'app.tasks.followup_task',
             'schedule': 60 * 60 * 24,   # every 24 hours
-            'options': {'queue': 'sitenest'},
+            'options': {'queue': 'TAZO-WEB'},
         },
         'ceo-digest-every-6h': {
             'task': 'app.tasks.ceo_digest_task',
             'schedule': 60 * 60 * 6,    # every 6 hours
-            'options': {'queue': 'sitenest'},
+            'options': {'queue': 'TAZO-WEB'},
         },
         'facebook-token-refresh-every-50-days': {
             # Runs at 09:00 every 50 days — safely before the 60-day token expiry.
@@ -67,7 +67,7 @@ celery_app.conf.update(
             # crontab, so we use a timedelta of 50 days (4_320_000 seconds).
             'task': 'app.tasks.facebook_token_refresh_task',
             'schedule': 60 * 60 * 24 * 50,   # every 50 days in seconds
-            'options': {'queue': 'sitenest'},
+            'options': {'queue': 'TAZO-WEB'},
         },
     },
 )

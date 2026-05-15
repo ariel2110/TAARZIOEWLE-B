@@ -1,4 +1,4 @@
-"""Morning payment webhook listener
+﻿"""Morning payment webhook listener
 =====================================
 Receives POST events from Morning (Israeli payment processor),
 verifies the HMAC-SHA256 signature, and routes to the correct
@@ -242,7 +242,7 @@ def _notify_admin_pro_payment(
             'title': 'לקוח Starter חדש!',
             'actions': (
                 '• צור קשר ותאם צרכים\n'
-                '• הגדר תת-דומיין (xxx.sitenest.site)\n'
+                '• הגדר תת-דומיין (xxx.TAZO-WEB.site)\n'
                 '• הפעל את האתר ידנית'
             ),
         },
@@ -270,10 +270,10 @@ def _notify_admin_pro_payment(
     }
 
     cfg = tier_config.get(tier, tier_config['starter'])
-    admin_panel_url = f"https://api.sitenest.site/api/v1/admin/public-flow"
+    admin_panel_url = f"https://api.TAZO-WEB.site/api/v1/admin/public-flow"
 
     msg = (
-        f"{cfg['emoji']} *SiteNest — {cfg['title']}*\n\n"
+        f"{cfg['emoji']} *TAZO-WEB — {cfg['title']}*\n\n"
         f"👤 שם: *{client_name}*\n"
         f"📞 טלפון: {client_phone or 'לא זמין'}\n"
         f"💰 חבילה: *{PLAN_LABELS.get(tier, tier)}*\n"
@@ -295,11 +295,11 @@ def _send_pro_client_welcome(client_name: str, client_phone: str) -> None:
     """
     msg = (
         f"היי {client_name}! 👋\n\n"
-        f"אני אריאל מ-SiteNest. קיבלתי עכשיו את ההזמנה שלך למסלול המקצועי (Pro).\n\n"
+        f"אני אריאל מ-TAZO-WEB. קיבלתי עכשיו את ההזמנה שלך למסלול המקצועי (Pro).\n\n"
         f"אני כבר מתחיל לעבוד על האסטרטגיה הדיגיטלית שלך ואחזור אליך "
         f"תוך 24 שעות עם תוכנית פעולה מלאה — כולל דומיין, עיצוב, SEO וקמפיין.\n\n"
         f"תודה על האמון 🙏\n"
-        f"_אריאל, SiteNest_"
+        f"_אריאל, TAZO_WEB_"
     )
     from app.services.communications.evolution_whatsapp_service import EvolutionWhatsAppService
     EvolutionWhatsAppService().send_text(client_phone, msg)
@@ -363,7 +363,7 @@ def _send_auto_congrats(phone: str, business_name: str, live_url: str) -> None:
         f"האתר שלך כבר באוויר!\n\n"
         f"🌐 הכתובת שלך:\n{live_url}\n\n"
         f"💳 המנוי שלך הוא 39 ₪/חודש — כולל אחסון, תחזוקה, ועדכונים.\n\n"
-        f"שנצליח ביחד 🚀\n_צוות SiteNest_"
+        f"שנצליח ביחד 🚀\n_צוות TAZO_WEB_"
     )
     EvolutionWhatsAppService().send_text(phone, msg)
     logger.info('[Activation] Congrats sent to %s***', phone[:6])
@@ -376,7 +376,7 @@ def _notify_admin_activation_failed(token: str, domain: str, error: str) -> None
         return
     from app.services.communications.evolution_whatsapp_service import EvolutionWhatsAppService
     msg = (
-        f"⚠️ *SiteNest — הפעלת אתר נכשלה*\n\n"
+        f"⚠️ *TAZO-WEB — הפעלת אתר נכשלה*\n\n"
         f"Token: `{token[:12]}...`\n"
         f"Domain: {domain}\n"
         f"Error: {error}\n\n"

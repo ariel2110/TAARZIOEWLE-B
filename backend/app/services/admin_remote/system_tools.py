@@ -1,6 +1,6 @@
-"""system_tools.py
+﻿"""system_tools.py
 ==================
-SiteNest Tool Library — real-time functions the AI agents can call.
+TAZO-WEB Tool Library — real-time functions the AI agents can call.
 
 Each tool:
   • Accepts simple parameters (no huge objects)
@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 # ─────────────────────────────────────────────────────────────────────────────
 
 def get_system_stats(db: Session) -> dict[str, Any]:
-    """Return a live snapshot of the SiteNest database: leads, sites, messages."""
+    """Return a live snapshot of the TAZO-WEB database: leads, sites, messages."""
     try:
         import datetime as dt
         from sqlalchemy import cast, func
@@ -639,7 +639,7 @@ TOOLS_SCHEMA: list[dict] = [
         "function": {
             "name": "get_system_stats",
             "description": (
-                "שלוף נתונים חיים ממסד הנתונים של SiteNest: "
+                "שלוף נתונים חיים ממסד הנתונים של TAZO-WEB: "
                 "כמות לידים, אתרים, הודעות WhatsApp. "
                 "השתמש כשנשאלת על מצב המערכת, KPIs, ביצועים יומיים."
             ),

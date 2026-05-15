@@ -1,28 +1,40 @@
 :root {
-  --bg: #1A1A1A;
-  --bg-card: #242424;
-  --bg-sidebar: #242424;
-  --text: #F5F5F5;
-  --text-muted: #9CA3AF;
-  --border: #3A3A3A;
-  --shadow: rgba(0, 0, 0, .05);
-  --nav-active-bg: #FFD700;
-  --nav-active-text: #1A1A1A;
+  /* ── TAZO Brand Colors ─────────────────────────────────────── */
+  --tazo-gold: #F59E0B;
+  --tazo-gold-dark: #D97706;
+  --tazo-gold-light: #FCD34D;
+  --tazo-dark: #0F172A;
+  --tazo-dark-card: #1E293B;
+  --tazo-dark-sidebar: #1E293B;
+  /* ── Theme vars ────────────────────────────────────────────── */
+  --bg: #0F172A;
+  --bg-card: #1E293B;
+  --bg-sidebar: #1E293B;
+  --text: #F1F5F9;
+  --text-muted: #94A3B8;
+  --border: #334155;
+  --shadow: rgba(0, 0, 0, .3);
+  --primary: #F59E0B;
+  --primary-hover: #D97706;
+  --nav-active-bg: #F59E0B;
+  --nav-active-text: #0F172A;
   font-family: 'Heebo', 'Inter', system-ui, sans-serif;
   color: var(--text);
   background: var(--bg);
 }
 
 [data-theme="dark"] {
-  --bg: #1A1A1A;
-  --bg-card: #242424;
-  --bg-sidebar: #242424;
-  --text: #f1f5f9;
-  --text-muted: #94a3b8;
+  --bg: #0F172A;
+  --bg-card: #1E293B;
+  --bg-sidebar: #1E293B;
+  --text: #F1F5F9;
+  --text-muted: #94A3B8;
   --border: #334155;
-  --shadow: rgba(0, 0, 0, .3);
-  --nav-active-bg: #FFD700;
-  --nav-active-text: #1A1A1A;
+  --shadow: rgba(0, 0, 0, .4);
+  --primary: #F59E0B;
+  --primary-hover: #D97706;
+  --nav-active-bg: #F59E0B;
+  --nav-active-text: #0F172A;
 }
 
 * {

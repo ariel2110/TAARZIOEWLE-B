@@ -1,4 +1,4 @@
-from pydantic import Field, model_validator
+﻿from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -63,8 +63,8 @@ class Settings(BaseSettings):
     morning_plan_id: str | None = Field(default=None)          # recurring plan ID (optional)
     morning_webhook_secret: str | None = Field(default=None)   # HMAC key for webhook verification
     morning_fixed_payment_url: str = Field(default='https://mrng.to/Afe6Dg21q0')  # fallback fixed 39 NIS link
-    morning_success_url: str = Field(default='https://sitenest.site/success')
-    morning_cancel_url: str = Field(default='https://sitenest.site')
+    morning_success_url: str = Field(default='https://tazo-web.com/success')
+    morning_cancel_url: str = Field(default='https://tazo-web.com')
 
     # Hostinger — domain registration & DNS
     hostinger_api_token: str | None = Field(default=None)
@@ -80,14 +80,14 @@ class Settings(BaseSettings):
     anthropic_api_key: str | None = Field(default=None)
     gemini_api_key: str | None = Field(default=None)
     xai_api_key: str | None = Field(default=None)
-    api_base_url: str = Field(default='https://api.sitenest.site')
+    api_base_url: str = Field(default='https://api.tazo-web.com')
     llm_default_model: str = Field(default='gpt-4o')
 
     # OTP / delivery
     delivery_mode: str = Field(default='console')   # 'console' | 'whatsapp' | 'sms'
     whatsapp_api_key: str | None = Field(default=None)
     whatsapp_webhook_secret: str | None = Field(default=None)
-    whatsapp_verify_token: str = Field(default='sitenest-verify')
+    whatsapp_verify_token: str = Field(default='tazo-web-verify')
     notification_email: str | None = Field(default=None)
     sms_provider: str | None = Field(default=None)
 

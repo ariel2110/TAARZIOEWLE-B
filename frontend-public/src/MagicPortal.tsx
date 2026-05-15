@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+﻿import { useCallback, useEffect, useRef, useState } from 'react';
 
 const API = import.meta.env.VITE_API_BASE_URL || 'https://api.tazo-web.com/api/v1';
-const WHATSAPP_NUMBER = import.meta.env.VITE_SITENEST_WA_PHONE || '972546363350';
+const WHATSAPP_NUMBER = import.meta.env.VITE_TAZO_WEB_WA_PHONE || '972546363350';
 const SCARCITY_MINUTES = 15;
 
 // ── Types ─────────────────────────────────────────────────────────────────────

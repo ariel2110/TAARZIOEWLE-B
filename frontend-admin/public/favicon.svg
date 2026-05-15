@@ -1,19 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <!-- Rounded square background — brand indigo -->
-  <rect width="64" height="64" rx="14" fill="#6366f1"/>
-
-  <!-- Roof / gable — bold triangle -->
-  <polygon points="32,10 8,34 56,34" fill="white" opacity="0.95"/>
-
-  <!-- House body -->
-  <rect x="16" y="34" width="32" height="20" rx="2" fill="white" opacity="0.95"/>
-
-  <!-- Door — centered, indigo so it "punches through" -->
-  <rect x="27" y="42" width="10" height="12" rx="2" fill="#6366f1"/>
-
-  <!-- Left window -->
-  <rect x="18" y="37" width="8" height="7" rx="1.5" fill="#6366f1" opacity="0.7"/>
-
-  <!-- Right window -->
-  <rect x="38" y="37" width="8" height="7" rx="1.5" fill="#6366f1" opacity="0.7"/>
+  <!-- TAZO-WEB Admin favicon: Gold TW on dark navy -->
+  <rect width="64" height="64" rx="14" fill="#0F172A"/>
+  <!-- Gold accent bar (top) -->
+  <rect x="0" y="0" width="64" height="5" rx="14" fill="#F59E0B"/>
+  <!-- T letter -->
+  <rect x="9" y="16" width="22" height="5" rx="2" fill="#F59E0B"/>
+  <rect x="17" y="16" width="6" height="24" rx="2" fill="#F59E0B"/>
+  <!-- W letter -->
+  <polygon points="33,16 37,36 41,24 45,36 49,16 46,16 41,30 37,18 33,30 28.5,16" fill="#F59E0B"/>
+  <!-- TAZO dot -->
+  <circle cx="32" cy="50" r="3" fill="#F59E0B" opacity="0.7"/>
 </svg>

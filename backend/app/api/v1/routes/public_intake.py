@@ -1,5 +1,5 @@
-"""
-Public intake form endpoint — serves sitenest.site landing page form.
+﻿"""
+Public intake form endpoint — serves TAZO-WEB.site landing page form.
 Allows potential customers to submit their business info, social links, and images.
 
 VIP flow: POST /public/google-vip  →  exchange Google ID token for a short-lived VIP JWT
@@ -41,7 +41,7 @@ ALLOWED_EXTS = {'.jpg', '.jpeg', '.png', '.webp', '.gif'}
 MAX_CORRECTIONS = 3
 
 # ── Demo submission rate limits ─────────────────────────────────────────────
-# Prevents token burning and abuse from sitenest.site public intake form.
+# Prevents token burning and abuse from TAZO-WEB.site public intake form.
 _DEMO_IP_MAX       = 3    # max 3 submissions per IP per 24 h
 _DEMO_IP_WINDOW    = 1440 # 24 hours in minutes
 _DEMO_PHONE_MAX    = 2    # same phone can only submit 2 demos total (all-time: use very long window)
@@ -177,7 +177,7 @@ def _notify_admin_approval(token: str, business_name: str, phone: str, message: 
         return
     approve_url = f"{settings.api_base_url}/static/approve.html?key={settings.admin_dev_token}"
     notification = (
-        f"📋 *SiteNest - הודעה ממתינה לאישורך*\n\n"
+        f"📋 *TAZO-WEB - הודעה ממתינה לאישורך*\n\n"
         f"👤 לקוח: *{business_name}*\n"
         f"📞 טלפון: {phone}\n\n"
         f"✉️ *ההודעה המוצעת:*\n"

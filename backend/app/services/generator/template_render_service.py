@@ -1,4 +1,4 @@
-import json
+﻿import json
 import re
 from html import escape as _e
 
@@ -215,7 +215,7 @@ class TemplateRenderService:
   <div style="color:white;font-size:16px;font-weight:700;margin-bottom:6px">{name}</div>
   {f'<div>{address}</div>' if address else ''}
   {f'<div style="margin-top:4px"><a href="tel:{phone_clean}" style="color:rgba(255,255,255,0.7)">{phone}</a></div>' if phone else ''}
-  {'<div style="margin-top:12px;font-size:11px;color:rgba(255,255,255,0.3)">אתר זה הוא הדגמה בלבד — נוצר על ידי SiteNest</div>' if is_demo else ''}
+  {'<div style="margin-top:12px;font-size:11px;color:rgba(255,255,255,0.3)">אתר זה הוא הדגמה בלבד — נוצר על ידי TAZO-WEB</div>' if is_demo else ''}
 </footer>
 
 </body>

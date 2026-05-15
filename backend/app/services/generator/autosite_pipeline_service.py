@@ -1,4 +1,4 @@
-"""AutoSite Multi-Agent Generation Pipeline
+﻿"""AutoSite Multi-Agent Generation Pipeline
 ==========================================
 Five specialized AI agents work together to produce a ready-to-send
 Hebrew landing page + personalized WhatsApp outreach message.
@@ -356,7 +356,7 @@ PAGE ARCHITECTURE — REQUIRED SECTION ORDER
   • Right side: about_us text + industry highlights
   • Background: very light primary tint (primary_color_hex at 5% opacity)
 
-[12] SITENEST VERIFICATION BADGE (centered, above contact strip)
+[12] TAZO-WEB VERIFICATION BADGE (centered, above contact strip)
   • Pill badge: primary_color_hex bg, white text, checkmark icon
   • "✅ עסק זה אומת ונבדק על-ידי tazo-web"
   • Sub-text: "הפלטפורמה המובילה לאתרי עסקים בישראל | מותאם לחיפוש Google"
@@ -573,7 +573,7 @@ PAGE SECTIONS ORDER — V2 ONLY
   • Premium styling: each card has left-border in primary color, italic summary arrow
   • Industry-relevant questions (pricing, area, timing, experience, process)
 
-[10] SITENEST VERIFICATION BADGE
+[10] TAZO-WEB VERIFICATION BADGE
   • Same as V1: centered pill, "✅ עסק זה אומת על-ידי tazo-web"
 
 [11] CONTACT CTA STRIP (dramatic, full-bleed primary gradient)

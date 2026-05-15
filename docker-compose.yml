@@ -1,4 +1,4 @@
-services:
+﻿services:
   postgres:
     image: postgres:16
     container_name: localbiz-postgres
@@ -11,7 +11,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - sitenest_net
+      - TAZO_WEB_net
     healthcheck:
       test: [ 'CMD-SHELL', 'pg_isready -U localbiz -d localbiz' ]
       interval: 5s
@@ -26,7 +26,7 @@ services:
     volumes:
       - redis_data:/data
     networks:
-      - sitenest_net
+      - TAZO_WEB_net
     healthcheck:
       test: [ 'CMD', 'redis-cli', 'ping' ]
       interval: 5s
@@ -54,7 +54,7 @@ services:
     ports:
       - '8000:8000'
     networks:
-      - sitenest_net
+      - TAZO_WEB_net
     depends_on:
       postgres:
         condition: service_healthy
@@ -79,8 +79,8 @@ services:
       CELERY_BROKER_URL: 'redis://localbiz-redis:6379/0'
       CELERY_RESULT_BACKEND: 'redis://localbiz-redis:6379/0'
     networks:
-      - sitenest_net
-    command: celery -A app.core.celery_app worker --loglevel=info --concurrency=2 -Q sitenest
+      - TAZO_WEB_net
+    command: celery -A app.core.celery_app worker --loglevel=info --concurrency=2 -Q TAZO-WEB
     depends_on:
       postgres:
         condition: service_healthy
@@ -104,7 +104,7 @@ services:
       CELERY_BROKER_URL: 'redis://localbiz-redis:6379/0'
       CELERY_RESULT_BACKEND: 'redis://localbiz-redis:6379/0'
     networks:
-      - sitenest_net
+      - TAZO_WEB_net
     command: celery -A app.core.celery_app beat --loglevel=info --scheduler celery.beat:PersistentScheduler
     depends_on:
       postgres:
@@ -113,7 +113,7 @@ services:
         condition: service_healthy
 
 networks:
-  sitenest_net:
+  TAZO_WEB_net:
     driver: bridge
 
 volumes:

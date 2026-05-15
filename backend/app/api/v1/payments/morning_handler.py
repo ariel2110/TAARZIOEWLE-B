@@ -1,4 +1,4 @@
-"""Central Morning event dispatcher
+﻿"""Central Morning event dispatcher
 =====================================
 Maps Morning ``eventType`` strings to dedicated handler functions.
 
@@ -115,7 +115,7 @@ def handle_page_contacted(ctx: dict) -> dict:
     owner = settings.whatsapp_owner_phone
     if owner:
         msg = (
-            f"🔔 *ליד חדש — SiteNest*\n\n"
+            f"🔔 *ליד חדש — TAZO-WEB*\n\n"
             f"👤 שם: *{name}*\n"
             f"📞 טלפון: {phone or 'לא זמין'}\n"
             f"📧 אימייל: {email or 'לא זמין'}\n"
@@ -166,7 +166,7 @@ def handle_payment_received(ctx: dict) -> dict:
     owner = settings.whatsapp_owner_phone
     if owner:
         msg = (
-            f"💰 *הכנסה פסיבית — SiteNest*\n\n"
+            f"💰 *הכנסה פסיבית — TAZO-WEB*\n\n"
             f"💵 סכום: *{amount:,} ₪*\n"
             f"👤 לקוח: {name}\n"
             f"📦 מוצר: {product}\n"

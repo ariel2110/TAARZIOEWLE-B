@@ -1,4 +1,4 @@
-
+﻿
 import { useEffect, useState, useCallback } from 'react';
 import { SectionTitle } from '../components/ui';
 import {
@@ -11,7 +11,7 @@ import {
   askGrok, executeGrokAction,
 } from '../services/queries';
 
-const WA_PHONE = (import.meta.env.VITE_SITENEST_WA_PHONE || '972546363350') as string;
+const WA_PHONE = (import.meta.env.VITE_TAZO_WEB_WA_PHONE || '972546363350') as string;
 
 // ────────────────────────────────────────────────────────────────────
 // Translation helpers

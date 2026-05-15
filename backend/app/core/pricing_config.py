@@ -1,4 +1,4 @@
-"""API Pricing Configuration — SiteNest
+﻿"""API Pricing Configuration — TAZO-WEB
 =========================================
 All costs are in USD per 1,000,000 tokens (or flat per-unit for non-LLM tools).
 Update these values when provider pricing changes.

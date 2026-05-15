@@ -1,4 +1,4 @@
-# SiteNest Platform — v28
+﻿# TAZO-WEB Platform — v28
 
 > **פלטפורמת SaaS ישראלית** לבניית אתרי עסקים קטנים אוטומטית, עם AI, WhatsApp, ותשלומים.
 
@@ -8,16 +8,16 @@
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│  frontend-admin    (React + Vite) — admin.sitenest.site  │
-│  frontend-public   (React + Vite) — sitenest.site        │
-│  frontend-customer (React + Vite) — app.sitenest.site    │
+│  frontend-admin    (React + Vite) — admin.TAZO-WEB.site  │
+│  frontend-public   (React + Vite) — TAZO-WEB.site        │
+│  frontend-customer (React + Vite) — app.TAZO-WEB.site    │
 ├─────────────────────────────────────────────────────┤
 │  backend           (FastAPI + SQLAlchemy)            │
 │  └─ port 8765 — Uvicorn (2 workers)                 │
 ├─────────────────────────────────────────────────────┤
 │  PostgreSQL        (Docker — port 5433)             │
 │  Redis             (port 6379)                      │
-│  Celery Worker     (Docker — queue: sitenest)       │
+│  Celery Worker     (Docker — queue: TAZO-WEB)       │
 │  Evolution API     (Docker — port 8181, WhatsApp)   │
 └─────────────────────────────────────────────────────┘
 ```
@@ -28,13 +28,13 @@
 
 ```bash
 # 1. שירות backend
-systemctl start sitenest-backend
+systemctl start TAZO-WEB-backend
 
 # 2. PostgreSQL + Celery + Evolution (Docker Compose)
 docker compose up -d
 
 # 3. בדיקת בריאות
-curl https://api.sitenest.site/health
+curl https://api.TAZO-WEB.site/health
 ```
 
 ---
@@ -134,7 +134,7 @@ npm install && npm run dev   # http://localhost:5174
 ## 📁 מבנה הפרויקט
 
 ```
-site-nest-platform/
+tazo-web-platform/
 ├── backend/
 │   ├── app/
 │   │   ├── api/v1/routes/      # FastAPI endpoints

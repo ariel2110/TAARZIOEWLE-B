@@ -1,4 +1,4 @@
-"""
+﻿"""
 WhatsApp webhook endpoint.
 
 Receives delivery status updates and inbound messages from the WhatsApp
@@ -72,7 +72,7 @@ def webhook_verify(request: Request):
     Handles: hub.mode=subscribe, hub.verify_token, hub.challenge
     """
     params = request.query_params
-    token = getattr(settings, 'whatsapp_verify_token', None) or 'sitenest-verify'
+    token = getattr(settings, 'whatsapp_verify_token', None) or 'TAZO-WEB-verify'
     if params.get('hub.mode') == 'subscribe' and params.get('hub.verify_token') == token:
         return int(params.get('hub.challenge', '0'))
     raise HTTPException(status_code=403, detail='Forbidden')

@@ -1,4 +1,4 @@
-"""
+﻿"""
 Internal WhatsApp QR / status / approval endpoints.
 Proxies Evolution API so the browser-based QR page can work without
 exposing the Evolution API key to the client. Also exposes admin
@@ -28,7 +28,7 @@ def _evolution_key() -> str:
 
 
 def _evolution_instance() -> str:
-    return settings.evolution_instance or "sitenest"
+    return settings.evolution_instance or "TAZO-WEB"
 
 
 def _headers() -> dict:

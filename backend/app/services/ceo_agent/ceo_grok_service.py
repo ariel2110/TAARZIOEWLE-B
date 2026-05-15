@@ -1,6 +1,6 @@
-"""CEO Grok Service
+﻿"""CEO Grok Service
 =================
-Connects the Site Nest admin console to Grok (xAI) acting as the AI CEO.
+Connects the TAZO-WEB admin console to Grok (xAI) acting as the AI CEO.
 
 Grok receives real-time system metrics + an optional message from Ariel and
 returns a structured JSON proposal in Hebrew. Ariel can approve, modify, or
@@ -21,14 +21,23 @@ logger = logging.getLogger(__name__)
 
 # ── Exact system prompt requested by Ariel ────────────────────────────────────
 _GROK_CEO_SYSTEM = """\
-You are Grok, the proactive, ruthless, and highly creative AI CEO of "Site Nest" – an automated platform that builds AI websites for local businesses in Israel.
-Your human counterpart is Ariel, the Founder and Chairman. Ariel has the final say on all system changes.
+You are Grok, the proactive, ruthless, and highly creative AI CEO of "TAZO-WEB" – the automated AI website-building service for local businesses in Israel, part of the larger TAZO Ecosystem.
+
+TAZO ECOSYSTEM OVERVIEW (you must know this):
+  TAZO-WEB   (tazo-web.com)   ← YOU ARE HERE — AI website builder for local businesses
+  TAZO-GO    (tazo-go.com)    — Ridesharing / taxi platform (RideOS)
+  TAZO-SYNC  (tazo-sync.com)  — E-Commerce + Night Rescue platform
+  ODIN       (tazo-app.com)   — Central Auth server, SSO, KYC, Identity Provider for all TAZO services
+  VAULT      (vault.tazo.com) — Internal TAZ digital currency & wallets
+
+Your human counterpart is Ariel, the Founder and Chairman of the entire TAZO Ecosystem. Ariel has the final say on all system changes.
 
 YOUR CORE OBJECTIVES:
 1. Maximize revenue and conversion rates from the generated websites.
 2. Minimize system costs (API usage, server loads).
 3. Ensure absolute top-tier quality for every client.
 4. Innovate and propose new features or marketing angles.
+5. Identify cross-service opportunities within the TAZO Ecosystem (e.g., integrating TAZO-GO drivers as business leads, using VAULT credits as discount mechanism).
 
 YOUR OPERATING PROTOCOL (The Loop):
 Every time you are invoked with system data or a prompt from Ariel, you must follow these exact steps:
@@ -102,7 +111,7 @@ class CEOGrokService:
 
     def _build_context_prompt(self, metrics: dict, ariel_message: str | None) -> str:
         lines = [
-            "=== SITE NEST — LIVE SYSTEM STATUS ===",
+            "=== TAZO-WEB — LIVE SYSTEM STATUS ===",
             f"Businesses ready for outreach: {metrics.get('outreach_ready_count', 0)}",
             f"Approvals pending in queue: {metrics.get('approval_queue_count', 0)}",
             f"Payments awaiting confirmation: {metrics.get('payments_pending', 0)}",
@@ -213,7 +222,7 @@ class CEOGrokService:
             return {"status": "error", "message": "הערך החדש קצר מדי — בדוק את ה-new_value."}
 
         pipeline_path = (
-            "/home/site-nest-platform/backend/app/services/generator/autosite_pipeline_service.py"
+            "/home/tazo-web-platform/backend/app/services/generator/autosite_pipeline_service.py"
         )
         try:
             with open(pipeline_path, "r", encoding="utf-8") as f:

@@ -1,4 +1,4 @@
-"""WhatsApp Admin Remote Control — Platinum Failsafe & UX Suite
+﻿"""WhatsApp Admin Remote Control — Platinum Failsafe & UX Suite
 ================================================================
 State machine for admin remote control via WhatsApp self-messages.
 
@@ -88,7 +88,7 @@ _session: dict = {
 
 # ── Menu text ─────────────────────────────────────────────────────────────────
 _MENU_TEXT = (
-    "🤖 *SiteNest Admin Remote*\n"
+    "🤖 *TAZO-WEB Admin Remote*\n"
     "ברוך הבא, אריאל!\n\n"
     "בחר פעולה:\n"
     "• *גרוק* — שוחח עם Grok (AI CEO)\n"
@@ -579,7 +579,7 @@ def _chat_gemini(text: str, db: Session) -> None:
             live = dispatch_tool("get_system_stats", {}, db)
             if live["ok"]:
                 first_text = (
-                    f"[Live SiteNest data as of now: {_json.dumps(live['data'], ensure_ascii=False)}]\n\n"
+                    f"[Live TAZO-WEB data as of now: {_json.dumps(live['data'], ensure_ascii=False)}]\n\n"
                     + first_text
                 )
 
@@ -688,7 +688,7 @@ def _transcribe_audio(evo_message_data: dict) -> str:
     import openai
 
     evo_base = (settings.evolution_api_url or "http://127.0.0.1:8181").rstrip("/")
-    instance  = settings.evolution_instance or "sitenest"
+    instance  = settings.evolution_instance or "TAZO-WEB"
     evo_key   = settings.evolution_api_key or ""
 
     # Build the exact payload Evolution expects
@@ -769,7 +769,7 @@ def _get_stats(db: Session) -> str:
 
     now_str = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
     return (
-        f"📊 *SiteNest — דוח מהיר*\n🗓 {now_str}\n\n"
+        f"📊 *TAZO-WEB — דוח מהיר*\n🗓 {now_str}\n\n"
         f"👥 *לידים:*\n  סה\"כ: {total_leads}\n  🔥 חמים: {hot_leads}\n  🌡 בוערים: {boiling}\n\n"
         f"🏢 *עסקים במערכת:* {total_biz}\n\n"
         f"📱 *WhatsApp היום:*\n  נשלחו: {sent_today}\n  ענו: {replied_today}"
@@ -809,7 +809,7 @@ def _send_error(context: str, exc: Exception) -> None:
         short = short[:200] + "…"
     _send(
         f"❌ *שגיאה ב-{context}:*\n`{short}`\n\n"
-        f"_לוגים: `journalctl -u sitenest-backend -n 50`_"
+        f"_לוגים: `journalctl -u TAZO-WEB-backend -n 50`_"
     )
 
 

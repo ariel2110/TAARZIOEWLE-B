@@ -1,4 +1,4 @@
-# Evolution API v1.8.7 — WhatsApp Gateway for SiteNest
+﻿# Evolution API v1.8.7 — WhatsApp Gateway for TAZO-WEB
 # STANDALONE compose — independent from docker-compose.yml
 # Run:  docker compose -f docker-compose.evolution.yml up -d
 # Stop: docker compose -f docker-compose.evolution.yml down
@@ -16,7 +16,7 @@ services:
 
   evolution-redis:
     image: redis:7-alpine
-    container_name: sitenest-evolution-redis
+    container_name: tazo-web-evolution-redis
     restart: unless-stopped
     command: redis-server --save "" --loglevel warning
     mem_limit: 64m
@@ -31,7 +31,7 @@ services:
 
   evolution-api:
     image: atendai/evolution-api:v1.8.7
-    container_name: sitenest-evolution
+    container_name: tazo-web-evolution
     restart: unless-stopped
     depends_on:
       evolution-redis:
@@ -43,7 +43,7 @@ services:
 
       SERVER_TYPE: "http"
       SERVER_PORT: "8080"
-      SERVER_URL: "https://evolution.sitenest.site"
+      SERVER_URL: "https://evolution.tazo-web.com"
       SERVER_DISABLE_MANAGER: "false"
       SERVER_DISABLE_DOCS: "true"
 

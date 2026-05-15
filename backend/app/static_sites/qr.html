@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SiteNest — חיבור WhatsApp</title>
+<title>TAZO-WEB — חיבור WhatsApp</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -110,12 +110,12 @@
 </head>
 <body>
 <div class="card">
-  <div class="logo">SiteNest</div>
+  <div class="logo">TAZO-WEB</div>
   <div class="subtitle">חיבור WhatsApp Business</div>
 
   <div id="qr-section">
     <div class="qr-wrap">
-      <img id="qr-img" class="qr-img" src="/static/qr_sitenest.png" alt="QR Code">
+      <img id="qr-img" class="qr-img" src="/static/qr_TAZO-WEB.png" alt="QR Code">
     </div>
     <div class="status-row">
       <div id="status-dot" class="dot waiting"></div>
@@ -144,14 +144,14 @@
   <div class="connected" id="connected-section">
     <div class="check">✅</div>
     <h2>WhatsApp מחובר!</h2>
-    <p style="color:#8b949e;margin-top:8px;">SiteNest יכול עכשיו לשלוח הודעות</p>
+    <p style="color:#8b949e;margin-top:8px;">TAZO-WEB יכול עכשיו לשלוח הודעות</p>
   </div>
 </div>
 
 <script>
 const API = 'http://127.0.0.1:8181';
 const APIKEY = 'RnTc0S2Nb8MAG3Iio_Bqj-sbS-lToqkY8oAQLm8-Fkw';
-const INSTANCE = 'sitenest';
+const INSTANCE = 'TAZO-WEB';
 let timerVal = 30;
 let timerInterval;
 
@@ -175,7 +175,7 @@ async function fetchQR() {
       img.src = d.base64;
     } else {
       // fallback to cached PNG with cache-bust
-      img.src = '/static/qr_sitenest.png?t=' + Date.now();
+      img.src = '/static/qr_TAZO-WEB.png?t=' + Date.now();
     }
     if (d.code) {
       document.getElementById('pairing-code').textContent = formatCode(d.code);
@@ -184,7 +184,7 @@ async function fetchQR() {
     document.getElementById('status-text').textContent = 'ממתין לסריקה...';
     resetTimer();
   } catch(e) {
-    img.src = '/static/qr_sitenest.png?t=' + Date.now();
+    img.src = '/static/qr_TAZO-WEB.png?t=' + Date.now();
   }
   img.classList.remove('fade');
 }

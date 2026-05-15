@@ -1,4 +1,4 @@
-"""Hostinger domain & DNS service
+﻿"""Hostinger domain & DNS service
 ==================================
 Handles domain availability checks, registration, DNS management,
 nginx virtual-host creation, and SSL via Certbot.
@@ -31,7 +31,7 @@ _TIMEOUT = 20
 _ALLOWED_TLDS = {'.co.il', '.com'}
 _NGINX_SITES_AVAILABLE = Path('/etc/nginx/sites-available')
 _NGINX_SITES_ENABLED = Path('/etc/nginx/sites-enabled')
-_STATIC_ROOT = Path('/home/site-nest-platform/backend/app/static_sites/live')
+_STATIC_ROOT = Path('/home/tazo-web-platform/backend/app/static_sites/live')
 
 
 class HostingerService:

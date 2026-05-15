@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { getPublicDemo, trackDemoView, PublicDemoData } from '../services/queries';
 
@@ -44,7 +44,7 @@ function PhoneBtn({ phone, primary }: { phone: string; primary: string }) {
 }
 
 function WaBtnAdmin({ bizName }: { bizName: string }) {
-    const phone = (import.meta.env.VITE_SITENEST_WA_PHONE || '972523456789') as string;
+    const phone = (import.meta.env.VITE_TAZO_WEB_WA_PHONE || '972523456789') as string;
     const msg = encodeURIComponent(
         `שלום! ראיתי את האתר הדמו שבניתם עבור "${bizName}" 🌐\n\nהאתר נראה מדהים וייצוגי!\nאשמח לשמוע פרטים על תהליך בניית האתר האמיתי ⭐`
     );
@@ -110,7 +110,7 @@ export default function DemoSitePage() {
                 <span style={{ fontSize: 13, color: '#78350f', fontWeight: 600 }}>
                     🎬 זהו <strong>אתר דמו חינמי</strong> שנבנה עבור <strong>{data.business_name}</strong> ע"י tazo-web
                 </span>
-                <a href={`https://wa.me/${(import.meta.env.VITE_SITENEST_WA_PHONE || '972523456789') as string}?text=${encodeURIComponent(`שלום! ראיתי את הדמו של "${data.business_name}" ואשמח לדבר על בניית האתר 😊`)}`}
+                <a href={`https://wa.me/${(import.meta.env.VITE_TAZO_WEB_WA_PHONE || '972523456789') as string}?text=${encodeURIComponent(`שלום! ראיתי את הדמו של "${data.business_name}" ואשמח לדבר על בניית האתר 😊`)}`}
                     target="_blank" rel="noopener noreferrer"
                     style={{ background: '#f59e0b', color: '#78350f', textDecoration: 'none', borderRadius: 20, padding: '5px 14px', fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' }}>
                     📱 רוצים אתר אמיתי? לחצו כאן!

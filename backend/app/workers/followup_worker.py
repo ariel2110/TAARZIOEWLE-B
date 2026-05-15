@@ -1,11 +1,11 @@
-"""
+﻿"""
 followup_worker.py — Processes pending follow-up outreach tasks.
 
 Scans OutreachMessage records that are in 'sent' status and have passed
 their follow-up window, then queues them for follow-up or marks as stale.
 
 Schedule:
-    0 9 * * * cd /home/site-nest-platform/backend && .venv/bin/python -m app.workers.followup_worker
+    0 9 * * * cd /home/tazo-web-platform/backend && .venv/bin/python -m app.workers.followup_worker
 
 Usage:
     python -m app.workers.followup_worker

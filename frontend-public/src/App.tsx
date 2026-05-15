@@ -4,6 +4,7 @@ import MagicPortal from './MagicPortal';
 import LandingExtra from './LandingExtra';
 import IntakeForm from './IntakeForm';
 import SubmissionStatus from './SubmissionStatus';
+import PageGuide from './PageGuide';
 import './styles.css';
 
 export type AppPage = 'marketplace' | 'home' | 'intake' | 'status';
@@ -48,12 +49,18 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  function handleGoTo(target: AppPage, planName?: string) {
+    if (target === 'home') goToBusinessLanding();
+    else if (target === 'intake') goToIntake(planName);
+    else if (target === 'marketplace') goHome();
+  }
+
   if (page === 'status') {
-    return <SubmissionStatus token={statusToken} onBack={goHome} selectedPlan={selectedPlan} />;
+    return <><SubmissionStatus token={statusToken} onBack={goHome} selectedPlan={selectedPlan} /><PageGuide page={page} onGoTo={handleGoTo} /></>;
   }
 
   if (page === 'intake') {
-    return <IntakeForm onSubmitted={goToStatus} onBack={goHome} selectedPlan={selectedPlan} />;
+    return <><IntakeForm onSubmitted={goToStatus} onBack={goHome} selectedPlan={selectedPlan} /><PageGuide page={page} onGoTo={handleGoTo} /></>;
   }
 
   if (page === 'home') {
@@ -61,10 +68,11 @@ export default function App() {
       <>
         <MagicPortal />
         <LandingExtra onStartIntake={goToIntake} />
+        <PageGuide page={page} onGoTo={handleGoTo} />
       </>
     );
   }
 
   // Default: Marketplace
-  return <Marketplace onJoin={goToBusinessLanding} />;
+  return <><Marketplace onJoin={goToBusinessLanding} /><PageGuide page={page} onGoTo={handleGoTo} /></>;
 }

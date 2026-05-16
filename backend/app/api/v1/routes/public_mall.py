@@ -226,6 +226,15 @@ async def nearby_businesses(
             # Check if in our TAZO DB
             in_db = db.query(DemoSite).filter(DemoSite.place_id == place_id).first()
 
+            photos = place.get("photos", [])
+            photo_url = ""
+            if photos and api_key:
+                photo_ref = photos[0].get("photo_reference", "")
+                if photo_ref:
+                    photo_url = f"https://maps.googleapis.com/maps/api/place/photo?maxwidth=600&photo_reference={photo_ref}&key={api_key}"
+            open_now = place.get("opening_hours", {}).get("open_now")
+            place_category = _types_to_category(place.get("types", []))
+
             results.append({
                 "place_id": place_id,
                 "name": place.get("name", ""),
@@ -239,6 +248,9 @@ async def nearby_businesses(
                 "subdomain": in_db.slug if in_db else None,
                 "url": f"https://{in_db.slug}.tazo-web.com" if in_db and in_db.slug else None,
                 "status": "active" if in_db else "available",
+                "photo_url": photo_url,
+                "open_now": open_now,
+                "category": place_category,
             })
             if len(results) >= limit:
                 break

@@ -382,10 +382,11 @@ function NearbySection({ query }: { query: string }) {
 }
 
 
-function MallView({ onCategory, onSearch, onJoin }: {
+function MallView({ onCategory, onSearch, onJoin, onBusinessClick }: {
   onCategory: (c: Category) => void;
   onSearch: (q: string) => void;
   onJoin: () => void;
+  onBusinessClick: (b: Business) => void;
 }) {
   const [q, setQ] = useState('');
   const [featured, setFeatured] = useState<Business[]>([]);
@@ -464,7 +465,7 @@ function MallView({ onCategory, onSearch, onJoin }: {
           <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 28 }}>עסקים מומלצים ⭐</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: 16 }}>
             {featured.map(biz => (
-              <BusinessCard key={biz.id} biz={biz} onClick={() => {}} />
+              <BusinessCard key={biz.id} biz={biz} onClick={() => onBusinessClick(biz)} />
             ))}
           </div>
         </section>
@@ -785,5 +786,5 @@ export default function Marketplace({ onJoin }: { onJoin: () => void }) {
       onBack={() => { setView('mall'); setBusinesses([]); }}
     />;
   }
-  return <MallView onCategory={handleCategoryClick} onSearch={handleSearch} onJoin={onJoin} />;
+  return <MallView onCategory={handleCategoryClick} onSearch={handleSearch} onJoin={onJoin} onBusinessClick={handleBusinessClick} />;
 }

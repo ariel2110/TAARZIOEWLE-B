@@ -66,8 +66,8 @@ export default function App() {
 
   if (page === 'home') {
     return (
-      <Sidebar currentPage={page} onGoTo={handleGoTo} />
       <>
+        <Sidebar currentPage={page} onGoTo={handleGoTo} />
         <MagicPortal />
         <LandingExtra onStartIntake={goToIntake} />
         <PageGuide page={page} onGoTo={handleGoTo} />

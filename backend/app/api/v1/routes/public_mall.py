@@ -259,6 +259,37 @@ async def nearby_businesses(
         # Sort: closest first
         results.sort(key=lambda x: x["distance_km"])
 
+    # ── DB fallback when Google Places API key is not configured ────────
+    if not results:
+        from app.models.demo_site import DemoSite as _DS
+        ql = q.lower()
+        terms = CATEGORY_KEYWORDS.get(ql, [ql])
+        db_results = []
+        for d in (db.query(_DS).filter(_DS.slug.isnot(None))
+                  .order_by(_DS.reviews_count.desc()).all()):
+            if not (_matches(d.category, terms) or _matches(d.business_name, terms)):
+                continue
+            db_results.append({
+                "place_id": d.place_id or f"tazo-{d.slug}",
+                "name": d.business_name or "",
+                "address": d.address or d.city or "",
+                "rating": float(d.rating) if d.rating else None,
+                "reviews_count": d.reviews_count or 0,
+                "lat": lat,
+                "lng": lng,
+                "distance_km": 0.0,
+                "in_tazo": True,
+                "subdomain": d.slug,
+                "url": f"https://{d.slug}.tazo-web.com" if d.slug else None,
+                "status": "active",
+                "photo_url": getattr(d, "photo_url", None) or "",
+                "open_now": None,
+                "category": d.category or ql,
+            })
+            if len(db_results) >= limit:
+                break
+        results = db_results
+
     return {"businesses": results, "count": len(results), "lat": lat, "lng": lng}
 
 

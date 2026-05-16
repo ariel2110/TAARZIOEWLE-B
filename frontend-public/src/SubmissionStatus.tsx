@@ -60,6 +60,7 @@ export default function SubmissionStatus({ token, onBack, selectedPlan }: Props)
     const [checkoutLoading, setCheckoutLoading] = useState(false);
     const [checkoutError, setCheckoutError] = useState('');
 
+    // Auto-poll while AI is building
     useEffect(() => {
         if (!token) {
             setLoadError('קישור לא תקין');
@@ -68,6 +69,16 @@ export default function SubmissionStatus({ token, onBack, selectedPlan }: Props)
         }
         fetchStatus();
     }, [token]);
+
+    useEffect(() => {
+        if (!data) return;
+        const isBuilding = data.ai_status === 'pending' || data.ai_status === 'generating';
+        if (!isBuilding) return;
+        const interval = setInterval(() => {
+            fetchStatus();
+        }, 8000);
+        return () => clearInterval(interval);
+    }, [data?.ai_status, token]);
 
     async function fetchStatus() {
         setLoading(true);

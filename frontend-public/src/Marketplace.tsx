@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 
-const API = import.meta.env.VITE_API_BASE_URL || 'https://api.tazo-web.com/api/v1';
+const API = import.meta.env.VITE_API_BASE_URL || 'https://tazo-web.com/api/v1';
 
 type View = 'mall' | 'category' | 'building';
 

@@ -1,6 +1,6 @@
 ﻿import { useCallback, useEffect, useRef, useState } from 'react';
 
-const API = import.meta.env.VITE_API_BASE_URL || 'https://api.tazo-web.com/api/v1';
+const API = import.meta.env.VITE_API_BASE_URL || 'https://tazo-web.com/api/v1';
 const WHATSAPP_NUMBER = import.meta.env.VITE_TAZO_WEB_WA_PHONE || '972546363350';
 const SCARCITY_MINUTES = 15;
 
@@ -170,7 +170,7 @@ export default function MagicPortal() {
                     setDisplayStep(PROGRESS_STEPS.length - 1);
                     // Auto-send demo link via WhatsApp if phone was already provided
                     if (phoneSavedRef.current && phoneRef.current) {
-                        const demoUrl = status.public_url || `https://api.tazo-web.com${status.preview_url}`;
+                        const demoUrl = status.public_url || `https://tazo-web.com${status.preview_url}`;
                         fetch(`${API}/public/send-demo-link`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
@@ -224,7 +224,7 @@ export default function MagicPortal() {
         setShowWall(false);
         // If build already finished while wall was open, go to done now
         if (buildComplete) {
-            const demoUrl = publicUrl || `https://api.tazo-web.com${previewUrl}`;
+            const demoUrl = publicUrl || `https://tazo-web.com${previewUrl}`;
             fetch(`${API}/public/send-demo-link`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -538,7 +538,7 @@ export default function MagicPortal() {
                     {phoneSaved || true /* show demo regardless */ ? (
                         <iframe
                             className="mp-iframe"
-                            src={publicUrl || `https://api.tazo-web.com${previewUrl}`}
+                            src={publicUrl || `https://tazo-web.com${previewUrl}`}
                             title={`אתר הדמו — ${businessName}`}
                             sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-top-navigation-by-user-activation"
                         />

@@ -21,6 +21,7 @@ interface Business {
   tagline?: string;
   status: 'active' | 'building' | 'pending';
   subdomain?: string;
+  photo_url?: string;
 }
 
 const CATEGORIES: Category[] = [
@@ -111,8 +112,14 @@ function BusinessCard({ biz, onClick }: { biz: Business; onClick: () => void }) 
         transition: 'all 0.2s ease',
         transform: hov ? 'translateY(-2px)' : 'none',
         width: '100%',
+        overflow: 'hidden',
       }}
     >
+      {biz.photo_url && (
+        <img src={biz.photo_url} alt={biz.name}
+          style={{ width: 'calc(100% + 48px)', height: 140, objectFit: 'cover', display: 'block', margin: '-24px -24px 16px', borderRadius: '18px 18px 0 0' }}
+        />
+      )}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
         <span style={{ background: badge.bg, color: badge.color, border: `1px solid ${badge.border}`, borderRadius: 50, padding: '4px 12px', fontSize: 12, fontWeight: 600 }}>
           {badge.text}
@@ -278,7 +285,7 @@ function NearbyCard({ biz, onBuild }: { biz: NearbyBusiness; onBuild: (b: Nearby
 }
 
 // ── Nearby Section ───────────────────────────────────────────────────────────
-function NearbySection({ query }: { query: string }) {
+function NearbySection({ query, autoStart = false }: { query: string; autoStart?: boolean }) {
   const [loc, setLoc] = useState<{ lat: number; lng: number } | null>(null);
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<NearbyBusiness[]>([]);
@@ -334,6 +341,9 @@ function NearbySection({ query }: { query: string }) {
   useEffect(() => {
     if (loc && query) fetchNearby(loc.lat, loc.lng, query);
   }, [query]);
+  // Auto-start location when category context is provided on mount
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (autoStart && query) requestLocation(); }, []);
 
   if (!askedLoc) {
     return (
@@ -552,7 +562,7 @@ function CategoryView({ category, businesses, loading, onSearch, onBusinessClick
           </button>
         </div>
 
-        <NearbySection query={category?.name || ''} />
+        <NearbySection query={category?.name || ''} autoStart />
 
         {loading && (
           <div style={{ textAlign: 'center', padding: '60px 0', color: 'rgba(255,255,255,0.4)' }}>

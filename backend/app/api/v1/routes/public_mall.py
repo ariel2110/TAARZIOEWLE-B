@@ -107,7 +107,8 @@ def _demo_to_dict(d: DemoSite) -> dict:
     return {"id": d.id, "name": d.business_name, "city": d.city, "phone": d.phone,
             "rating": d.rating, "reviews_count": getattr(d, "reviews_count", None),
             "tagline": d.tagline, "status": "active", "subdomain": d.slug,
-            "place_id": getattr(d, "place_id", None)}
+            "place_id": getattr(d, "place_id", None),
+            "photo_url": getattr(d, "photo_url", None)}
 
 def _biz_to_dict(biz: Business, status: str) -> dict:
     return {"id": biz.id, "name": biz.name, "city": biz.city, "phone": biz.phone,

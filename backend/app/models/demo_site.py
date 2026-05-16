@@ -29,6 +29,7 @@ class DemoSite(Base, TimestampMixin):
     category: Mapped[str | None] = mapped_column(String(120), nullable=True)
 
     # Lifecycle
+    photo_url: Mapped[str | None] = mapped_column(String(1024), nullable=True)
     status: Mapped[str] = mapped_column(String(30), default='draft')  # draft/sent/viewed/converted
     view_count: Mapped[int] = mapped_column(Integer, default=0)
     first_viewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

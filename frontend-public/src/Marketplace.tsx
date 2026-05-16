@@ -68,7 +68,7 @@ function CategoryCard({ cat, onClick }: { cat: Category; onClick: () => void }) 
         background: hov ? cat.gradient : 'rgba(255,255,255,0.05)',
         border: `1px solid ${hov ? 'transparent' : 'rgba(255,255,255,0.08)'}`,
         borderRadius: 20,
-        padding: '28px 24px',
+        padding: 'clamp(16px,3vw,28px) clamp(14px,3vw,24px)',
         cursor: 'pointer',
         textAlign: 'right' as const,
         fontFamily: 'inherit',
@@ -451,7 +451,7 @@ function MallView({ onCategory, onSearch, onJoin }: {
       {/* CATEGORIES */}
       <section style={{ padding: '0 24px 80px', maxWidth: 1100, margin: '0 auto' }}>
         <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 28, color: 'rgba(255,255,255,0.85)' }}>קטגוריות</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(240px,1fr))', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 12 }}>
           {CATEGORIES.map(cat => (
             <CategoryCard key={cat.id} cat={cat} onClick={() => onCategory(cat)} />
           ))}

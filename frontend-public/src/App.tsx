@@ -57,11 +57,23 @@ export default function App() {
   }
 
   if (page === 'status') {
-    return <><SubmissionStatus token={statusToken} onBack={goHome} selectedPlan={selectedPlan} /><PageGuide page={page} onGoTo={handleGoTo} /></>;
+    return (
+      <>
+        <Sidebar currentPage={page} onGoTo={handleGoTo} />
+        <SubmissionStatus token={statusToken} onBack={goHome} selectedPlan={selectedPlan} />
+        <PageGuide page={page} onGoTo={handleGoTo} />
+      </>
+    );
   }
 
   if (page === 'intake') {
-    return <><IntakeForm onSubmitted={goToStatus} onBack={goHome} selectedPlan={selectedPlan} /><PageGuide page={page} onGoTo={handleGoTo} /></>;
+    return (
+      <>
+        <Sidebar currentPage={page} onGoTo={handleGoTo} />
+        <IntakeForm onSubmitted={goToStatus} onBack={goHome} selectedPlan={selectedPlan} />
+        <PageGuide page={page} onGoTo={handleGoTo} />
+      </>
+    );
   }
 
   if (page === 'home') {
@@ -76,5 +88,11 @@ export default function App() {
   }
 
   // Default: Marketplace
-  return <><Marketplace onJoin={goToBusinessLanding} /><PageGuide page={page} onGoTo={handleGoTo} /></>;
+  return (
+    <>
+      <Sidebar currentPage={page} onGoTo={handleGoTo} />
+      <Marketplace onJoin={goToBusinessLanding} />
+      <PageGuide page={page} onGoTo={handleGoTo} />
+    </>
+  );
 }

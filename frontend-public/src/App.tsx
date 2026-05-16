@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Sidebar from './Sidebar'
 import Marketplace from './Marketplace';
 import MagicPortal from './MagicPortal';
 import LandingExtra from './LandingExtra';
@@ -65,6 +66,7 @@ export default function App() {
 
   if (page === 'home') {
     return (
+      <Sidebar currentPage={page} onGoTo={handleGoTo} />
       <>
         <MagicPortal />
         <LandingExtra onStartIntake={goToIntake} />

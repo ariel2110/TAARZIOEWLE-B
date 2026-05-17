@@ -33,12 +33,18 @@ def build_demo_public_url(slug: str, *, scheme: str = 'https') -> str:
     return f'{scheme}://{safe_slug}.{PUBLIC_SITE_ROOT}'
 
 
+# Accept both the production domain and the legacy TAZO-WEB.site domain
+_ACCEPTED_HOST_ROOTS = ('tazo-web.com', PUBLIC_SITE_ROOT.lower())
+
+
 def parse_subdomain_from_host(host: str) -> str | None:
     hostname = (host or '').split(':', 1)[0].strip().lower()
-    suffix = f'.{PUBLIC_SITE_ROOT}'
-    if not hostname.endswith(suffix):
-        return None
-    sub = hostname[: -len(suffix)]
+    sub = None
+    for root in _ACCEPTED_HOST_ROOTS:
+        suffix = '.' + root.lower()
+        if hostname.endswith(suffix):
+            sub = hostname[: -len(suffix)]
+            break
     if not sub or '.' in sub:
         return None
     if sub in RESERVED_SUBDOMAINS:

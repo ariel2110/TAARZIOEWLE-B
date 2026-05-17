@@ -39,7 +39,7 @@
       dockerfile: Dockerfile
     container_name: localbiz-backend
     env_file:
-      - ./backend/.env
+      - ./backend/.env.example
     environment:
       USE_POSTGRES: 'true'
       POSTGRES_HOST: localbiz-postgres
@@ -68,7 +68,7 @@
       dockerfile: Dockerfile
     container_name: localbiz-celery
     env_file:
-      - ./backend/.env
+      - ./backend/.env.example
     environment:
       USE_POSTGRES: 'true'
       POSTGRES_HOST: localbiz-postgres
@@ -93,7 +93,7 @@
       dockerfile: Dockerfile
     container_name: localbiz-celery-beat
     env_file:
-      - ./backend/.env
+      - ./backend/.env.example
     environment:
       USE_POSTGRES: 'true'
       POSTGRES_HOST: localbiz-postgres

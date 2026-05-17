@@ -1,7 +1,8 @@
 from app.api.v1.routes.public_intake import router as public_intake_router
 from app.api.v1.routes import public_portal
 from app.api.v1.routes.public_inbound import router as public_inbound_router
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from app.api.deps import verify_portal_request
 from app.api.v1.routes.health import router as health_router
 from app.api.v1.routes.auth import router as auth_router
 from app.api.v1.routes.admin_businesses import router as admin_business_router
@@ -39,50 +40,56 @@ from app.api.v1.routes.admin_social import router as admin_social_router
 from app.api.v1.routes.admin_domain_approvals import router as admin_domain_approvals_router
 from app.api.v1.routes.admin_agent_connections import router as admin_agent_connections_router
 
+from app.api.v1.routes.public_mall import router as public_mall_router
+from app.api.v1.routes.public_site_orders import router as public_site_orders_router
+
 api_router = APIRouter()
+
+# ── Public & webhook routes (no portal-origin check) ─────────────────────────
 api_router.include_router(health_router)
 api_router.include_router(auth_router)
-api_router.include_router(admin_business_router)
-api_router.include_router(admin_draft_router)
-api_router.include_router(admin_ceo_router)
-api_router.include_router(admin_leads_router)
-api_router.include_router(admin_payments_router)
-api_router.include_router(admin_analytics_router)
-api_router.include_router(admin_insights_router)
-api_router.include_router(admin_targeting_router)
-api_router.include_router(admin_queues_router)
-api_router.include_router(admin_communications_router)
-api_router.include_router(admin_approvals_router)
-
-api_router.include_router(admin_feedback_router)
-
-api_router.include_router(admin_customers_router)
-api_router.include_router(admin_customer_ops_router)
-api_router.include_router(admin_public_flow_router)
-api_router.include_router(admin_security_router)
-api_router.include_router(admin_workflows_router)
-api_router.include_router(admin_enrich_router)
-api_router.include_router(admin_demos_router)
 api_router.include_router(public_demos_router)
 api_router.include_router(public_sites_router)
-api_router.include_router(customer_portal_router)
-api_router.include_router(admin_notifications_router)
-api_router.include_router(webhooks_whatsapp_router)
-api_router.include_router(admin_users_router)
-api_router.include_router(admin_tasks_router)
 api_router.include_router(public_inbound_router)
-
 api_router.include_router(public_intake_router)
 api_router.include_router(public_portal.router)
+api_router.include_router(public_mall_router)
+api_router.include_router(public_site_orders_router)
+api_router.include_router(customer_portal_router)
+# Webhooks arrive directly from Meta / Morning — must NOT require portal headers
+api_router.include_router(webhooks_whatsapp_router)
 api_router.include_router(webhooks_morning_router)
 api_router.include_router(internal_whatsapp_router)
-api_router.include_router(admin_whatsapp_router)
-api_router.include_router(admin_api_keys_router)
-api_router.include_router(admin_social_router)
-api_router.include_router(admin_domain_approvals_router)
-api_router.include_router(admin_agent_connections_router)
-from app.api.v1.routes.public_mall import router as public_mall_router
-api_router.include_router(public_mall_router)
 
-from app.api.v1.routes.public_site_orders import router as public_site_orders_router
-api_router.include_router(public_site_orders_router)
+# ── Admin routes — require portal-gateway origin (X-Odin-Origin + X-Internal-Key)
+# In production, Traefik injects these headers after ForwardAuth passes.
+# In development (INTERNAL_KEY not set) the check is skipped automatically.
+_admin = APIRouter(dependencies=[Depends(verify_portal_request)])
+_admin.include_router(admin_business_router)
+_admin.include_router(admin_draft_router)
+_admin.include_router(admin_ceo_router)
+_admin.include_router(admin_leads_router)
+_admin.include_router(admin_payments_router)
+_admin.include_router(admin_analytics_router)
+_admin.include_router(admin_insights_router)
+_admin.include_router(admin_targeting_router)
+_admin.include_router(admin_queues_router)
+_admin.include_router(admin_communications_router)
+_admin.include_router(admin_approvals_router)
+_admin.include_router(admin_feedback_router)
+_admin.include_router(admin_customers_router)
+_admin.include_router(admin_customer_ops_router)
+_admin.include_router(admin_public_flow_router)
+_admin.include_router(admin_security_router)
+_admin.include_router(admin_workflows_router)
+_admin.include_router(admin_enrich_router)
+_admin.include_router(admin_demos_router)
+_admin.include_router(admin_notifications_router)
+_admin.include_router(admin_users_router)
+_admin.include_router(admin_tasks_router)
+_admin.include_router(admin_whatsapp_router)
+_admin.include_router(admin_api_keys_router)
+_admin.include_router(admin_social_router)
+_admin.include_router(admin_domain_approvals_router)
+_admin.include_router(admin_agent_connections_router)
+api_router.include_router(_admin)

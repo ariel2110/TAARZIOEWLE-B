@@ -30,6 +30,11 @@ class Settings(BaseSettings):
     jwt_secret_key: str = Field(default='change-me-in-production')
     jwt_algorithm: str = Field(default='HS256')
     jwt_expire_minutes: int = Field(default=720)
+
+    # Odin SSO — RS256 PEM public key exported from AORDIIENL (set via ODIN_JWT_PUBLIC_KEY env var)
+    odin_jwt_public_key: str | None = Field(default=None)
+    # Portal gateway shared secret — must match TRAEFIK_INTERNAL_KEY in Odin/Traefik
+    internal_key: str | None = Field(default=None)
     admin_seed_email: str = Field(default='ar.2110@gmail.com')
     admin_seed_name: str = Field(default='Ariel')
     allowed_admin_email_domain: str | None = None

@@ -12,6 +12,25 @@ from app.services.auth.auth_service import AuthService
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
+
+def verify_portal_request(
+    x_odin_origin: Optional[str] = Header(default=None),
+    x_internal_key: Optional[str] = Header(default=None),
+) -> None:
+    """Verify the request arrived through the Odin/Traefik portal gateway.
+
+    When INTERNAL_KEY is set in env, both X-Odin-Origin and X-Internal-Key
+    must match. In development (key not set) the check is skipped.
+    """
+    if not settings.internal_key:
+        return  # dev mode — skip
+    if x_odin_origin != "true" or x_internal_key != settings.internal_key:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Request must originate from the portal gateway",
+        )
+
+
 # Role hierarchy: higher index = more permissions
 _ROLE_RANK: dict[str, int] = {
     'viewer': 0,

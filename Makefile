@@ -1,4 +1,4 @@
-.PHONY: up down logs backend admin customer migrate seed deploy workers celery beat
+.PHONY: up down logs backend admin customer migrate seed deploy workers celery beat test lint ci
 
 up:
 	docker compose up --build -d
@@ -35,3 +35,16 @@ celery:
 
 beat:
 	cd backend && celery -A app.core.celery_app beat --loglevel=info
+
+# ── Quality ──────────────────────────────────────────────────────────────────
+
+test:
+	cd backend && python -m pytest tests/ -q --tb=short
+
+lint:
+	cd backend && ruff check app/
+
+ci: lint test
+	cd frontend-admin   && npm ci && npm run build
+	cd frontend-customer && npm ci && npm run build
+	cd frontend-public  && npm ci && npm run build

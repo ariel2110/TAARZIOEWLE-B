@@ -1,0 +1,49 @@
+name: Deploy — Production
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+
+# Prevent concurrent deployments
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to tazo-web.com
+    runs-on: ubuntu-latest
+    # Only deploy when CI passed
+    if: github.event.workflow_run.conclusion == 'success'
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          script: |
+            set -e
+            cd /root/tazo-web   # adjust if repo was cloned elsewhere
+
+            echo "→ Pulling latest code…"
+            git pull origin main
+
+            echo "→ Rebuilding app services…"
+            docker compose up -d --build --no-deps \
+              backend celery_worker celery_beat
+
+            echo "→ Health check…"
+            sleep 10
+            curl -sf https://tazo-web.com/api/v1/health | python3 -c "
+            import sys, json
+            d = json.load(sys.stdin)
+            assert d.get('database_ok') == True, f'DB unhealthy: {d}'
+            print('Health OK:', d)
+            "
+
+            echo "→ Deploy complete ✓"

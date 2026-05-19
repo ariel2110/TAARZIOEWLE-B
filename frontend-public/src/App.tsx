@@ -24,6 +24,10 @@ export default function App() {
     return '';
   });
   const [selectedPlan, setSelectedPlan] = useState<string | undefined>(undefined);
+  const [jumpCategory, setJumpCategory] = useState<string | undefined>(() => {
+    const m = window.location.hash.match(/^#\/category\/([^/]+)/);
+    return m ? m[1] : undefined;
+  });
 
   function goToIntake(planName?: string) {
     window.location.hash = '#/start';
@@ -51,10 +55,19 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  function handleGoTo(target: AppPage, planName?: string) {
-    if (target === 'home') goToBusinessLanding();
-    else if (target === 'intake') goToIntake(planName);
-    else if (target === 'marketplace') goHome();
+  function handleGoTo(target: AppPage, categoryId?: string) {
+    if (target === 'marketplace') {
+      if (categoryId) {
+        window.location.hash = `#/category/${categoryId}`;
+        setJumpCategory(categoryId);
+      } else {
+        window.location.hash = '';
+        setJumpCategory(undefined);
+      }
+      setPage('marketplace');
+    } else if (target === 'home') goToBusinessLanding();
+    else if (target === 'intake') goToIntake(categoryId); // categoryId re-used as planName here
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   if (page === 'status') {
@@ -93,7 +106,7 @@ export default function App() {
     <>
       <TazoWebInstallBanner />
       <Sidebar currentPage={page} onGoTo={handleGoTo} />
-      <Marketplace onJoin={goToBusinessLanding} />
+      <Marketplace onJoin={goToBusinessLanding} jumpCategory={jumpCategory} onClearJumpCategory={() => setJumpCategory(undefined)} />
       <PageGuide page={page} onGoTo={handleGoTo} />
     </>
   );

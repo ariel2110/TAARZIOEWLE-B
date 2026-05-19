@@ -14,12 +14,11 @@ const LANGS = [{ code: 'he', label: 'עב' }, { code: 'en', label: 'EN' }, { cod
 
 interface SidebarProps {
   currentPage: AppPage
-  onGoTo: (page: AppPage, plan?: string) => void
+  onGoTo: (page: AppPage, categoryId?: string) => void
 }
 
 export default function Sidebar({ currentPage, onGoTo }: SidebarProps) {
   const [open, setOpen]               = useState(false)
-  const [servicesOpen, setServicesOpen] = useState(false)
   const [lang, setLang]               = useState(() => localStorage.getItem('tazo-lang') || 'he')
   const touchStartX                   = useRef(0)
 
@@ -164,19 +163,13 @@ export default function Sidebar({ currentPage, onGoTo }: SidebarProps) {
         <Divider />
 
         {/* ── SECTION 2: TAZO Consumer ── */}
-        <SectionBlock label="🛍️ TAZO App — לקוחות">
-          <NavItem icon="🚕" label="הזמן מונית / שליח" onClick={() => window.open('https://tazo-go.com','_blank')} cta />
-          <NavItem
-            icon="🛠️" label="שירותים מיוחדים" sublabel="Auto · Events · Health"
-            expandable expanded={servicesOpen} onToggle={() => setServicesOpen(v => !v)}
-          />
-          {servicesOpen && (
-            <div style={{ paddingRight: 30, display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <SubItem icon="🔧" label="Tazo Auto — מוסכים" onClick={() => window.open('https://tazo-go.com/services','_blank')} />
-              <SubItem icon="🎟️" label="Tazo Events — כרטיסים" onClick={() => window.open('https://tazo-go.com/events','_blank')} />
-              <SubItem icon="🏥" label="Tazo Health" onClick={() => window.open('https://tazo-go.com/health','_blank')} />
-            </div>
-          )}
+        <SectionBlock label="🛍️ TAZO Mall — קטגוריות">
+          <NavItem icon="🍕" label="מסעדות ואוכל" sublabel="פיצות, המבורגר, שוורמה..." onClick={() => { onGoTo('marketplace', 'food'); setOpen(false) }} />
+          <NavItem icon="💈" label="יופי וטיפוח" sublabel="מספרות, עיסוי, ספא..." onClick={() => { onGoTo('marketplace', 'beauty'); setOpen(false) }} />
+          <NavItem icon="🔧" label="תיקונים ושירותים" sublabel="חשמלאי, שרברב, שיפוצים..." onClick={() => { onGoTo('marketplace', 'repairs'); setOpen(false) }} />
+          <NavItem icon="🚗" label="רכב ומוסכים" sublabel="מוסכים, צמיגים, הגרלה..." onClick={() => { onGoTo('marketplace', 'vehicles'); setOpen(false) }} />
+          <NavItem icon="🎟️" label="אירועים ובידור" sublabel="אולמות, כרטיסים, בר..." onClick={() => { onGoTo('marketplace', 'events'); setOpen(false) }} />
+          <NavItem icon="🏥" label="בריאות וספורט" sublabel="רופאים, כושר, פיזיותרפיה..." onClick={() => { onGoTo('marketplace', 'health'); setOpen(false) }} />
         </SectionBlock>
 
         <Divider />
@@ -199,8 +192,8 @@ export default function Sidebar({ currentPage, onGoTo }: SidebarProps) {
         {/* ── SECTION 5: TAZO Family ── */}
         <SectionBlock label="🌐 TAZO Family">
           <NavItem icon="🌐" label="TAZO Portal" sublabel="tazo-app.com" onClick={() => window.open('https://tazo-app.com','_blank')} />
-          <NavItem icon="🚗" label="TAZO Go — נסיעות" sublabel="tazo-go.com" onClick={() => window.open('https://tazo-go.com','_blank')} />
-          <NavItem icon="🔄" label="TAZO Sync — עסקים" sublabel="tazo-sync.com" onClick={() => window.open('https://tazo-sync.com','_blank')} />
+          <NavItem icon="�" label="TAZO Sync — עסקים" sublabel="tazo-sync.com" onClick={() => window.open('https://tazo-sync.com','_blank')} />
+          <NavItem icon="🚕" label="TAZO Go — הסעות" sublabel="מוניות ושליחים · tazo-go.com" onClick={() => window.open('https://tazo-go.com','_blank')} />
         </SectionBlock>
 
         <Divider />

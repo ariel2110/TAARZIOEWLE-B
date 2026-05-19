@@ -223,16 +223,18 @@ interface NearbyBusiness {
 }
 
 // ── Nearby Card ──────────────────────────────────────────────────────────────
-function NearbyCard({ biz, onBuild }: { biz: NearbyBusiness; onBuild: (b: NearbyBusiness) => void }) {
+function NearbyCard({ biz, onBuild }: { biz: NearbyBusiness; onBuild: (b: NearbyBusiness) => Promise<string | null> }) {
   const [building, setBuilding] = useState(false);
-  const [built, setBuilt] = useState(false);
+  const [builtUrl, setBuiltUrl] = useState<string | null>(null);
+  const [attempted, setAttempted] = useState(false);
   const distLabel = biz.distance_km < 1
     ? `${Math.round(biz.distance_km * 1000)} מ'`
     : `${biz.distance_km.toFixed(1)} ק"מ`;
   const handleBuild = async () => {
     setBuilding(true);
-    await onBuild(biz);
-    setBuilt(true);
+    const url = await onBuild(biz);
+    setBuiltUrl(url);
+    setAttempted(true);
     setBuilding(false);
   };
   return (
@@ -265,12 +267,12 @@ function NearbyCard({ biz, onBuild }: { biz: NearbyBusiness; onBuild: (b: Nearby
             {'★'.repeat(Math.round(biz.rating))} {biz.rating.toFixed(1)} ({biz.reviews_count?.toLocaleString()})
           </div>
         )}
-        {biz.in_tazo && biz.url ? (
-          <a href={biz.url} target="_blank" rel="noopener noreferrer"
+        {(biz.in_tazo && biz.url) || builtUrl ? (
+          <a href={builtUrl || biz.url!} target="_blank" rel="noopener noreferrer"
             style={{ display: 'block', textAlign: 'center', padding: '10px', background: 'linear-gradient(135deg,#4ade80,#22c55e)', borderRadius: 10, color: 'white', fontWeight: 700, fontSize: 13, textDecoration: 'none' }}>
             כנס לאתר →
           </a>
-        ) : built ? (
+        ) : attempted ? (
           <div style={{ textAlign: 'center', padding: '10px', background: 'rgba(34,197,94,0.15)', borderRadius: 10, color: '#4ade80', fontWeight: 700, fontSize: 13 }}>
             ✅ נשלח לבעל העסק!
           </div>
@@ -401,9 +403,9 @@ function NearbySection({ query, autoStart = false, categoryId }: {
     if (loc && activeQ) fetchNearby(loc.lat, loc.lng, activeQ, km);
   };
 
-  const handleBuild = async (biz: NearbyBusiness) => {
+  const handleBuild = async (biz: NearbyBusiness): Promise<string | null> => {
     try {
-      await fetch(`${API}/public/mall/build-from-place`, {
+      const r = await fetch(`${API}/public/mall/build-from-place`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -416,7 +418,11 @@ function NearbySection({ query, autoStart = false, categoryId }: {
           lng: (biz as NearbyBusiness & { lng?: number }).lng ?? loc?.lng,
         }),
       });
-    } catch { /* handled by card */ }
+      const d = await r.json();
+      return d.url || null;
+    } catch {
+      return null;
+    }
   };
 
   // ── React when parent passes a new query or category ─────────────────────
@@ -737,16 +743,12 @@ function MallView({ onCategory, onSearch, onJoin, onBusinessClick }: {
 }
 
 // ── Category View ────────────────────────────────────────────────────────────
-function CategoryView({ category, businesses, loading, onSearch, onBusinessClick, onBack }: {
+function CategoryView({ category, onSearch, onBack }: {
   category: Category | null;
-  businesses: Business[];
-  loading: boolean;
   onSearch: (q: string) => void;
-  onBusinessClick: (b: Business) => void;
   onBack: () => void;
 }) {
   const [q, setQ] = useState('');
-  const filtered = q ? businesses.filter(b => b.name.includes(q) || b.city?.includes(q)) : businesses;
 
   return (
     <div style={{ minHeight: '100vh', background: '#0f0f0f', color: 'white', fontFamily: '"Heebo", sans-serif', direction: 'rtl' }}>
@@ -782,30 +784,6 @@ function CategoryView({ category, businesses, loading, onSearch, onBusinessClick
           categoryId={category?.id}
           autoStart
         />
-
-        {loading && (
-          <div style={{ textAlign: 'center', padding: '60px 0', color: 'rgba(255,255,255,0.4)' }}>
-            <div style={{ fontSize: 40, marginBottom: 16 }}>⚙️</div>טוען עסקים...
-          </div>
-        )}
-
-        {!loading && filtered.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '60px 0' }}>
-            <div style={{ fontSize: 60, marginBottom: 20 }}>🔍</div>
-            <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 12 }}>לא נמצאו עסקים</div>
-            <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 15 }}>
-              לא מצאנו עסקים בקטגוריה זו עדיין — אנחנו עובדים על הרחבת הרשת 🚀
-            </div>
-          </div>
-        )}
-
-        {!loading && filtered.length > 0 && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: 16 }}>
-            {filtered.map(biz => (
-              <BusinessCard key={biz.id} biz={biz} onClick={() => onBusinessClick(biz)} />
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );
@@ -920,7 +898,11 @@ function BuildingView({ business, buildStep, notifyPhone, setNotifyPhone, notify
 }
 
 // ── Root Export ──────────────────────────────────────────────────────────────
-export default function Marketplace({ onJoin }: { onJoin: () => void }) {
+export default function Marketplace({ onJoin, jumpCategory, onClearJumpCategory }: {
+  onJoin: () => void;
+  jumpCategory?: string;
+  onClearJumpCategory?: () => void;
+}) {
   const [view, setView] = useState<View>('mall');
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [businesses, setBusinesses] = useState<Business[]>([]);
@@ -929,6 +911,19 @@ export default function Marketplace({ onJoin }: { onJoin: () => void }) {
   const [buildStep, setBuildStep] = useState(0);
   const [notifyPhone, setNotifyPhone] = useState('');
   const [notifySent, setNotifySent] = useState(false);
+
+  // Jump to a category when instructed from the sidebar
+  useEffect(() => {
+    if (jumpCategory) {
+      const cat = CATEGORIES.find(c => c.id === jumpCategory);
+      if (cat) {
+        setSelectedCategory(cat);
+        setView('category');
+      }
+      onClearJumpCategory?.();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jumpCategory]);
 
   const fetchBusinesses = useCallback(async (catId: string, q?: string) => {
     setLoading(true);
@@ -1008,10 +1003,7 @@ export default function Marketplace({ onJoin }: { onJoin: () => void }) {
   if (view === 'category') {
     return <CategoryView
       category={selectedCategory}
-      businesses={businesses}
-      loading={loading}
       onSearch={q => { if (selectedCategory) fetchBusinesses(selectedCategory.id, q); }}
-      onBusinessClick={handleBusinessClick}
       onBack={() => { setView('mall'); setBusinesses([]); }}
     />;
   }

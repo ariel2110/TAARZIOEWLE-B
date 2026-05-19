@@ -431,10 +431,24 @@ class BuildFromPlaceRequest(BaseModel):
 
 
 @router.post("/build-from-place")
+def _make_unique_slug(name: str, db: Session) -> str:
+    """Generate a unique URL-safe slug from a business name."""
+    import unicodedata as _ud
+    base = _ud.normalize('NFKD', name or 'biz').encode('ascii', 'ignore').decode().lower()
+    base = re.sub(r'[^a-z0-9]+', '-', base).strip('-')[:40] or 'biz'
+    slug = base
+    n = 0
+    while db.query(DemoSite).filter(DemoSite.slug == slug).first():
+        n += 1
+        slug = f"{base}-{n}"
+    return slug
+
+
 async def build_from_place(payload: BuildFromPlaceRequest, db: Session = Depends(get_db)):
     """
-    Given a Google Place ID, look up the business, create a Business record,
-    and trigger an async site build + WhatsApp notification to the owner.
+    Given a Google Place ID, look up the business, create a Business + DemoSite
+    record, and trigger an async site build + WhatsApp notification to the owner.
+    Returns the demo URL immediately so the frontend can link to it.
     """
     from app.core.config import settings
     import asyncio
@@ -496,7 +510,48 @@ async def build_from_place(payload: BuildFromPlaceRequest, db: Session = Depends
         db.commit()
         db.refresh(biz)
 
-    # Trigger async build
+    # Create DemoSite immediately so the business appears as "in_tazo" on next search
+    maps_url = (place_data.get("url") or
+                f"https://www.google.com/maps/place/?q=place_id:{payload.place_id}")
+    reviews = place_data.get("user_ratings_total") or payload.reviews_count
+    top_review = ""
+    reviews_list = place_data.get("reviews", [])
+    if reviews_list:
+        top_review = reviews_list[0].get("text", "")[:400]
+    photo_url = ""
+    photos = place_data.get("photos", [])
+    if photos and settings.google_places_api_key:
+        photo_ref = photos[0].get("photo_reference", "")
+        if photo_ref:
+            photo_url = (f"https://maps.googleapis.com/maps/api/place/photo"
+                         f"?maxwidth=800&photo_reference={photo_ref}"
+                         f"&key={settings.google_places_api_key}")
+    business_types_str = ",".join(place_data.get("types", []))
+    demo_slug = _make_unique_slug(name, db)
+    demo = DemoSite(
+        slug=demo_slug,
+        place_id=payload.place_id,
+        business_name=name,
+        tagline=f"{category} מקצועי ב{city}" if city else f"{category} מקצועי",
+        phone=phone,
+        address=address,
+        city=city,
+        rating=float(rating) if rating else None,
+        reviews_count=int(reviews) if reviews else None,
+        google_maps_url=maps_url,
+        top_review=top_review or None,
+        business_types=business_types_str or None,
+        category=category,
+        photo_url=photo_url or None,
+        status="draft",
+    )
+    db.add(demo)
+    db.commit()
+    db.refresh(demo)
+    demo_url = f"https://{demo.slug}.tazo-web.com"
+    logger.info(f"[build_from_place] Created DemoSite slug={demo.slug} for {name}")
+
+    # Trigger async AI site build
     async def _run():
         try:
             import asyncio as _aio
@@ -521,7 +576,13 @@ async def build_from_place(payload: BuildFromPlaceRequest, db: Session = Depends
         website=place_data.get("website", ""),
     ))
     asyncio.create_task(_run())
-    return {"status": "building", "business_id": biz.id, "business_name": name}
+    return {
+        "status": "building",
+        "business_id": biz.id,
+        "business_name": name,
+        "subdomain": demo_slug,
+        "url": demo_url,
+    }
 
 
 def _extract_city(address: str) -> str:

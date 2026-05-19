@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import VersionBar from './VersionBar';
 
 const API = import.meta.env.VITE_API_BASE_URL || 'https://tazo-web.com/api/v1';
 
@@ -697,6 +698,7 @@ function MallView({ onCategory, onSearch, onJoin, onBusinessClick }: {
           <a href="mailto:info@tazo-web.com" style={{ color: 'rgba(255,255,255,0.3)', textDecoration: 'none' }}>info@tazo-web.com</a>
         </div>
       </footer>
+      <VersionBar />
     </div>
   );
 }

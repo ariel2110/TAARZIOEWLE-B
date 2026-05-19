@@ -28,12 +28,24 @@ jobs:
           port: 22
           script: |
             set -e
-            cd /root/tazo-web   # adjust if repo was cloned elsewhere
+            cd /root/TAARZIOEWLE-B
 
             echo "→ Pulling latest code…"
             git pull origin main
 
-            echo "→ Rebuilding app services…"
+            # ── Build frontend ────────────────────────────────────────────
+            echo "→ Building frontend…"
+            export VITE_BUILD_TIME="$(date '+%d/%m/%Y %H:%M:%S')"
+            export VITE_GIT_HASH="$(git rev-parse --short HEAD)"
+            export VITE_GIT_MSG="$(git log -1 --pretty=%s)"
+            cd frontend-public
+            npm ci --prefer-offline --silent
+            npm run build
+            rsync -a --delete dist/. /var/www/tazo-web.com/
+            cd ..
+
+            # ── Rebuild backend services ───────────────────────────────────
+            echo "→ Rebuilding backend services…"
             docker compose up -d --build --no-deps \
               backend celery_worker celery_beat
 

@@ -6,6 +6,7 @@ import LandingExtra from './LandingExtra';
 import IntakeForm from './IntakeForm';
 import SubmissionStatus from './SubmissionStatus';
 import PageGuide from './PageGuide';
+import TazoWebInstallBanner from './TazoWebInstallBanner';
 import './styles.css';
 
 export type AppPage = 'marketplace' | 'home' | 'intake' | 'status';
@@ -90,6 +91,7 @@ export default function App() {
   // Default: Marketplace
   return (
     <>
+      <TazoWebInstallBanner />
       <Sidebar currentPage={page} onGoTo={handleGoTo} />
       <Marketplace onJoin={goToBusinessLanding} />
       <PageGuide page={page} onGoTo={handleGoTo} />

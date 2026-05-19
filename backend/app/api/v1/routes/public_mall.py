@@ -69,6 +69,107 @@ CATEGORY_KEYWORDS: dict[str, list[str]] = {
     "events":["אולם אירועים","צלמים","קייטרינג","בידור","אירוע","חתונה"],
 }
 
+# ── Hebrew query → Google Places primary type ─────────────────────────────
+# This is the single most important filter: prevents hotels/malls/etc.
+QUERY_TO_GOOGLE_TYPE: dict[str, str] = {
+    # Food
+    "restaurant": "restaurant", "pizzeria": "restaurant",
+    "פיצריה": "restaurant", "מסעדה": "restaurant", "המבורגר": "restaurant",
+    "שוורמה": "restaurant", "פלאפל": "restaurant", "מסעדת סושי": "restaurant",
+    "מסעדת חומוס": "restaurant", "מסעדת גריל": "restaurant",
+    "מסעדת בשר": "restaurant", "אוכל": "restaurant",
+    # Cafe / Bakery
+    "בית קפה": "cafe", "קפה": "cafe", "מאפייה": "bakery",
+    # Beauty
+    "מספרה": "hair_care", "ספרות": "hair_care",
+    "מניקור פדיקור": "beauty_salon", "ציפורניים": "beauty_salon",
+    "ספא עיסוי": "spa", "ספא": "spa",
+    # Health / Fitness
+    "חדר כושר": "gym", "יוגה פילאטיס": "gym", "כושר": "gym",
+    "פיזיותרפיה": "physiotherapist",
+    # Vehicles
+    "מוסך": "car_repair", "מוסך צמיגים": "car_repair",
+    # Professionals
+    "חשמלאי": "electrician", "שרברב": "plumber",
+    # Pets
+    "וטרינר": "veterinary_care", "ספר כלבים": "pet_store",
+    # Education
+    "גן ילדים": "school",
+    # Garden
+    "גנן": "florist",
+}
+
+# ── Hebrew expanded query → English keyword for Google precision ──────────
+QUERY_TO_EN_KW: dict[str, str] = {
+    "פיצריה": "pizzeria pizza",
+    "מסעדה": "restaurant",
+    "המבורגר": "hamburger burger restaurant",
+    "שוורמה": "shawarma kebab",
+    "פלאפל": "falafel hummus",
+    "מסעדת סושי": "sushi japanese restaurant",
+    "מסעדת חומוס": "hummus arabic restaurant",
+    "מסעדת גריל": "grill steakhouse BBQ",
+    "מסעדת בשר": "steakhouse meat restaurant",
+    "אוכל": "restaurant food",
+    "בית קפה": "cafe coffee shop",
+    "קפה": "cafe coffee",
+    "מאפייה": "bakery bread pastry",
+    "מספרה": "hair salon barbershop",
+    "ספרות": "barbershop",
+    "מניקור פדיקור": "nail salon manicure pedicure",
+    "ציפורניים": "nail salon",
+    "ספא עיסוי": "spa massage wellness",
+    "ספא": "spa",
+    "חדר כושר": "gym fitness center",
+    "יוגה פילאטיס": "yoga pilates studio",
+    "כושר": "gym fitness",
+    "פיזיותרפיה": "physiotherapy physical therapy clinic",
+    "מוסך": "car repair garage mechanic",
+    "מוסך צמיגים": "tire shop wheel alignment",
+    "חשמלאי": "electrician electrical",
+    "שרברב": "plumber plumbing",
+    "שיפוצניק": "contractor renovation",
+    "וטרינר": "veterinarian vet clinic",
+    "ספר כלבים": "dog grooming pet salon",
+    "גן ילדים": "kindergarten daycare preschool",
+    "פיזיותרפיה": "physiotherapy physical therapy",
+    "גנן": "landscaping garden",
+    "ניקיון בית": "house cleaning service",
+    "ניקיון שטיחים": "carpet cleaning",
+}
+
+# ── Types that should be EXCLUDED for any business search ─────────────────
+IRRELEVANT_TYPES: set[str] = {
+    "lodging", "hotel", "hostel", "motel", "resort",
+    "transit_station", "bus_station", "train_station", "subway_station",
+    "airport", "parking", "gas_station", "atm", "bank",
+    "hospital", "pharmacy", "police", "fire_station",
+    "local_government_office", "city_hall",
+    "real_estate_agency", "insurance_agency",
+}
+
+def _is_relevant_place(place: dict, target_type: str | None) -> bool:
+    """Return False if the place is clearly irrelevant (hotel, transit etc.)."""
+    types = set(place.get("types", []))
+    if types & IRRELEVANT_TYPES:
+        return False
+    # If we have a target type and the place doesn't have it (or a related type), skip
+    if target_type:
+        food_types = {"restaurant", "food", "meal_delivery", "meal_takeaway", "cafe", "bar", "bakery"}
+        beauty_types = {"hair_care", "beauty_salon", "spa", "nail_salon"}
+        health_types = {"gym", "physiotherapist", "health", "doctor", "dentist"}
+        vehicle_types = {"car_repair", "car_wash", "car_dealer"}
+        professional_types = {"electrician", "plumber", "general_contractor", "locksmith", "painter"}
+        pet_types = {"veterinary_care", "pet_store", "pet_boarding"}
+        school_types = {"school", "university", "preschool"}
+        relax_types = {"spa", "beauty_salon", "hair_care"}
+        # Group check — if target in a group, place must be in same group
+        for grp in [food_types, beauty_types, health_types, vehicle_types,
+                    professional_types, pet_types, school_types]:
+            if target_type in grp:
+                return bool(types & grp)
+    return True
+
 CATEGORY_SEARCH_TERMS: dict[str, list[str]] = {
     "food": ["מסעדה","פיצה","שוורמה","גריל","סושי","המבורגר","פלאפל"],
     "cafe": ["בית קפה","קפה","מאפייה","עוגות"],
@@ -194,26 +295,42 @@ async def nearby_businesses(
 
     if api_key:
         try:
+            # Determine the best Google Places type and English keyword for the query
+            google_type = QUERY_TO_GOOGLE_TYPE.get(q)
+            english_kw = QUERY_TO_EN_KW.get(q, q)
+
+            gparams: dict = {
+                "location": f"{lat},{lng}",
+                "radius": radius,
+                "keyword": english_kw,
+                "key": api_key,
+                "language": "iw",
+                # Note: do NOT use rankby=prominence together with radius —
+                # it causes Google to return the most "prominent" local businesses
+                # (hotels, malls) instead of the specific type we need.
+                # Without rankby, results are naturally sorted by distance/relevance.
+            }
+            if google_type:
+                gparams["type"] = google_type
+
             async with httpx.AsyncClient(timeout=12) as client:
-                resp = await client.get(
-                    PLACES_NEARBY_URL,
-                    params={
-                        "location": f"{lat},{lng}",
-                        "radius": radius,
-                        "keyword": q,
-                        "key": api_key,
-                        "language": "iw",
-                        "rankby": "prominence",
-                    },
+                resp = await client.get(PLACES_NEARBY_URL, params=gparams)
+                data = resp.json()
+                places = data.get("results", [])[:limit * 3]
+                logger.info(
+                    f"[nearby] q={q!r} type={google_type!r} kw={english_kw!r} "
+                    f"radius={radius} → {len(places)} results (status={data.get('status')})"
                 )
-                places = resp.json().get("results", [])[:limit * 3]
         except Exception as e:
             logger.warning(f"nearby places error: {e}")
             places = []
 
-        # Deduplicate and enrich
+        # Deduplicate, filter irrelevant, and enrich
         seen_ids: set[str] = set()
+        google_type_local = QUERY_TO_GOOGLE_TYPE.get(q)
         for place in places:
+            if not _is_relevant_place(place, google_type_local):
+                continue
             place_id = place.get("place_id", "")
             if not place_id or place_id in seen_ids:
                 continue

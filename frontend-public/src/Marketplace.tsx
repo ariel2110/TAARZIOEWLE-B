@@ -285,6 +285,24 @@ function NearbyCard({ biz, onBuild }: { biz: NearbyBusiness; onBuild: (b: Nearby
   );
 }
 
+// ── Category → specific Hebrew search term used by Google Places ────────────
+// Category names like "מסעדות ואוכל" are too broad.
+// Map each category ID to the best Hebrew term that the backend type-map understands.
+const CATEGORY_TO_QUERY: Record<string, string> = {
+  'food':      'מסעדה',
+  'cafe':      'בית קפה',
+  'beauty':    'מספרה',
+  'health':    'חדר כושר',
+  'repairs':   'שיפוצניק',
+  'electric':  'חשמלאי',
+  'vehicles':  'מוסך',
+  'garden':    'גנן',
+  'cleaning':  'ניקיון בית',
+  'pets':      'וטרינר',
+  'education': 'גן ילדים',
+  'events':    'אולם אירועים',
+};
+
 // ── Nearby Section ───────────────────────────────────────────────────────────
 const RADIUS_OPTIONS = [
   { km: 5,  label: '5 ק"מ'  },
@@ -323,18 +341,21 @@ function expandQuery(raw: string): string {
   return map[low] || raw.trim();
 }
 
-function NearbySection({ query, autoStart = false }: { query: string; autoStart?: boolean }) {
+function NearbySection({ query, autoStart = false, categoryId }: {
+  query: string; autoStart?: boolean; categoryId?: string;
+}) {
+  // Resolve effective query: prefer category-specific term over raw category name
+  const resolveQuery = (q: string, cid?: string) =>
+    (cid && CATEGORY_TO_QUERY[cid]) || expandQuery(q) || q;
+
   const [loc, setLoc] = useState<{ lat: number; lng: number } | null>(null);
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<NearbyBusiness[]>([]);
   const [error, setError] = useState('');
   const [askedLoc, setAskedLoc] = useState(false);
   const [radiusKm, setRadiusKm] = useState<5 | 10 | 15 | 50>(10);
-  const [searchQ, setSearchQ] = useState(query || '');
-  const [activeQ, setActiveQ] = useState(query || '');
-
-  // Keep searchQ in sync when parent passes a new query
-  useEffect(() => { if (query) { setSearchQ(query); } }, [query]);
+  const [searchQ, setSearchQ] = useState(() => resolveQuery(query, categoryId));
+  const [activeQ, setActiveQ] = useState(() => resolveQuery(query, categoryId));
 
   const fetchNearby = useCallback(async (lat: number, lng: number, q: string, km: number) => {
     const expanded = expandQuery(q || 'עסק');
@@ -398,10 +419,22 @@ function NearbySection({ query, autoStart = false }: { query: string; autoStart?
     } catch { /* handled by card */ }
   };
 
+  // ── React when parent passes a new query or category ─────────────────────
+  // This fires on every query/categoryId change (including category navigation).
+  // If location is already known → re-fetch immediately.
+  // If autoStart and location not yet known → request location.
   useEffect(() => {
-    if (autoStart && query) requestLocation(query, radiusKm);
+    const eq = resolveQuery(query, categoryId);
+    setSearchQ(eq);
+    setActiveQ(eq);
+    if (loc) {
+      // Already have location — just re-search silently
+      fetchNearby(loc.lat, loc.lng, eq, radiusKm);
+    } else if (autoStart && eq) {
+      requestLocation(eq, radiusKm);
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [query, categoryId]);
 
   // ── Not yet asked for location → show the search widget ──────────────────
   if (!askedLoc) {
@@ -743,7 +776,12 @@ function CategoryView({ category, businesses, loading, onSearch, onBusinessClick
           </button>
         </div>
 
-        <NearbySection query={category?.name || ''} autoStart />
+        <NearbySection
+          key={category?.id || ''}
+          query={category?.name || ''}
+          categoryId={category?.id}
+          autoStart
+        />
 
         {loading && (
           <div style={{ textAlign: 'center', padding: '60px 0', color: 'rgba(255,255,255,0.4)' }}>

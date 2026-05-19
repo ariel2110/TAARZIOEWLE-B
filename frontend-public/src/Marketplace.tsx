@@ -285,27 +285,74 @@ function NearbyCard({ biz, onBuild }: { biz: NearbyBusiness; onBuild: (b: Nearby
 }
 
 // ── Nearby Section ───────────────────────────────────────────────────────────
+const RADIUS_OPTIONS = [
+  { km: 5,  label: '5 ק"מ'  },
+  { km: 10, label: '10 ק"מ' },
+  { km: 15, label: '15 ק"מ' },
+  { km: 50, label: '50 ק"מ' },
+] as const;
+
+// Expand a short Hebrew query to a richer search term
+function expandQuery(raw: string): string {
+  const map: Record<string, string> = {
+    'פיצה': 'פיצריה', 'פיצריה': 'פיצריה', 'פיצות': 'פיצריה',
+    'המבורגר': 'המבורגר', 'המבורגרים': 'המבורגר',
+    'שוורמה': 'שוורמה', 'שאורמה': 'שוורמה',
+    'סושי': 'מסעדת סושי', 'יפנית': 'מסעדת סושי',
+    'פלאפל': 'פלאפל', 'חומוס': 'מסעדת חומוס',
+    'גריל': 'מסעדת גריל', 'בשר': 'מסעדת בשר',
+    'מסעדה': 'מסעדה', 'אוכל': 'מסעדה',
+    'קפה': 'בית קפה', 'קפיטריה': 'בית קפה', 'קפה בוקר': 'בית קפה',
+    'עוגות': 'מאפייה', 'מאפה': 'מאפייה', 'לחם': 'מאפייה',
+    'מספרה': 'מספרה', 'תספורת': 'מספרה', 'ספרות': 'מספרה',
+    'ציפורניים': 'מניקור פדיקור', 'מניקור': 'מניקור פדיקור',
+    'ספא': 'ספא עיסוי', 'עיסוי': 'ספא עיסוי',
+    'כושר': 'חדר כושר', 'ספורט': 'חדר כושר', 'חדר כושר': 'חדר כושר',
+    'יוגה': 'יוגה פילאטיס', 'פילאטיס': 'יוגה פילאטיס',
+    'רכב': 'מוסך', 'מכונאות': 'מוסך', 'צמיגים': 'מוסך צמיגים',
+    'חשמלאי': 'חשמלאי', 'שרברב': 'שרברב', 'אינסטלציה': 'שרברב',
+    'שיפוץ': 'שיפוצניק', 'שיפוצים': 'שיפוצניק',
+    'גן ילדים': 'גן ילדים', 'גן': 'גן ילדים',
+    'פיזיותרפיה': 'פיזיותרפיה', 'פיזיו': 'פיזיותרפיה',
+    'וטרינר': 'וטרינר', 'כלב': 'ספר כלבים', 'חתול': 'וטרינר',
+    'גינון': 'גנן', 'גן': 'גנן',
+    'ניקיון': 'ניקיון בית', 'שטיחים': 'ניקיון שטיחים',
+  };
+  const low = raw.trim().toLowerCase();
+  return map[low] || raw.trim();
+}
+
 function NearbySection({ query, autoStart = false }: { query: string; autoStart?: boolean }) {
   const [loc, setLoc] = useState<{ lat: number; lng: number } | null>(null);
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<NearbyBusiness[]>([]);
   const [error, setError] = useState('');
   const [askedLoc, setAskedLoc] = useState(false);
+  const [radiusKm, setRadiusKm] = useState<5 | 10 | 15 | 50>(10);
+  const [searchQ, setSearchQ] = useState(query || '');
+  const [activeQ, setActiveQ] = useState(query || '');
 
-  const fetchNearby = async (lat: number, lng: number, q: string) => {
+  // Keep searchQ in sync when parent passes a new query
+  useEffect(() => { if (query) { setSearchQ(query); } }, [query]);
+
+  const fetchNearby = useCallback(async (lat: number, lng: number, q: string, km: number) => {
+    const expanded = expandQuery(q || 'עסק');
     setLoading(true);
     setError('');
     try {
-      const r = await fetch(`${API}/public/mall/nearby?lat=${lat}&lng=${lng}&q=${encodeURIComponent(q)}&limit=10`);
+      const r = await fetch(
+        `${API}/public/mall/nearby?lat=${lat}&lng=${lng}&q=${encodeURIComponent(expanded)}&radius=${km * 1000}&limit=20`
+      );
       const d = await r.json();
       setResults(d.businesses || []);
+      if ((d.businesses || []).length === 0) setError('');
     } catch {
-      setError('לא הצלחנו לאחזר תוצאות');
+      setError('לא הצלחנו לאחזר תוצאות. בדוק חיבור לאינטרנט.');
     }
     setLoading(false);
-  };
+  }, []);
 
-  const requestLocation = () => {
+  const requestLocation = useCallback((q: string, km: number) => {
     setAskedLoc(true);
     if (!navigator.geolocation) { setError('הדפדפן לא תומך ב-GPS'); return; }
     setLoading(true);
@@ -313,10 +360,23 @@ function NearbySection({ query, autoStart = false }: { query: string; autoStart?
       pos => {
         const newLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         setLoc(newLoc);
-        fetchNearby(newLoc.lat, newLoc.lng, query || 'עסק');
+        fetchNearby(newLoc.lat, newLoc.lng, q, km);
       },
-      () => { setError('לא אושר גישה למיקום'); setLoading(false); }
+      () => { setError('לא אושר גישה למיקום. אפשר זאת בהגדרות הדפדפן.'); setLoading(false); },
+      { enableHighAccuracy: true, timeout: 10000 }
     );
+  }, [fetchNearby]);
+
+  const handleSearch = () => {
+    const q = searchQ.trim() || 'עסק';
+    setActiveQ(q);
+    if (loc) fetchNearby(loc.lat, loc.lng, q, radiusKm);
+    else requestLocation(q, radiusKm);
+  };
+
+  const handleRadiusChange = (km: 5 | 10 | 15 | 50) => {
+    setRadiusKm(km);
+    if (loc && activeQ) fetchNearby(loc.lat, loc.lng, activeQ, km);
   };
 
   const handleBuild = async (biz: NearbyBusiness) => {
@@ -330,62 +390,181 @@ function NearbySection({ query, autoStart = false }: { query: string; autoStart?
           address: biz.address,
           rating: biz.rating,
           reviews_count: biz.reviews_count,
-          lat: biz.lat ?? loc?.lat,
-          lng: biz.lng ?? loc?.lng,
+          lat: (biz as NearbyBusiness & { lat?: number }).lat ?? loc?.lat,
+          lng: (biz as NearbyBusiness & { lng?: number }).lng ?? loc?.lng,
         }),
       });
     } catch { /* handled by card */ }
   };
 
-  // Auto re-fetch when query changes (if we already have location)
   useEffect(() => {
-    if (loc && query) fetchNearby(loc.lat, loc.lng, query);
-  }, [query]);
-  // Auto-start location when category context is provided on mount
+    if (autoStart && query) requestLocation(query, radiusKm);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { if (autoStart && query) requestLocation(); }, []);
+  }, []);
 
+  // ── Not yet asked for location → show the search widget ──────────────────
   if (!askedLoc) {
     return (
-      <div style={{ textAlign: 'center', margin: '0 auto 32px', maxWidth: 580 }}>
-        <button onClick={requestLocation}
-          style={{ padding: '13px 28px', borderRadius: 14, background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)', color: 'white', fontWeight: 700, fontSize: 15, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 10, margin: '0 auto' }}>
-          📍 10 עסקים בסביבתי
-        </button>
+      <div style={{ maxWidth: 640, margin: '0 auto 40px', padding: '0 24px' }}>
+        {/* Search row */}
+        <div style={{
+          display: 'flex', gap: 10, alignItems: 'stretch',
+          background: 'rgba(255,255,255,0.05)', borderRadius: 18,
+          border: '1px solid rgba(255,255,255,0.1)', padding: '10px 12px',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.3)',
+        }}>
+          <span style={{ fontSize: 22, flexShrink: 0, alignSelf: 'center', paddingRight: 4 }}>📍</span>
+          <input
+            value={searchQ}
+            onChange={e => setSearchQ(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleSearch()}
+            placeholder="מה אתה מחפש? (פיצה, מספרה, כושר...)"
+            style={{
+              flex: 1, background: 'none', border: 'none', outline: 'none',
+              color: 'white', fontSize: 15, fontFamily: 'inherit', direction: 'rtl', minWidth: 0,
+            }}
+          />
+          <button
+            onClick={handleSearch}
+            style={{
+              flexShrink: 0, padding: '10px 22px', borderRadius: 12,
+              background: 'linear-gradient(135deg,#FF6B00,#ef4444)',
+              border: 'none', color: 'white', fontWeight: 800, fontSize: 14,
+              cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
+            }}>
+            חפש בסביבתי
+          </button>
+        </div>
+        {/* Radius chips */}
+        <div style={{ display: 'flex', gap: 8, marginTop: 12, justifyContent: 'center' }}>
+          {RADIUS_OPTIONS.map(opt => (
+            <button
+              key={opt.km}
+              onClick={() => setRadiusKm(opt.km as 5 | 10 | 15 | 50)}
+              style={{
+                padding: '6px 16px', borderRadius: 50, cursor: 'pointer', fontFamily: 'inherit', fontSize: 13,
+                fontWeight: radiusKm === opt.km ? 800 : 500,
+                background: radiusKm === opt.km ? 'rgba(255,107,0,0.2)' : 'rgba(255,255,255,0.04)',
+                border: `1.5px solid ${radiusKm === opt.km ? '#FF6B00' : 'rgba(255,255,255,0.1)'}`,
+                color: radiusKm === opt.km ? '#FF6B00' : 'rgba(255,255,255,0.5)',
+                transition: 'all .15s',
+              }}>
+              {opt.label}
+            </button>
+          ))}
+        </div>
       </div>
     );
   }
 
+  // ── After location requested → full results panel ────────────────────────
   return (
-    <div style={{ margin: '0 auto 48px', maxWidth: 1100, padding: '0 24px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <h2 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>
-          📍 {query ? `"${query}"` : 'עסקים'} בסביבתך
-        </h2>
+    <div style={{ margin: '0 auto 52px', maxWidth: 1100, padding: '0 24px' }}>
+
+      {/* Control bar */}
+      <div style={{
+        display: 'flex', flexWrap: 'wrap' as const, gap: 10, alignItems: 'center',
+        marginBottom: 20, background: 'rgba(255,255,255,0.04)',
+        border: '1px solid rgba(255,255,255,0.09)', borderRadius: 16, padding: '12px 16px',
+      }}>
+        {/* Search input */}
+        <div style={{ flex: '1 1 200px', display: 'flex', gap: 8, minWidth: 0 }}>
+          <input
+            value={searchQ}
+            onChange={e => setSearchQ(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleSearch()}
+            placeholder="שנה חיפוש (פיצה, המבורגר...)"
+            style={{
+              flex: 1, padding: '9px 14px', borderRadius: 10, minWidth: 0,
+              border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.06)',
+              color: 'white', fontSize: 14, fontFamily: 'inherit', direction: 'rtl', outline: 'none',
+            }}
+          />
+          <button onClick={handleSearch}
+            style={{ padding: '9px 16px', borderRadius: 10, background: 'linear-gradient(135deg,#FF6B00,#ef4444)', border: 'none', color: 'white', fontWeight: 800, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
+            🔍
+          </button>
+        </div>
+
+        {/* Radius selector */}
+        <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+          {RADIUS_OPTIONS.map(opt => (
+            <button
+              key={opt.km}
+              onClick={() => handleRadiusChange(opt.km as 5 | 10 | 15 | 50)}
+              style={{
+                padding: '7px 14px', borderRadius: 50, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: radiusKm === opt.km ? 800 : 500,
+                background: radiusKm === opt.km ? 'rgba(255,107,0,0.2)' : 'rgba(255,255,255,0.04)',
+                border: `1.5px solid ${radiusKm === opt.km ? '#FF6B00' : 'rgba(255,255,255,0.1)'}`,
+                color: radiusKm === opt.km ? '#FF6B00' : 'rgba(255,255,255,0.5)',
+                transition: 'all .15s',
+              }}>
+              {opt.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Refresh */}
         {loc && (
-          <button onClick={() => fetchNearby(loc.lat, loc.lng, query || 'עסק')}
-            style={{ background: 'none', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 20, padding: '6px 14px', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', fontSize: 13, fontFamily: 'inherit' }}>
-            🔄 רענן
+          <button onClick={() => fetchNearby(loc.lat, loc.lng, activeQ, radiusKm)}
+            style={{ padding: '7px 14px', borderRadius: 10, background: 'none', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: 13, fontFamily: 'inherit', flexShrink: 0 }}>
+            🔄
           </button>
         )}
       </div>
-      {error && <p style={{ color: '#ef4444', fontSize: 14 }}>{error}</p>}
+
+      {/* Title */}
+      <h2 style={{ fontSize: 19, fontWeight: 800, margin: '0 0 16px', color: 'rgba(255,255,255,0.85)' }}>
+        📍 {activeQ ? `"${activeQ}"` : 'עסקים'} בטווח של {radiusKm} ק"מ
+      </h2>
+
+      {/* Error */}
+      {error && (
+        <div style={{ padding: '12px 18px', borderRadius: 12, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', color: '#fca5a5', fontSize: 14, marginBottom: 16 }}>
+          ⚠️ {error}
+        </div>
+      )}
+
+      {/* Skeletons */}
       {loading && (
         <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 8 }}>
           {[1,2,3,4,5].map(i => (
-            <div key={i} style={{ minWidth: 220, height: 160, background: 'rgba(255,255,255,0.04)', borderRadius: 16, animation: 'pulse 1.5s ease-in-out infinite' }} />
+            <div key={i} style={{ minWidth: 220, height: 240, background: 'rgba(255,255,255,0.04)', borderRadius: 16, flexShrink: 0, animation: 'pulse 1.5s ease-in-out infinite' }} />
           ))}
         </div>
       )}
+
+      {/* Results */}
       {!loading && results.length > 0 && (
-        <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 8, scrollbarWidth: 'thin' }}>
-          {results.map(biz => (
-            <NearbyCard key={biz.place_id} biz={biz} onBuild={handleBuild} />
-          ))}
-        </div>
+        <>
+          <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: 13, marginBottom: 12 }}>
+            נמצאו {results.length} עסקים
+          </div>
+          <div style={{ display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 12, scrollbarWidth: 'thin' as const }}>
+            {results.map(biz => (
+              <NearbyCard key={biz.place_id} biz={biz} onBuild={handleBuild} />
+            ))}
+          </div>
+        </>
       )}
-      {!loading && results.length === 0 && loc && (
-        <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14 }}>לא נמצאו עסקים בקרבתך לחיפוש זה</p>
+
+      {/* Empty state */}
+      {!loading && results.length === 0 && loc && !error && (
+        <div style={{ textAlign: 'center', padding: '40px 24px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 20 }}>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>🔍</div>
+          <div style={{ fontWeight: 700, marginBottom: 8 }}>לא נמצאו עסקים</div>
+          <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14, marginBottom: 16 }}>
+            נסה לשנות את החיפוש או הגדל את הטווח
+          </div>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' as const }}>
+            {RADIUS_OPTIONS.filter(o => o.km > radiusKm).slice(0, 2).map(opt => (
+              <button key={opt.km} onClick={() => handleRadiusChange(opt.km as 5 | 10 | 15 | 50)}
+                style={{ padding: '8px 18px', borderRadius: 50, background: 'rgba(255,107,0,0.15)', border: '1px solid rgba(255,107,0,0.4)', color: '#FF6B00', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
+                הגדל ל-{opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );

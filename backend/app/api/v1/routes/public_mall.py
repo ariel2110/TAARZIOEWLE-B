@@ -177,8 +177,8 @@ async def nearby_businesses(
     lat: float = Query(..., ge=-90, le=90),
     lng: float = Query(..., ge=-180, le=180),
     q: str = Query(..., min_length=1),
-    radius: int = Query(5000, ge=100, le=15000),
-    limit: int = Query(10, le=20),
+    radius: int = Query(5000, ge=100, le=50000),
+    limit: int = Query(20, le=40),
     db: Session = Depends(get_db),
 ):
     """
@@ -206,7 +206,7 @@ async def nearby_businesses(
                         "rankby": "prominence",
                     },
                 )
-                places = resp.json().get("results", [])[:limit * 2]
+                places = resp.json().get("results", [])[:limit * 3]
         except Exception as e:
             logger.warning(f"nearby places error: {e}")
             places = []

@@ -25,6 +25,7 @@ def upgrade() -> None:
         sa.Column('top_review', sa.Text(), nullable=True),
         sa.Column('business_types', sa.String(512), nullable=True),
         sa.Column('category', sa.String(120), nullable=True),
+        sa.Column('photo_url', sa.String(1024), nullable=True),
         sa.Column('status', sa.String(30), nullable=False, server_default='draft'),
         sa.Column('view_count', sa.Integer(), nullable=False, server_default='0'),
         sa.Column('first_viewed_at', sa.DateTime(timezone=True), nullable=True),

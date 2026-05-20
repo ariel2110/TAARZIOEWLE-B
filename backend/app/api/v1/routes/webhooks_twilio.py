@@ -205,7 +205,7 @@ async def ai_voice_webhook(
         "[AIVoiceBot] call=%s from=%s status=%s dir=%s — greeting",
         CallSid[:8], From, CallStatus, Direction,
     )
-    twiml = ai_bot.greeting_twiml(CallSid, From)
+    twiml = await ai_bot.greeting_twiml(CallSid, From)
     return Response(content=twiml, media_type="application/xml")
 
 

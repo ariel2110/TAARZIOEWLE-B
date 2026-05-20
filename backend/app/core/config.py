@@ -93,12 +93,20 @@ class Settings(BaseSettings):
     llm_default_model: str = Field(default='gpt-4o')
 
     # OTP / delivery
-    delivery_mode: str = Field(default='console')   # 'console' | 'whatsapp' | 'sms'
+    delivery_mode: str = Field(default='console')   # 'console' | 'whatsapp' | 'sms' | 'voice'
+    otp_digits: int = Field(default=4)              # digits in OTP code (4 for voice, 6 for text)
     whatsapp_api_key: str | None = Field(default=None)
     whatsapp_webhook_secret: str | None = Field(default=None)
     whatsapp_verify_token: str = Field(default='tazo-web-verify')
     notification_email: str | None = Field(default=None)
     sms_provider: str | None = Field(default=None)
+
+    # Twilio — voice OTP calls
+    twilio_account_sid: str | None = Field(default=None)
+    twilio_auth_token: str | None = Field(default=None)
+    twilio_api_key_sid: str | None = Field(default=None)
+    twilio_api_key_secret: str | None = Field(default=None)
+    twilio_from_number: str | None = Field(default=None)  # e.g. +12015551234
 
     # Rate limiting / anti-abuse
     public_challenge_window_minutes: int = Field(default=15)

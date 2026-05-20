@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from app.models.login_challenge import LoginChallenge
 from app.models.customer_account import CustomerAccount
+from app.core.config import settings
 from app.core.security import create_access_token
 
 
@@ -42,7 +43,7 @@ class LoginChallengeService:
 
     def create_otp(self, db: Session, *, customer_phone: str, customer_account_id: int | None = None, onboarding_session_id: int | None = None) -> LoginChallenge:
         self._deactivate_previous(db, customer_phone, 'otp')
-        code = ''.join(secrets.choice('0123456789') for _ in range(6))
+        code = ''.join(secrets.choice('0123456789') for _ in range(settings.otp_digits))
         row = LoginChallenge(
             customer_phone=customer_phone,
             challenge_type='otp',

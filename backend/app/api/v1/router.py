@@ -34,6 +34,7 @@ from app.api.v1.routes.internal_whatsapp import router as internal_whatsapp_rout
 from app.api.v1.routes.admin_tasks import router as admin_tasks_router
 from app.api.v1.routes.admin_whatsapp import router as admin_whatsapp_router
 from app.api.v1.routes.webhooks_morning import router as webhooks_morning_router
+from app.api.v1.routes.webhooks_twilio import router as webhooks_twilio_router
 from app.api.v1.routes.admin_api_keys import router as admin_api_keys_router
 from app.api.v1.routes.admin_social import router as admin_social_router
 
@@ -56,9 +57,10 @@ api_router.include_router(public_portal.router)
 api_router.include_router(public_mall_router)
 api_router.include_router(public_site_orders_router)
 api_router.include_router(customer_portal_router)
-# Webhooks arrive directly from Meta / Morning — must NOT require portal headers
+# Webhooks arrive directly from Meta / Morning / Twilio — must NOT require portal headers
 api_router.include_router(webhooks_whatsapp_router)
 api_router.include_router(webhooks_morning_router)
+api_router.include_router(webhooks_twilio_router)
 api_router.include_router(internal_whatsapp_router)
 
 # ── Admin routes — require portal-gateway origin (X-Odin-Origin + X-Internal-Key)

@@ -346,13 +346,13 @@ class PublicPortalService:
 
 
 
-def _auto_prepare_draft(self, db: Session, business: Business, readiness_score: int | None = None) -> str:
-    if business.status in {'new', 'reviewed'} and (readiness_score or 0) >= 60:
-        business.status = 'ready_for_draft'
-        db.add(business)
-        db.commit()
-        return 'Business moved to ready_for_draft automatically based on onboarding readiness.'
-    return 'Business kept in current status pending additional review.'
+    def _auto_prepare_draft(self, db: Session, business: Business, readiness_score: int | None = None) -> str:
+        if business.status in {'new', 'reviewed'} and (readiness_score or 0) >= 60:
+            business.status = 'ready_for_draft'
+            db.add(business)
+            db.commit()
+            return 'Business moved to ready_for_draft automatically based on onboarding readiness.'
+        return 'Business kept in current status pending additional review.'
 
     def demo_request_status(self, db: Session, customer_phone: str | None):
         q = db.query(DemoRequestLog)

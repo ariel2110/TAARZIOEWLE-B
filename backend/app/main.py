@@ -1,3 +1,4 @@
+import logging
 import app.models
 from pathlib import Path
 from fastapi import FastAPI, Request
@@ -8,6 +9,11 @@ from app.api.v1.router import api_router
 from app.db.init_db import init_db
 
 app = FastAPI(title=settings.app_name)
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(levelname)s [%(name)s] %(message)s",
+)
 _allowed_origins = [
     settings.frontend_admin_url,
     settings.frontend_customer_url,

@@ -3,10 +3,10 @@ from __future__ import annotations
 import logging, re, math
 from typing import Optional
 import httpx
-from fastapi import APIRouter, Depends, Query, Body
+from fastapi import APIRouter, BackgroundTasks, Depends, Query, Body
 from pydantic import BaseModel, field_validator
 from sqlalchemy.orm import Session
-from app.db.session import get_db
+from app.db.session import get_db, SessionLocal
 from app.models.business import Business
 from app.models.demo_site import DemoSite
 from app.models.draft_site import DraftSite
@@ -187,7 +187,7 @@ CATEGORY_SEARCH_TERMS: dict[str, list[str]] = {
 
 PLACES_NEARBY_URL = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
 PLACES_DETAILS_URL = "https://maps.googleapis.com/maps/api/place/details/json"
-DETAIL_FIELDS = "name,formatted_address,formatted_phone_number,rating,user_ratings_total,place_id,geometry,types,vicinity"
+DETAIL_FIELDS = "name,formatted_address,formatted_phone_number,website,rating,user_ratings_total,place_id,geometry,types,vicinity,opening_hours,price_level,reviews,url"
 
 
 def _haversine(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
@@ -275,6 +275,7 @@ def featured(limit: int = Query(8, le=20), db: Session = Depends(get_db)):
 
 @router.get("/nearby")
 async def nearby_businesses(
+    background_tasks: BackgroundTasks,
     lat: float = Query(..., ge=-90, le=90),
     lng: float = Query(..., ge=-180, le=180),
     q: str = Query(..., min_length=1),
@@ -353,6 +354,8 @@ async def nearby_businesses(
             open_now = place.get("opening_hours", {}).get("open_now")
             place_category = _types_to_category(place.get("types", []))
 
+            price_level = place.get("price_level")  # 0-4
+            gmaps_url = f"https://www.google.com/maps/place/?q=place_id:{place_id}"
             results.append({
                 "place_id": place_id,
                 "name": place.get("name", ""),
@@ -369,12 +372,32 @@ async def nearby_businesses(
                 "photo_url": photo_url,
                 "open_now": open_now,
                 "category": place_category,
+                "price_level": price_level,
+                "google_maps_url": in_db.google_maps_url if in_db else gmaps_url,
+                "phone": getattr(in_db, 'phone', None) if in_db else None,
+                "website": getattr(in_db, 'website', None) if in_db else None,
             })
             if len(results) >= limit:
                 break
 
         # Sort: closest first
         results.sort(key=lambda x: x["distance_km"])
+
+        # ── Auto-build DemoSites in background for all unregistered businesses ──
+        for r in results:
+            if not r["in_tazo"] and r["place_id"]:
+                background_tasks.add_task(
+                    _background_build_place,
+                    place_id=r["place_id"],
+                    name=r["name"],
+                    address=r["address"],
+                    rating=r.get("rating"),
+                    reviews_count=r.get("reviews_count"),
+                    lat=r.get("lat"),
+                    lng=r.get("lng"),
+                    photo_url=r.get("photo_url", ""),
+                    category=r.get("category", ""),
+                )
 
     # ── DB fallback when Google Places API key is not configured ────────
     if not results:
@@ -413,7 +436,59 @@ async def nearby_businesses(
 # ──────────────────────────────────────────────────────────────────────────────
 # BUILD FROM PLACE — Create a TAZO site from a Google Places ID
 # ──────────────────────────────────────────────────────────────────────────────
+def _make_unique_slug(name: str, db: Session) -> str:
+    """Generate a unique URL-safe slug from a business name."""
+    import unicodedata as _ud
+    base = _ud.normalize('NFKD', name or 'biz').encode('ascii', 'ignore').decode().lower()
+    base = re.sub(r'[^a-z0-9]+', '-', base).strip('-')[:40] or 'biz'
+    slug = base
+    n = 0
+    while db.query(DemoSite).filter(DemoSite.slug == slug).first():
+        n += 1
+        slug = f"{base}-{n}"
+    return slug
 
+
+def _background_build_place(
+    place_id: str, name: str, address: str,
+    rating: float | None, reviews_count: int | None,
+    lat: float | None, lng: float | None,
+    photo_url: str = "", category: str = "",
+) -> None:
+    """Lightweight background task: create Business + DemoSite from nearby result."""
+    db = SessionLocal()
+    try:
+        if db.query(DemoSite).filter(DemoSite.place_id == place_id).first():
+            return
+        if db.query(Business).filter(Business.google_place_id == place_id).first():
+            return
+        city = _extract_city(address)
+        biz = Business(
+            name=name, address=address, category=category or "general",
+            google_place_id=place_id, lat=lat, lng=lng, rating=rating,
+            city=city, photo_url=photo_url, status="active",
+        )
+        db.add(biz)
+        db.flush()
+        slug = _make_unique_slug(name, db)
+        site = DemoSite(
+            business_id=biz.id, slug=slug, status="seeded",
+            business_name=name, address=address, city=city,
+            category=category or "general",
+            photo_url=photo_url or None,
+            place_id=place_id,
+            rating=float(rating) if rating else None,
+            reviews_count=int(reviews_count) if reviews_count else None,
+            google_maps_url=f"https://www.google.com/maps/place/?q=place_id:{place_id}",
+        )
+        db.add(site)
+        db.commit()
+        logger.info(f"[auto-build] {name} → {slug}.tazo-web.com")
+    except Exception as e:
+        logger.warning(f"[auto-build] failed for {name}: {e}")
+        db.rollback()
+    finally:
+        db.close()
 class BuildFromPlaceRequest(BaseModel):
     place_id: str
     name: Optional[str] = None
@@ -431,19 +506,6 @@ class BuildFromPlaceRequest(BaseModel):
 
 
 @router.post("/build-from-place")
-def _make_unique_slug(name: str, db: Session) -> str:
-    """Generate a unique URL-safe slug from a business name."""
-    import unicodedata as _ud
-    base = _ud.normalize('NFKD', name or 'biz').encode('ascii', 'ignore').decode().lower()
-    base = re.sub(r'[^a-z0-9]+', '-', base).strip('-')[:40] or 'biz'
-    slug = base
-    n = 0
-    while db.query(DemoSite).filter(DemoSite.slug == slug).first():
-        n += 1
-        slug = f"{base}-{n}"
-    return slug
-
-
 async def build_from_place(payload: BuildFromPlaceRequest, db: Session = Depends(get_db)):
     """
     Given a Google Place ID, look up the business, create a Business + DemoSite
@@ -489,6 +551,29 @@ async def build_from_place(payload: BuildFromPlaceRequest, db: Session = Depends
     city = _extract_city(address)
     types = place_data.get("types", [])
     category = _types_to_category(types)
+    official_website = place_data.get("website", "")
+
+    # Try to enrich description from official website meta tags
+    website_description = ""
+    website_og_image = ""
+    if official_website:
+        try:
+            async with httpx.AsyncClient(timeout=6, follow_redirects=True) as wc:
+                wr = await wc.get(official_website, headers={"User-Agent": "TazoBot/1.0"})
+                if wr.status_code == 200:
+                    html = wr.text[:20000]  # only first 20KB
+                    # meta description
+                    m = re.search(r'<meta[^>]+name=["\']description["\'][^>]+content=["\']([^"\']{10,300})', html, re.I)
+                    if not m:
+                        m = re.search(r'<meta[^>]+content=["\']([^"\']{10,300})["\'][^>]+name=["\']description["\']', html, re.I)
+                    if m:
+                        website_description = m.group(1).strip()
+                    # og:image
+                    og = re.search(r'<meta[^>]+property=["\']og:image["\'][^>]+content=["\']([^"\']+)', html, re.I)
+                    if og:
+                        website_og_image = og.group(1).strip()
+        except Exception as we:
+            logger.debug(f"website scrape failed for {official_website}: {we}")
 
     if not name:
         return {"status": "error", "detail": "Could not fetch business name"}
@@ -526,13 +611,18 @@ async def build_from_place(payload: BuildFromPlaceRequest, db: Session = Depends
             photo_url = (f"https://maps.googleapis.com/maps/api/place/photo"
                          f"?maxwidth=800&photo_reference={photo_ref}"
                          f"&key={settings.google_places_api_key}")
+    # Prefer og:image from official site if no Google photo
+    if not photo_url and website_og_image:
+        photo_url = website_og_image
+    # Combine tagline: prefer website description, fallback to generated
+    tagline = website_description or (f"{category} מקצועי ב{city}" if city else f"{category} מקצועי")
     business_types_str = ",".join(place_data.get("types", []))
     demo_slug = _make_unique_slug(name, db)
     demo = DemoSite(
         slug=demo_slug,
         place_id=payload.place_id,
         business_name=name,
-        tagline=f"{category} מקצועי ב{city}" if city else f"{category} מקצועי",
+        tagline=tagline[:200],
         phone=phone,
         address=address,
         city=city,
@@ -543,6 +633,7 @@ async def build_from_place(payload: BuildFromPlaceRequest, db: Session = Depends
         business_types=business_types_str or None,
         category=category,
         photo_url=photo_url or None,
+        website=official_website or None,
         status="draft",
     )
     db.add(demo)
@@ -573,7 +664,9 @@ async def build_from_place(payload: BuildFromPlaceRequest, db: Session = Depends
         rating=float(rating or 0),
         lat=geo.get("lat") if geo else None,
         lng=geo.get("lng") if geo else None,
-        website=place_data.get("website", ""),
+        website=official_website,
+        description=tagline,
+        slug=demo_slug,
     ))
     asyncio.create_task(_run())
     return {
@@ -582,6 +675,8 @@ async def build_from_place(payload: BuildFromPlaceRequest, db: Session = Depends
         "business_name": name,
         "subdomain": demo_slug,
         "url": demo_url,
+        "phone": phone or None,
+        "website": official_website or None,
     }
 
 
@@ -655,21 +750,70 @@ async def trigger_build(payload: TriggerBuildRequest, db: Session = Depends(get_
                 await _owner_wa(biz.name, p, getattr(draft, "preview_url", None), demo_url)
         except Exception as e:
             logger.exception(f"trigger-build error biz={biz.id}: {e}")
-    # Notify tazo-sync to create shadow business panel
-    asyncio.create_task(_notify_tazo_sync(
-        place_id=payload.place_id,
-        name=name,
-        phone=phone,
-        address=address,
-        city=city,
-        category=category,
-        rating=float(rating or 0),
-        lat=geo.get("lat") if geo else None,
-        lng=geo.get("lng") if geo else None,
-        website=place_data.get("website", ""),
-    ))
     asyncio.create_task(_run())
     return {"status": "building", "business_id": biz.id, "business_name": biz.name}
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# CLAIM + REMOVE BUSINESS OWNERSHIP
+# ──────────────────────────────────────────────────────────────────────────────
+
+class RemoveRequest(BaseModel):
+    place_id: str
+    business_name: str
+    phone: str
+    reason: Optional[str] = None
+
+    @field_validator("phone")
+    @classmethod
+    def _vp(cls, v):
+        c = re.sub(r"\D", "", v)
+        if not (9 <= len(c) <= 15):
+            raise ValueError("Invalid phone")
+        return c
+
+    @field_validator("business_name")
+    @classmethod
+    def _vn(cls, v): return re.sub(r"<[^>]+>", "", v).strip()[:200] if v else v
+
+    @field_validator("place_id")
+    @classmethod
+    def _vi(cls, v): return re.sub(r"[^A-Za-z0-9_\-]", "", v)[:150]
+
+
+@router.post("/remove-request")
+async def remove_request(payload: RemoveRequest, db: Session = Depends(get_db)):
+    """Store a business removal request and notify admin via WhatsApp."""
+    phone = payload.phone
+    if phone.startswith("0"):
+        phone = "972" + phone[1:]
+
+    # Mark the site as removal-requested in DB if found
+    demo = db.query(DemoSite).filter(DemoSite.place_id == payload.place_id).first()
+    if demo:
+        demo.status = "removal_requested"
+        db.commit()
+
+    # Notify admin
+    admin_msg = (
+        f"\u26a0\ufe0f \u05d1\u05e7\u05e9\u05ea \u05d4\u05e1\u05e8\u05d4 \u05de-TAZO\n\n"
+        f"\u05e2\u05e1\u05e7: *{payload.business_name}*\n"
+        f"Place ID: {payload.place_id}\n"
+        f"\u05d8\u05dc\u05e4\u05d5\u05df: {phone}\n"
+        f"\u05e1\u05d9\u05d1\u05d4: {payload.reason or '\u05dc\u05d0 \u05e6\u05d5\u05d9\u05df'}\n\n"
+        f"\u05d9\u05e9 \u05dc\u05d0\u05de\u05ea \u05d1\u05e2\u05dc\u05d5\u05ea \u05dc\u05e4\u05e0\u05d9 \u05d4\u05e1\u05e8\u05d4."
+    )
+    try:
+        async with httpx.AsyncClient(timeout=8) as c:
+            await c.post(
+                "http://sitenest-evolution:8080/message/sendText/tazo-main",
+                json={"number": "972546363350", "text": admin_msg},
+                headers={"apikey": "tazo-evo-key"},
+            )
+    except Exception as e:
+        logger.warning(f"remove-request WA failed: {e}")
+
+    return {"status": "ok", "message": "\u05d1\u05e7\u05e9\u05ea\u05da \u05e0\u05ea\u05e7\u05d1\u05dc\u05d4"}
 
 
 async def _owner_wa(name: str, phone: str, preview: str | None, demo_url: str | None = None):

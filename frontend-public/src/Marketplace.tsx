@@ -220,70 +220,311 @@ interface NearbyBusiness {
   photo_url?: string;
   open_now?: boolean;
   category?: string;
+  lat?: number;
+  lng?: number;
+  price_level?: number;
+  phone?: string;
+  website?: string;
+  google_maps_url?: string;
 }
 
-// ── Nearby Card ──────────────────────────────────────────────────────────────
-function NearbyCard({ biz, onBuild }: { biz: NearbyBusiness; onBuild: (b: NearbyBusiness) => Promise<string | null> }) {
-  const [building, setBuilding] = useState(false);
-  const [builtUrl, setBuiltUrl] = useState<string | null>(null);
-  const [attempted, setAttempted] = useState(false);
-  const distLabel = biz.distance_km < 1
-    ? `${Math.round(biz.distance_km * 1000)} מ'`
-    : `${biz.distance_km.toFixed(1)} ק"מ`;
-  const handleBuild = async () => {
-    setBuilding(true);
-    const url = await onBuild(biz);
-    setBuiltUrl(url);
-    setAttempted(true);
-    setBuilding(false);
+// ── Ownership Modal ──────────────────────────────────────────────────────────
+function OwnershipModal({ biz, onClose }: { biz: NearbyBusiness; onClose: () => void }) {
+  const [mode, setMode] = useState<'menu' | 'remove'>('menu');
+  const [phone, setPhone] = useState('');
+  const [reason, setReason] = useState('');
+  const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
+
+  const sendRemove = async () => {
+    setSending(true);
+    try {
+      await fetch(`${API}/public/mall/remove-request`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ place_id: biz.place_id, business_name: biz.name, phone, reason }),
+      });
+      setSent(true);
+    } finally { setSending(false); }
   };
+
   return (
-    <div style={{ minWidth: 240, maxWidth: 260, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 16, overflow: 'hidden', flexShrink: 0 }}>
-      {biz.photo_url ? (
-        <img src={biz.photo_url} alt={biz.name} style={{ width: '100%', height: 140, objectFit: 'cover', display: 'block' }} />
-      ) : (
-        <div style={{ width: '100%', height: 140, background: 'rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40 }}>
-          🏢
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div style={{ background: 'linear-gradient(to bottom,#1a1a2e,#0f0f1a)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '24px 24px 0 0', padding: '28px 24px 40px', width: '100%', maxWidth: 480, direction: 'rtl', fontFamily: 'inherit' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+          <h3 style={{ margin: 0, fontSize: 19, fontWeight: 900 }}>👤 אני בעל העסק</h3>
+          <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.08)', border: 'none', color: 'rgba(255,255,255,0.6)', width: 32, height: 32, borderRadius: '50%', cursor: 'pointer', fontSize: 15, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
         </div>
-      )}
-      <div style={{ padding: '14px 14px 16px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-          <span style={{ fontSize: 11, background: biz.in_tazo ? 'rgba(34,197,94,0.15)' : 'rgba(245,158,11,0.12)', color: biz.in_tazo ? '#4ade80' : '#f59e0b', borderRadius: 20, padding: '2px 10px', fontWeight: 700 }}>
-            {biz.in_tazo ? '✅ ב-TAZO' : '🔨 זמין לבנייה'}
-          </span>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3 }}>
-            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>📍 {distLabel}</span>
-            {biz.open_now !== undefined && (
-              <span style={{ fontSize: 10, fontWeight: 700, color: biz.open_now ? '#4ade80' : '#f87171' }}>
-                {biz.open_now ? '🟢 פתוח עכשיו' : '🔴 סגור'}
-              </span>
-            )}
-          </div>
+        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', marginBottom: 20, background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '10px 14px' }}>
+          עסק: <strong style={{ color: 'rgba(255,255,255,0.8)' }}>{biz.name}</strong>
         </div>
-        <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 4, lineHeight: 1.3 }}>{biz.name}</div>
-        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 10 }}>{biz.address}</div>
-        {biz.rating && (
-          <div style={{ fontSize: 13, color: '#f59e0b', marginBottom: 12 }}>
-            {'★'.repeat(Math.round(biz.rating))} {biz.rating.toFixed(1)} ({biz.reviews_count?.toLocaleString()})
+
+        {!sent && mode === 'menu' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <a href={`https://tazo-sync.com/claim?place_id=${biz.place_id}&name=${encodeURIComponent(biz.name)}`}
+              target="_blank" rel="noopener noreferrer"
+              style={{ padding: '20px', background: 'linear-gradient(135deg,rgba(245,158,11,0.12),rgba(239,68,68,0.12))', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 16, textDecoration: 'none', color: 'white', display: 'block' }}>
+              <div style={{ fontWeight: 900, fontSize: 16, marginBottom: 8 }}>🏆 תבע בעלות על העסק</div>
+              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', lineHeight: 1.6 }}>
+                ✅ ערוך תוכן ותמונות<br />
+                ✅ קבל הזמנות ותורים<br />
+                ✅ לוח בקרה עסקי מלא<br />
+                <span style={{ color: '#f59e0b', fontWeight: 700, fontSize: 12, marginTop: 8, display: 'block' }}>→ הרשמה חינמית ב-TAZO SYNC</span>
+              </div>
+            </a>
+            <button onClick={() => setMode('remove')}
+              style={{ padding: '16px 20px', background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 14, cursor: 'pointer', fontFamily: 'inherit', color: 'white', textAlign: 'right' as const, transition: 'background .2s' }}>
+              <div style={{ fontWeight: 700, fontSize: 14, color: '#f87171', marginBottom: 4 }}>🗑️ בקש הסרת העסק</div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)' }}>לאחר אימות בעלות — העסק יוסר ממאגר TAZO</div>
+            </button>
           </div>
         )}
-        {(biz.in_tazo && biz.url) || builtUrl ? (
-          <a href={builtUrl || biz.url!} target="_blank" rel="noopener noreferrer"
-            style={{ display: 'block', textAlign: 'center', padding: '10px', background: 'linear-gradient(135deg,#4ade80,#22c55e)', borderRadius: 10, color: 'white', fontWeight: 700, fontSize: 13, textDecoration: 'none' }}>
-            כנס לאתר →
-          </a>
-        ) : attempted ? (
-          <div style={{ textAlign: 'center', padding: '10px', background: 'rgba(34,197,94,0.15)', borderRadius: 10, color: '#4ade80', fontWeight: 700, fontSize: 13 }}>
-            ✅ נשלח לבעל העסק!
+
+        {!sent && mode === 'remove' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div style={{ padding: '12px 16px', background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 12, fontSize: 13, color: 'rgba(255,255,255,0.65)', lineHeight: 1.7 }}>
+              בקשת הסרה דורשת <strong>אימות בעלות</strong>. לאחר הבדיקה, העסק יוסר.<br />
+              <span style={{ color: '#f87171', fontSize: 12 }}>⚠️ פעולה זו אינה הפיכה</span>
+            </div>
+            <div>
+              <label style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', display: 'block', marginBottom: 6 }}>טלפון הרשום לעסק *</label>
+              <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="05X-XXXXXXX"
+                style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.06)', color: 'white', fontSize: 14, fontFamily: 'inherit', direction: 'rtl', boxSizing: 'border-box' as const, outline: 'none' }} />
+            </div>
+            <div>
+              <label style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', display: 'block', marginBottom: 6 }}>סיבה (אופציונלי)</label>
+              <textarea value={reason} onChange={e => setReason(e.target.value)} placeholder="הסבר קצר..." rows={3}
+                style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.06)', color: 'white', fontSize: 14, fontFamily: 'inherit', direction: 'rtl', resize: 'none', boxSizing: 'border-box' as const, outline: 'none' }} />
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => setMode('menu')} style={{ flex: 1, padding: '12px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, color: 'rgba(255,255,255,0.6)', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14 }}>חזור</button>
+              <button onClick={sendRemove} disabled={sending || !phone.trim()}
+                style={{ flex: 2, padding: '12px', background: phone.trim() ? 'rgba(239,68,68,0.85)' : 'rgba(239,68,68,0.25)', border: 'none', borderRadius: 10, color: 'white', cursor: phone.trim() ? 'pointer' : 'default', fontWeight: 700, fontFamily: 'inherit', fontSize: 14 }}>
+                {sending ? '⏳ שולח...' : '📤 שלח בקשת הסרה'}
+              </button>
+            </div>
           </div>
-        ) : (
-          <button onClick={handleBuild} disabled={building}
-            style={{ width: '100%', padding: '10px', background: building ? 'rgba(255,255,255,0.08)' : 'linear-gradient(135deg,#f59e0b,#ef4444)', border: 'none', borderRadius: 10, color: 'white', fontWeight: 700, fontSize: 13, cursor: building ? 'default' : 'pointer', fontFamily: 'inherit' }}>
-            {building ? '🔨 בונה אתר...' : '🚀 בנה אתר עכשיו'}
-          </button>
+        )}
+
+        {sent && (
+          <div style={{ textAlign: 'center', padding: '32px 0' }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>✅</div>
+            <div style={{ fontWeight: 900, fontSize: 18, marginBottom: 10 }}>הבקשה נשלחה!</div>
+            <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 14, lineHeight: 1.7 }}>
+              נבדוק את הבקשה ונצור איתך קשר לאימות הבעלות.<br />
+              לאחר אימות — העסק יוסר ממאגר TAZO.
+            </div>
+          </div>
         )}
       </div>
     </div>
+  );
+}
+
+// ── Category → emoji map ──────────────────────────────────────────────────────
+const CAT_EMOJI: Record<string, string> = {
+  food: '🍕', cafe: '☕', beauty: '✂️', health: '💪',
+  repairs: '🔧', electric: '⚡', vehicles: '🚗',
+  garden: '🌿', cleaning: '🏠', pets: '🐾',
+  education: '🎓', events: '🎉', general: '🏢',
+};
+
+// ── Price level display ───────────────────────────────────────────────────────
+function PriceLevel({ level }: { level: number }) {
+  return (
+    <span>
+      <span style={{ color: '#a3e635' }}>{'₪'.repeat(level + 1)}</span>
+      <span style={{ color: 'rgba(255,255,255,0.2)' }}>{'₪'.repeat(4 - level)}</span>
+    </span>
+  );
+}
+
+// ── Nearby Card (WOW redesign) ────────────────────────────────────────────────
+function NearbyCard({ biz, onBuild }: { biz: NearbyBusiness; onBuild: (b: NearbyBusiness) => Promise<string | null> }) {
+  const [building, setBuilding] = useState(false);
+  const [builtUrl, setBuiltUrl] = useState<string | null>(null);
+  const [builtPhone, setBuiltPhone] = useState<string | null>(null);
+  const [builtWebsite, setBuiltWebsite] = useState<string | null>(null);
+  const [attempted, setAttempted] = useState(false);
+  const [showOwner, setShowOwner] = useState(false);
+  const [hov, setHov] = useState(false);
+
+  const distLabel = biz.distance_km < 1
+    ? `${Math.round(biz.distance_km * 1000)} מ'`
+    : `${biz.distance_km.toFixed(1)} ק"מ`;
+
+  const handleBuild = async () => {
+    setBuilding(true);
+    try {
+      const r = await fetch(`${API}/public/mall/build-from-place`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          place_id: biz.place_id, name: biz.name, address: biz.address,
+          rating: biz.rating, reviews_count: biz.reviews_count,
+          lat: biz.lat, lng: biz.lng,
+        }),
+      });
+      const d = await r.json();
+      setBuiltUrl(d.url || null);
+      if (d.phone) setBuiltPhone(d.phone);
+      if (d.website) setBuiltWebsite(d.website);
+    } catch { /* ignore */ }
+    setAttempted(true);
+    setBuilding(false);
+  };
+
+  const siteUrl = builtUrl || biz.url;
+  const phone   = builtPhone || biz.phone;
+  const website = builtWebsite || biz.website;
+  const emoji   = CAT_EMOJI[biz.category || 'general'] || '🏢';
+
+  // Category gradient
+  const catGrads: Record<string, string> = {
+    food: 'linear-gradient(135deg,#7f1d1d,#991b1b)', cafe: 'linear-gradient(135deg,#451a03,#92400e)',
+    beauty: 'linear-gradient(135deg,#4a1d96,#6d28d9)', health: 'linear-gradient(135deg,#042f2e,#065f46)',
+    repairs: 'linear-gradient(135deg,#1c0a00,#78350f)', electric: 'linear-gradient(135deg,#1e3a5f,#1e40af)',
+    vehicles: 'linear-gradient(135deg,#111827,#1f2937)', garden: 'linear-gradient(135deg,#052e16,#14532d)',
+    cleaning: 'linear-gradient(135deg,#082f49,#075985)', pets: 'linear-gradient(135deg,#431407,#9a3412)',
+    education: 'linear-gradient(135deg,#1e1b4b,#3730a3)', events: 'linear-gradient(135deg,#4c0519,#9f1239)',
+    general: 'linear-gradient(135deg,#18181b,#27272a)',
+  };
+  const bgGrad = catGrads[biz.category || 'general'] || catGrads.general;
+
+  return (
+    <>
+      <div
+        onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+        style={{
+          background: 'rgba(255,255,255,0.04)', borderRadius: 22, overflow: 'hidden',
+          border: `1px solid ${hov ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.07)'}`,
+          transition: 'all 0.3s cubic-bezier(0.4,0,0.2,1)',
+          transform: hov ? 'translateY(-6px) scale(1.01)' : 'none',
+          boxShadow: hov ? '0 32px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05)' : '0 4px 16px rgba(0,0,0,0.3)',
+        }}
+      >
+        {/* ── HERO PHOTO ── */}
+        <div style={{ position: 'relative', height: 210, overflow: 'hidden', background: bgGrad }}>
+          {biz.photo_url ? (
+            <img src={biz.photo_url} alt={biz.name}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.6s ease', transform: hov ? 'scale(1.08)' : 'scale(1)' }} />
+          ) : (
+            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ fontSize: 72, opacity: 0.5, filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.5))' }}>{emoji}</span>
+            </div>
+          )}
+          {/* Gradient overlay */}
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top,rgba(0,0,0,0.92) 0%,rgba(0,0,0,0.3) 55%,rgba(0,0,0,0.1) 100%)' }} />
+
+          {/* TOP BADGES */}
+          <div style={{ position: 'absolute', top: 12, left: 12, right: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+            <span style={{ fontSize: 11, fontWeight: 800, padding: '5px 12px', borderRadius: 20, backdropFilter: 'blur(12px)', background: biz.in_tazo ? 'rgba(34,197,94,0.85)' : 'rgba(139,92,246,0.85)', color: 'white', letterSpacing: '0.3px' }}>
+              {biz.in_tazo ? '✅ ב-TAZO' : '✨ זמין לבנייה'}
+            </span>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5 }}>
+              {biz.open_now !== undefined && (
+                <span style={{ fontSize: 11, fontWeight: 800, padding: '5px 12px', borderRadius: 20, backdropFilter: 'blur(12px)', background: biz.open_now ? 'rgba(34,197,94,0.85)' : 'rgba(239,68,68,0.85)', color: 'white' }}>
+                  {biz.open_now ? '🟢 פתוח' : '🔴 סגור'}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* BOTTOM: Name + Rating overlay */}
+          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '14px 16px 16px' }}>
+            <div style={{ fontWeight: 900, fontSize: 19, lineHeight: 1.25, marginBottom: 6, textShadow: '0 2px 12px rgba(0,0,0,0.9)', letterSpacing: '-0.3px' }}>
+              {biz.name}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' as const }}>
+              {biz.rating != null && (
+                <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{ color: '#fbbf24', fontSize: 13, letterSpacing: '-1px' }}>
+                    {'★'.repeat(Math.round(biz.rating))}{'☆'.repeat(5 - Math.round(biz.rating))}
+                  </span>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: '#fcd34d' }}>{biz.rating.toFixed(1)}</span>
+                  {biz.reviews_count != null && (
+                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>({biz.reviews_count.toLocaleString()})</span>
+                  )}
+                </span>
+              )}
+              {biz.price_level != null && <PriceLevel level={biz.price_level} />}
+              <span style={{ fontSize: 11, fontWeight: 800, color: '#fb923c', background: 'rgba(251,146,60,0.15)', padding: '2px 8px', borderRadius: 10 }}>
+                📍 {distLabel}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* ── INFO BODY ── */}
+        <div style={{ padding: '14px 16px 2px' }}>
+          {/* Address */}
+          <div style={{ display: 'flex', gap: 6, marginBottom: 6, alignItems: 'flex-start' }}>
+            <span style={{ fontSize: 13, flexShrink: 0, marginTop: 1 }}>📍</span>
+            <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', lineHeight: 1.5, flex: 1 }}>{biz.address}</span>
+          </div>
+          {/* Phone */}
+          {phone && (
+            <div style={{ display: 'flex', gap: 6, marginBottom: 6, alignItems: 'center' }}>
+              <span style={{ fontSize: 13 }}>📞</span>
+              <a href={`tel:${phone}`} style={{ fontSize: 13, color: '#60a5fa', fontWeight: 600, textDecoration: 'none' }}>{phone}</a>
+            </div>
+          )}
+          {/* Website */}
+          {website && (
+            <div style={{ display: 'flex', gap: 6, marginBottom: 6, alignItems: 'center' }}>
+              <span style={{ fontSize: 13 }}>🌐</span>
+              <a href={website} target="_blank" rel="noopener noreferrer"
+                style={{ fontSize: 12, color: '#a78bfa', textDecoration: 'none', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
+                {website.replace(/^https?:\/\/(www\.)?/, '')}
+              </a>
+            </div>
+          )}
+        </div>
+
+        {/* ── ACTIONS ── */}
+        <div style={{ padding: '10px 16px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {/* Primary: Site or Build */}
+          {siteUrl ? (
+            <a href={siteUrl} target="_blank" rel="noopener noreferrer"
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '13px', background: 'linear-gradient(135deg,#f59e0b,#ef4444)', borderRadius: 12, color: 'white', fontWeight: 900, fontSize: 14, textDecoration: 'none', letterSpacing: '0.2px', transition: 'opacity .2s', boxShadow: '0 4px 20px rgba(245,158,11,0.35)' }}>
+              🌐 כנס לאתר TAZO
+            </a>
+          ) : attempted ? (
+            <div style={{ textAlign: 'center', padding: '13px', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 12, color: '#4ade80', fontWeight: 700, fontSize: 13 }}>
+              ✅ האתר בבנייה — יישלח לבעל העסק
+            </div>
+          ) : (
+            <button onClick={handleBuild} disabled={building}
+              style={{ padding: '13px', background: building ? 'rgba(255,255,255,0.06)' : 'linear-gradient(135deg,#6366f1,#8b5cf6)', border: 'none', borderRadius: 12, color: 'white', fontWeight: 900, fontSize: 14, cursor: building ? 'default' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: building ? 'none' : '0 4px 20px rgba(99,102,241,0.4)', transition: 'all .2s' }}>
+              {building ? '⚙️ בונה אתר...' : '🚀 בנה אתר עכשיו — בחינם'}
+            </button>
+          )}
+
+          {/* Secondary row: TAZO GO + Maps */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+            <a href={`https://tazo-go.com/ride?lat=${biz.lat ?? ''}&lng=${biz.lng ?? ''}&name=${encodeURIComponent(biz.name)}`}
+              target="_blank" rel="noopener noreferrer"
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '10px 8px', background: 'rgba(37,211,102,0.09)', border: '1px solid rgba(37,211,102,0.22)', borderRadius: 10, color: '#4ade80', fontWeight: 700, fontSize: 12, textDecoration: 'none', transition: 'background .2s' }}>
+              🚕 הסע אותי
+            </a>
+            <a href={biz.google_maps_url || `https://www.google.com/maps/place/?q=place_id:${biz.place_id}`}
+              target="_blank" rel="noopener noreferrer"
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '10px 8px', background: 'rgba(66,133,244,0.09)', border: '1px solid rgba(66,133,244,0.22)', borderRadius: 10, color: '#60a5fa', fontWeight: 700, fontSize: 12, textDecoration: 'none', transition: 'background .2s' }}>
+              🗺️ Google Maps
+            </a>
+          </div>
+
+          {/* Owner button */}
+          <button onClick={() => setShowOwner(true)}
+            style={{ padding: '9px', background: 'none', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10, color: 'rgba(255,255,255,0.3)', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', transition: 'all .2s' }}>
+            👤 אני בעל העסק
+          </button>
+        </div>
+      </div>
+
+      {showOwner && <OwnershipModal biz={biz} onClose={() => setShowOwner(false)} />}
+    </>
   );
 }
 
@@ -414,15 +655,13 @@ function NearbySection({ query, autoStart = false, categoryId }: {
           address: biz.address,
           rating: biz.rating,
           reviews_count: biz.reviews_count,
-          lat: (biz as NearbyBusiness & { lat?: number }).lat ?? loc?.lat,
-          lng: (biz as NearbyBusiness & { lng?: number }).lng ?? loc?.lng,
+          lat: biz.lat ?? loc?.lat,
+          lng: biz.lng ?? loc?.lng,
         }),
       });
       const d = await r.json();
       return d.url || null;
-    } catch {
-      return null;
-    }
+    } catch { return null; }
   };
 
   // ── React when parent passes a new query or category ─────────────────────
@@ -574,13 +813,13 @@ function NearbySection({ query, autoStart = false, categoryId }: {
         </div>
       )}
 
-      {/* Results */}
+      {/* Results grid */}
       {!loading && results.length > 0 && (
         <>
-          <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: 13, marginBottom: 12 }}>
+          <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: 13, marginBottom: 16 }}>
             נמצאו {results.length} עסקים
           </div>
-          <div style={{ display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 12, scrollbarWidth: 'thin' as const }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(290px,1fr))', gap: 20 }}>
             {results.map(biz => (
               <NearbyCard key={biz.place_id} biz={biz} onBuild={handleBuild} />
             ))}

@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import String, Integer, Float, Text, DateTime
+from sqlalchemy import String, Integer, Float, Text, DateTime, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base
 from app.models.mixins import TimestampMixin
@@ -27,10 +27,12 @@ class DemoSite(Base, TimestampMixin):
     top_review: Mapped[str | None] = mapped_column(Text, nullable=True)
     business_types: Mapped[str | None] = mapped_column(String(512), nullable=True)
     category: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    website: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    business_id: Mapped[int | None] = mapped_column(Integer, ForeignKey('businesses.id', ondelete='SET NULL'), nullable=True, index=True)
 
     # Lifecycle
     photo_url: Mapped[str | None] = mapped_column(String(1024), nullable=True)
-    status: Mapped[str] = mapped_column(String(30), default='draft')  # draft/sent/viewed/converted
+    status: Mapped[str] = mapped_column(String(30), default='draft')  # draft/sent/viewed/converted/seeded/removal_requested
     view_count: Mapped[int] = mapped_column(Integer, default=0)
     first_viewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     whatsapp_sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

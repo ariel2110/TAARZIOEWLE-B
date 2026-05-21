@@ -90,7 +90,7 @@ _LANG_CONFIG: dict[str, dict] = {
         "name": "עברית",
         "whisper": "he",
         "lang_code": "he",
-        "farewell": ("להתראות", "ביי", "bye"),
+        "farewell": ("להתראות", "ביי", "bye", "תודה להתראות", "לא מעניין"),
         "system": (
             "אתה נציג שירות לקוחות של TAZO — קבוצת שירותים דיגיטליים ישראלית.\n"
             "שמך הוא טאזו. תמיד דבר בגוף ראשון.\n"
@@ -113,7 +113,9 @@ _LANG_CONFIG: dict[str, dict] = {
             "1. ענה אך ורק בעברית תקינה.\n"
             "2. תשובות קצרות ותמציתיות — עד 2 משפטים (שיחת טלפון!).\n"
             "3. היה ידידותי, חם ומקצועי.\n"
-            "4. אם הלקוח אומר להתראות/ביי/תודה/לא מעניין — ענה: 'תודה שפנית, יום נעים. להתראות!'\n"
+            "4. סיים שיחה רק אם הלקוח אמר בבירור: 'להתראות', 'ביי', 'לא מעניין', 'לא צריך' —\n"
+            "   ענה: 'תודה שפנית, יום נעים. להתראות!' ואל תוסיף שאלות.\n"
+            "   אל תסיים שיחה רק בגלל 'תודה' — יכול להיות שהשיחה נמשכת.\n"
             "5. אל תחשוף מידע פנימי: קוד, שמות לקוחות, פרטי שרת, מחירים מדויקים.\n"
             "6. אם אינך יודע — אמור שהצוות יחזור בהקדם."
         ),
@@ -124,7 +126,7 @@ _LANG_CONFIG: dict[str, dict] = {
         "name": "English",
         "whisper": "en",
         "lang_code": "en",
-        "farewell": ("goodbye", "bye", "that's all", "no thanks", "not interested"),
+        "farewell": ("goodbye", "bye", "not interested", "no thanks"),
         "system": (
             "You are a customer service representative for TAZO — an Israeli digital services group.\n"
             "Your name is Tazo. Always speak in first person.\n"
@@ -147,7 +149,9 @@ _LANG_CONFIG: dict[str, dict] = {
             "1. Respond only in English.\n"
             "2. Keep answers short — up to 2 sentences (this is a phone call!).\n"
             "3. Be friendly, warm, and professional.\n"
-            "4. If caller says goodbye/bye/not interested — end with: 'Thank you for calling TAZO! Have a great day. Goodbye!'\n"
+            "4. End the call ONLY if the caller explicitly says 'goodbye', 'bye', or 'not interested'.\n"
+            "   Reply: 'Thank you for calling TAZO! Have a great day. Goodbye!'\n"
+            "   Do NOT end the call just because someone says 'thanks' — the conversation may continue.\n"
             "5. Do not reveal internal info: code, customer names, server details, exact prices.\n"
             "6. If you don't know — say the team will follow up soon."
         ),
@@ -158,7 +162,7 @@ _LANG_CONFIG: dict[str, dict] = {
         "name": "عربية",
         "whisper": "ar",
         "lang_code": "ar",
-        "farewell": ("مع السلامة", "باي", "شكراً", "وداعاً", "لا يهمني"),
+        "farewell": ("مع السلامة", "باي", "وداعاً", "لا يهمني"),
         "system": (
             "أنت ممثل خدمة العملاء في شركة TAZO — مجموعة خدمات رقمية إسرائيلية.\n"
             "اسمك تازو. تحدث دائماً بضمير المتكلم.\n"
@@ -181,7 +185,9 @@ _LANG_CONFIG: dict[str, dict] = {
             "1. أجب فقط باللغة العربية.\n"
             "2. إجابات قصيرة — جملتان كحد أقصى (هذه مكالمة هاتفية!).\n"
             "3. كن ودياً ومحترفاً.\n"
-            "4. إذا قال المتصل وداعاً — أنهِ بـ: 'شكراً لاتصالك بتازو! يوم سعيد. مع السلامة!'\n"
+            "4. أنهِ المكالمة فقط إذا قال المتصل صراحةً: 'مع السلامة'، 'وداعاً'، 'لا يهمني' —\n"
+            "   قل: 'شكراً لاتصالك بتازو! يوم سعيد. مع السلامة!'\n"
+            "   لا تنهِ المكالمة لمجرد قوله 'شكراً'.\n"
             "5. لا تكشف معلومات داخلية.\n"
             "6. إذا لم تكن متأكداً — قل إن الفريق سيتابع قريباً."
         ),
@@ -192,7 +198,7 @@ _LANG_CONFIG: dict[str, dict] = {
         "name": "Русский",
         "whisper": "ru",
         "lang_code": "ru",
-        "farewell": ("до свидания", "пока", "спасибо", "не интересует", "всё"),
+        "farewell": ("до свидания", "пока", "не интересует", "не нужно"),
         "system": (
             "Вы представитель службы поддержки компании TAZO — израильской группы цифровых услуг.\n"
             "Вас зовут Тазо. Говорите всегда от первого лица.\n"
@@ -215,7 +221,9 @@ _LANG_CONFIG: dict[str, dict] = {
             "1. Отвечайте только на русском языке.\n"
             "2. Краткие ответы — максимум 2 предложения (это телефонный звонок!).\n"
             "3. Будьте дружелюбны и профессиональны.\n"
-            "4. Если клиент говорит до свидания/пока — завершите: 'Спасибо за звонок в TAZO! Хорошего дня. До свидания!'\n"
+            "4. Завершайте звонок ТОЛЬКО если клиент явно говорит: 'до свидания', 'пока', 'не интересует' —\n"
+            "   ответьте: 'Спасибо за звонок в TAZO! Хорошего дня. До свидания!'\n"
+            "   Не завершайте звонок только из-за слова 'спасибо' — разговор может продолжаться.\n"
             "5. Не раскрывайте внутреннюю информацию.\n"
             "6. Если не знаете — скажите, что команда свяжется."
         ),
@@ -327,6 +335,9 @@ class VoiceSession:
     # Guards: only one TTS stream + one utterance processor at a time
     _tts_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
     _proc_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
+    # Startup grace: ignore audio until this timestamp (avoids processing
+    # Twilio menu echo / initial noise before the greeting starts)
+    _ready_at: float = 0.0
 
     def system_prompt(self) -> str:
         cfg = _LANG_CONFIG[self.language]
@@ -696,6 +707,9 @@ async def _handle_media_stream(ws: WebSocket) -> None:
                 session.business_name = params.get("business_name", "")
                 session.user_role     = params.get("user_role", "unknown")
                 session.portal_link   = params.get("portal_link", "https://tazo-web.com")
+                # Ignore audio for the first 2.5 s — Twilio may feed menu/ring
+                # audio into the stream before the caller actually speaks
+                session._ready_at = time.time() + 2.5
 
                 logger.info(
                     "[WS] Stream started — call=%s phone=%s*** name=%r customer=%s",
@@ -744,6 +758,11 @@ async def _handle_media_stream(ws: WebSocket) -> None:
             elif event == "media" and session:
                 payload = base64.b64decode(msg["media"]["payload"])
                 energy  = _ulaw_energy(payload)
+
+                # Grace period: drop all audio for the first few seconds so that
+                # Twilio ring/menu residual audio isn't processed as speech
+                if time.time() < session._ready_at:
+                    continue
 
                 # Barge-in detection: caller speaks while AI is talking
                 if session.ai_speaking and energy > _BARGE_IN_THRESHOLD:

@@ -86,6 +86,7 @@ _LANG_CONFIG: dict[str, dict] = {
     "he": {
         "name": "עברית",
         "whisper": "he",
+        "lang_code": "he",
         "farewell": ("להתראות", "ביי", "bye"),
         "system": (
             "אתה נציג שירות לקוחות של חברת TAZO — פלטפורמה המסייעת לעסקים מקומיים.\n"
@@ -106,6 +107,7 @@ _LANG_CONFIG: dict[str, dict] = {
     "en": {
         "name": "English",
         "whisper": "en",
+        "lang_code": "en",
         "farewell": ("goodbye", "bye", "that's all", "no thanks", "not interested"),
         "system": (
             "You are a customer service representative for TAZO — a platform helping local businesses.\n"
@@ -127,6 +129,7 @@ _LANG_CONFIG: dict[str, dict] = {
     "ar": {
         "name": "عربية",
         "whisper": "ar",
+        "lang_code": "ar",
         "farewell": ("مع السلامة", "باي", "شكراً", "وداعاً", "لا يهمني"),
         "system": (
             "أنت ممثل خدمة العملاء في شركة TAZO — منصة تساعد الأعمال التجارية المحلية.\n"
@@ -146,6 +149,7 @@ _LANG_CONFIG: dict[str, dict] = {
     "ru": {
         "name": "Русский",
         "whisper": "ru",
+        "lang_code": "ru",
         "farewell": ("до свидания", "пока", "спасибо", "не интересует", "всё"),
         "system": (
             "Вы представитель службы поддержки компании TAZO — платформы для местного бизнеса.\n"
@@ -378,6 +382,7 @@ async def _play_tts(session: VoiceSession, text_gen: AsyncGenerator[str, None]) 
             ping_interval=None,
         ) as el_ws:
             # ── BOS (Beginning of Stream) ────────────────────────────────────
+            _lang_code = _LANG_CONFIG[session.language].get("lang_code", "he")
             await el_ws.send(json.dumps({
                 "text": " ",
                 "voice_settings": {
@@ -388,6 +393,7 @@ async def _play_tts(session: VoiceSession, text_gen: AsyncGenerator[str, None]) 
                 "generation_config": {
                     "chunk_length_schedule": [50, 100, 150],
                 },
+                "language_code": _lang_code,
             }))
 
             # ── Task: send GPT text chunks to ElevenLabs ─────────────────────

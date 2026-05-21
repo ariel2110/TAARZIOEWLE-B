@@ -344,17 +344,18 @@ async def _gpt_stream(session: VoiceSession) -> AsyncGenerator[str, None]:
     """Stream GPT-4o-mini reply tokens for the current conversation."""
     try:
         oai = AsyncOpenAI(api_key=OPENAI_API_KEY)
-        async with oai.chat.completions.stream(
+        stream = await oai.chat.completions.create(
             model="gpt-4o-mini",
             messages=[{"role": "system", "content": session.system_prompt()}]
             + session.messages[-20:],
             max_tokens=150,
             temperature=0.7,
-        ) as stream:
-            async for event in stream:
-                delta = event.choices[0].delta.content if event.choices else None
-                if delta:
-                    yield delta
+            stream=True,
+        )
+        async for chunk in stream:
+            delta = chunk.choices[0].delta.content if chunk.choices else None
+            if delta:
+                yield delta
     except Exception as exc:
         logger.error("[LLM] GPT error: %s", exc)
         yield "סליחה, יש תקלה רגעית."
@@ -685,7 +686,6 @@ async def _play_tts_rest(session: VoiceSession, text: str) -> str:
             f"https://api.elevenlabs.io/v1/text-to-speech"
             f"/{ELEVENLABS_VOICE_ID}/stream"
             f"?output_format=ulaw_8000"
-            f"&optimize_streaming_latency=4"
         )
         headers = {
             "xi-api-key": ELEVENLABS_API_KEY,

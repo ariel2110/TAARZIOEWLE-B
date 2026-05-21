@@ -1,7 +1,7 @@
 """
 TAZO Voice Stream Microservice
 ================================
-Real-time Hebrew AI voice call handler.
+Real-time multi-language AI voice call handler.
 
 Architecture:
   Phone ↔ Twilio ↔ [WebSocket] ↔ THIS SERVER
@@ -14,6 +14,12 @@ Architecture:
                          (text-in → mulaw_8000-out)
                                       |
                               [WebSocket] → Twilio → Phone
+
+Language selection:
+  At call start a multilingual menu is played.
+  Caller presses 1=Hebrew 2=English 3=Arabic 4=Russian (DTMF).
+  Language can be changed at any time during the call with the same keys.
+  If the caller speaks before pressing a key, Hebrew is used by default.
 
 Barge-in:
   While AI audio is playing, if Twilio receives voice energy above threshold
@@ -74,24 +80,105 @@ _EL_WS_URL = (
     f"&xi_api_key={ELEVENLABS_API_KEY}"
 )
 
-# ── System prompt ─────────────────────────────────────────────────────────────
+# ── Language configuration ────────────────────────────────────────────────────
 
-_BASE_SYSTEM = """\
-אתה נציג שירות לקוחות של חברת TAZO — פלטפורמה המסייעת לעסקים מקומיים.
-שמך הוא טאזו.
+_LANG_CONFIG: dict[str, dict] = {
+    "he": {
+        "name": "עברית",
+        "whisper": "he",
+        "farewell": ("להתראות", "ביי", "bye"),
+        "system": (
+            "אתה נציג שירות לקוחות של חברת TAZO — פלטפורמה המסייעת לעסקים מקומיים.\n"
+            "שמך הוא טאזו.\n"
+            "\nכללים חשובים:\n"
+            "1. ענה אך ורק בעברית תקינה.\n"
+            "2. תשובות קצרות ותמציתיות — עד 2 משפטים (שיחת טלפון!).\n"
+            "3. היה ידידותי, חם ומקצועי.\n"
+            "4. אם הלקוח אומר להתראות/ביי/תודה/לא מעניין — סיים: "
+            "'תודה שפנית, יום נעים. להתראות!'\n"
+            "5. TAZO מאפשרת לעסקים: הזמנות WhatsApp, דף עסקי, ניהול לקוחות, שיווק אוטומטי.\n"
+            "6. אם הלקוח מבקש קישור/הרשמה/להצטרף — ציין [SEND_LINK] בתחילת התשובה.\n"
+            "7. אל תחשוף מידע פנימי. אם אינך יודע — אמור שהצוות יחזור בהקדם."
+        ),
+        "farewell_reply": "תודה שפנית לטאזו! יום נעים ומוצלח. להתראות!",
+        "lang_change_ack": "עוברים לעברית.",
+    },
+    "en": {
+        "name": "English",
+        "whisper": "en",
+        "farewell": ("goodbye", "bye", "that's all", "no thanks", "not interested"),
+        "system": (
+            "You are a customer service representative for TAZO — a platform helping local businesses.\n"
+            "Your name is Tazo.\n"
+            "\nImportant rules:\n"
+            "1. Respond only in English.\n"
+            "2. Keep answers short — up to 2 sentences (this is a phone call!).\n"
+            "3. Be friendly, warm, and professional.\n"
+            "4. If the caller says goodbye/bye/not interested — end with: "
+            "'Thank you for calling TAZO! Have a great day. Goodbye!'\n"
+            "5. TAZO helps businesses with: WhatsApp orders, business pages, "
+            "customer management, automated marketing.\n"
+            "6. If the caller asks for a link/signup — prefix your reply with [SEND_LINK].\n"
+            "7. Do not reveal internal information. If unsure — say the team will follow up."
+        ),
+        "farewell_reply": "Thank you for calling TAZO! Have a wonderful day. Goodbye!",
+        "lang_change_ack": "Switching to English.",
+    },
+    "ar": {
+        "name": "عربية",
+        "whisper": "ar",
+        "farewell": ("مع السلامة", "باي", "شكراً", "وداعاً", "لا يهمني"),
+        "system": (
+            "أنت ممثل خدمة العملاء في شركة TAZO — منصة تساعد الأعمال التجارية المحلية.\n"
+            "اسمك تازو.\n"
+            "\nقواعد مهمة:\n"
+            "1. أجب فقط باللغة العربية.\n"
+            "2. إجابات قصيرة وموجزة — جملتان كحد أقصى (هذه مكالمة هاتفية!).\n"
+            "3. كن ودياً ومحترفاً.\n"
+            "4. إذا قال المتصل وداعاً — أنهِ بـ: 'شكراً لاتصالك بتازو! يوم سعيد. مع السلامة!'\n"
+            "5. TAZO تساعد الأعمال على: طلبات واتساب، صفحة الأعمال، إدارة العملاء، التسويق الآلي.\n"
+            "6. إذا طلب رابطاً أو تسجيلاً — ابدأ ردك بـ [SEND_LINK].\n"
+            "7. لا تكشف معلومات داخلية. إذا لم تكن متأكداً — قل إن الفريق سيتابع قريباً."
+        ),
+        "farewell_reply": "شكراً لاتصالك بتازو! يوم سعيد ومبارك. مع السلامة!",
+        "lang_change_ack": "ننتقل إلى العربية.",
+    },
+    "ru": {
+        "name": "Русский",
+        "whisper": "ru",
+        "farewell": ("до свидания", "пока", "спасибо", "не интересует", "всё"),
+        "system": (
+            "Вы представитель службы поддержки компании TAZO — платформы для местного бизнеса.\n"
+            "Вас зовут Тазо.\n"
+            "\nВажные правила:\n"
+            "1. Отвечайте только на русском языке.\n"
+            "2. Краткие ответы — максимум 2 предложения (это телефонный звонок!).\n"
+            "3. Будьте дружелюбны и профессиональны.\n"
+            "4. Если клиент говорит до свидания/пока — завершите: "
+            "'Спасибо за звонок в TAZO! Хорошего дня. До свидания!'\n"
+            "5. TAZO помогает бизнесу: заказы WhatsApp, бизнес-страница, "
+            "управление клиентами, автоматизированный маркетинг.\n"
+            "6. Если клиент просит ссылку/регистрацию — начните ответ с [SEND_LINK].\n"
+            "7. Не раскрывайте внутреннюю информацию. Если не знаете — скажите, что команда свяжется."
+        ),
+        "farewell_reply": "Спасибо за звонок в TAZO! Хорошего дня. До свидания!",
+        "lang_change_ack": "Переключаемся на русский.",
+    },
+}
 
-כללים חשובים:
-1. ענה אך ורק בעברית תקינה.
-2. תשובות קצרות ותמציתיות — עד 2 משפטים (שיחת טלפון!).
-3. היה ידידותי, חם ומקצועי.
-4. אם הלקוח אומר להתראות/ביי/תודה/לא מעניין — סיים: 'תודה שפנית, יום נעים. להתראות!'
-5. TAZO מאפשרת לעסקים: הזמנות WhatsApp, דף עסקי, ניהול לקוחות, שיווק אוטומטי.
-6. אם הלקוח מבקש קישור/הרשמה/להצטרף — ציין [SEND_LINK] בתחילת התשובה.
-7. אל תחשוף מידע פנימי (מחירים, API, קוד, שמות לקוחות, שרתים).
-8. אם אינך יודע — אמור שהצוות יחזור בהקדם.\
-"""
+# DTMF digit → language code
+_DTMF_TO_LANG: dict[str, str] = {"1": "he", "2": "en", "3": "ar", "4": "ru"}
 
-_FAREWELL_WORDS = ("להתראות", "ביי", "bye")
+# Multilingual menu played at call start before greeting
+_LANG_MENU = (
+    "ברוכים הבאים לטאזו! "
+    "לעברית לחצו 1. "
+    "For English press 2. "
+    "للعربية اضغط 3. "
+    "На русском нажмите 4."
+)
+
+_FAREWELL_WORDS = ("להתראות", "ביי", "bye")  # kept for backwards-compat; per-lang used instead
 
 # ── VAD parameters ────────────────────────────────────────────────────────────
 
@@ -158,6 +245,10 @@ class VoiceSession:
     is_customer:    bool = False
     business_name:  str = ""
 
+    # Language selection (1=he 2=en 3=ar 4=ru via DTMF, or auto-detected)
+    language:      str  = "he"
+    lang_selected: bool = False   # True once caller has chosen or first speech arrived
+
     # Conversation history for GPT
     messages: list[dict] = field(default_factory=list)
 
@@ -176,43 +267,65 @@ class VoiceSession:
     _proc_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
 
     def system_prompt(self) -> str:
+        cfg = _LANG_CONFIG[self.language]
+        base = cfg["system"]
         extra = ""
         if self.is_customer:
-            extra = "\n=== לקוח קיים ===\n"
+            extra = "\n=== Existing customer ===\n"
             if self.caller_name:
-                extra += f"שם: {self.caller_name}\n"
+                extra += f"Name: {self.caller_name}\n"
             if self.business_name:
-                extra += f"עסק: {self.business_name}\n"
-            extra += "ברך אותו בשמו ועזור בחום.\n"
+                extra += f"Business: {self.business_name}\n"
+            extra += "Greet them by name and assist warmly.\n"
         elif self.caller_name:
-            extra = f"\nהלקוח פנה בעבר. שמו: {self.caller_name}. עודד אותו להצטרף.\n"
-        return _BASE_SYSTEM + extra
+            extra = f"\nKnown contact: {self.caller_name}. Encourage them to join TAZO.\n"
+        return base + extra
 
     def greeting_text(self) -> str:
-        if self.is_customer and self.caller_name:
-            first = self.caller_name.split()[0]
-            biz = f" בנושא {self.business_name}" if self.business_name else ""
-            return f"שלום {first}! שמחים שהתקשרת. כיצד אוכל לעזור לך היום{biz}?"
-        if self.caller_name:
-            first = self.caller_name.split()[0]
-            return f"שלום {first}! אני טאזו מ-TAZO. כיצד אוכל לעזור?"
-        return (
-            "שלום! הגעת לשירות הלקוחות של TAZO. "
-            "אני טאזו, כאן כדי לעזור. כיצד אוכל לסייע?"
-        )
+        lang = self.language
+        biz = f" — {self.business_name}" if self.business_name else ""
+        if lang == "he":
+            if self.is_customer and self.caller_name:
+                first = self.caller_name.split()[0]
+                biz_he = f" בנושא {self.business_name}" if self.business_name else ""
+                return f"שלום {first}! שמחים שהתקשרת. כיצד אוכל לעזור לך היום{biz_he}?"
+            if self.caller_name:
+                first = self.caller_name.split()[0]
+                return f"שלום {first}! אני טאזו מ-TAZO. כיצד אוכל לעזור?"
+            return (
+                "שלום! הגעת לשירות הלקוחות של TAZO. "
+                "אני טאזו, כאן כדי לעזור. כיצד אוכל לסייע?"
+            )
+        elif lang == "en":
+            if self.caller_name:
+                first = self.caller_name.split()[0]
+                return f"Hello {first}! Great to hear from you. How can I help you today{biz}?"
+            return "Hello! You've reached TAZO customer service. I'm Tazo, here to help. How can I assist you?"
+        elif lang == "ar":
+            if self.caller_name:
+                first = self.caller_name.split()[0]
+                return f"مرحباً {first}! سعيد بسماعك. كيف يمكنني مساعدتك{biz}؟"
+            return "مرحباً! وصلت إلى خدمة عملاء TAZO. أنا تازو، هنا للمساعدة. كيف يمكنني مساعدتك؟"
+        elif lang == "ru":
+            if self.caller_name:
+                first = self.caller_name.split()[0]
+                return f"Здравствуйте, {first}! Рады вашему звонку. Чем могу помочь{biz}?"
+            return "Здравствуйте! Вы позвонили в службу поддержки TAZO. Меня зовут Тазо. Чем могу помочь?"
+        # fallback
+        return "Hello! You've reached TAZO. How can I help?"
 
 
 # ── Whisper STT ───────────────────────────────────────────────────────────────
 
-async def _transcribe(mulaw_bytes: bytes) -> str:
-    """Convert μ-law buffer → WAV → Whisper Hebrew transcription."""
+async def _transcribe(mulaw_bytes: bytes, whisper_lang: str = "he") -> str:
+    """Convert μ-law buffer → WAV → Whisper transcription."""
     wav = _ulaw_to_wav(mulaw_bytes)
     try:
         oai = AsyncOpenAI(api_key=OPENAI_API_KEY)
         result = await oai.audio.transcriptions.create(
             model="whisper-1",
             file=("audio.wav", io.BytesIO(wav), "audio/wav"),
-            language="he",
+            language=whisper_lang,
         )
         return result.text.strip()
     except Exception as exc:
@@ -358,8 +471,15 @@ async def _process_utterance(session: VoiceSession, audio: bytes) -> None:
         return
 
     async with session._proc_lock:
-        # 1. STT
-        speech = await _transcribe(audio)
+        # If language not yet selected, lock in default (Hebrew) now
+        if not session.lang_selected:
+            session.lang_selected = True
+            logger.info("[PROC] Language defaulted to 'he' (no DTMF received)")
+
+        cfg = _LANG_CONFIG[session.language]
+
+        # 1. STT — use language-appropriate Whisper hint
+        speech = await _transcribe(audio, cfg["whisper"])
         if not speech:
             logger.warning("[PROC] Empty transcript — skipping")
             return
@@ -367,10 +487,10 @@ async def _process_utterance(session: VoiceSession, audio: bytes) -> None:
         logger.info("[PROC] call=%s user: %r", session.call_sid[:8], speech)
         session.messages.append({"role": "user", "content": speech})
 
-        # 2. Farewell shortcut
+        # 2. Farewell shortcut — language-aware
         lower = speech.lower()
-        if any(w in lower for w in _FAREWELL_WORDS) and len(speech) < 30:
-            bye = "תודה שפנית לטאזו! יום נעים ומוצלח. להתראות!"
+        if any(w in lower for w in cfg["farewell"]) and len(speech) < 30:
+            bye = cfg["farewell_reply"]
             session.messages.append({"role": "assistant", "content": bye})
             async with session._tts_lock:
                 await _play_tts(session, _iter_str(bye))
@@ -437,12 +557,31 @@ async def _handle_media_stream(ws: WebSocket) -> None:
                     session.is_customer,
                 )
 
-                # Play greeting immediately (fire-and-forget)
-                greeting = session.greeting_text()
-                session.messages.append({"role": "assistant", "content": greeting})
-                asyncio.create_task(
-                    _play_greeting(session, greeting)
-                )
+                # Play language selection menu (greeting deferred until language chosen)
+                asyncio.create_task(_play_greeting(session, _LANG_MENU))
+
+            # ── dtmf (language selection / change) ────────────────────────
+            elif event == "dtmf" and session:
+                digit = msg.get("dtmf", {}).get("digit", "")
+                lang = _DTMF_TO_LANG.get(digit)
+                if lang:
+                    prev_lang = session.language
+                    session.language = lang
+                    session.lang_selected = True
+                    logger.info(
+                        "[WS] call=%s language %s→%s via DTMF %s",
+                        session.call_sid[:8], prev_lang, lang, digit,
+                    )
+                    if prev_lang == lang and session.messages:
+                        # Same language re-selected mid-call: just acknowledge quietly
+                        ack = _LANG_CONFIG[lang]["lang_change_ack"]
+                        asyncio.create_task(_play_greeting(session, ack))
+                    else:
+                        # New language (or initial selection): play full greeting
+                        greeting = session.greeting_text()
+                        session.messages = []   # reset conversation for new language
+                        session.messages.append({"role": "assistant", "content": greeting})
+                        asyncio.create_task(_play_greeting(session, greeting))
 
             # ── media (audio from caller) ──────────────────────────────────
             elif event == "media" and session:
@@ -481,6 +620,14 @@ async def _handle_media_stream(ws: WebSocket) -> None:
                             session.speech_frames = 0
                             session.silence_frames = 0
                             session.in_speech = False
+
+                            # If no language chosen yet, default to Hebrew and
+                            # synthesise a greeting into the history before processing
+                            if not session.lang_selected:
+                                session.lang_selected = True
+                                greeting = session.greeting_text()
+                                session.messages.append({"role": "assistant", "content": greeting})
+
                             asyncio.create_task(_process_utterance(session, captured))
 
             # ── stop ───────────────────────────────────────────────────────

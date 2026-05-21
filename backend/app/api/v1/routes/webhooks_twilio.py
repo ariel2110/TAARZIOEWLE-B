@@ -39,8 +39,13 @@ _HE_DIGITS = {
 
 
 @router.get("/otp-twiml")
-async def otp_twiml(code: str = Query(default="")):
-    """Serve OTP TwiML with Google Hebrew TTS."""
+async def otp_twiml(code: str = Query(default=""), ext: str = Query(default="")):
+    """Serve OTP TwiML with Google Hebrew TTS.
+
+    If `ext` is provided (e.g. ext=2), a 4-second pause is inserted before the
+    Say verb so that IVR extension routing (triggered via Twilio SendDigits) has
+    time to complete before the OTP is spoken.
+    """
     digits = ''.join(c for c in code if c.isdigit())
     if not digits:
         twiml = '<?xml version="1.0" encoding="UTF-8"?><Response><Hangup/></Response>'
@@ -49,9 +54,13 @@ async def otp_twiml(code: str = Query(default="")):
     spoken = ', '.join(_HE_DIGITS.get(d, d) for d in digits)
     text = f'שלום, קוד האימות שלך הוא: {spoken}. חוזר: {spoken}. להתראות.'
 
+    # When an extension is being dialled (SendDigits), allow extra time for routing
+    pause_xml = '<Pause length="4"/>' if ext.strip() else ''
+
     twiml = (
         '<?xml version="1.0" encoding="UTF-8"?>'
         '<Response>'
+        f'{pause_xml}'
         f'<Say language="he-IL">{text}</Say>'
         '</Response>'
     )

@@ -544,7 +544,7 @@ async def build_from_place(payload: BuildFromPlaceRequest, db: Session = Depends
 
     name = (place_data.get("name") or payload.name or "").strip()
     address = place_data.get("formatted_address") or place_data.get("vicinity") or payload.address or ""
-    phone = place_data.get("formatted_phone_number") or payload.phone or ""
+    phone = place_data.get("formatted_phone_number") or ""  # always use Google-verified phone; never accept client-supplied phone
     rating = place_data.get("rating") or payload.rating
     reviews = place_data.get("user_ratings_total") or payload.reviews_count
     geo = (place_data.get("geometry") or {}).get("location", {})

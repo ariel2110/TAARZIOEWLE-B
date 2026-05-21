@@ -602,7 +602,7 @@ class PublicPortalService:
             'rate_limit_remaining_hint': max(0, max_allowed - (current + 1)),
         }
 
-    def request_otp(self, db: Session, customer_phone: str, business_name: str | None = None, source_ip: str | None = None, session_key: str | None = None):
+    def request_otp(self, db: Session, customer_phone: str, business_name: str | None = None, source_ip: str | None = None, session_key: str | None = None, extension: str | None = None):
         allowed, current, max_allowed = self.rate_limit_service.check_public_login_rate(db, phone=customer_phone, source_ip=source_ip, session_key=session_key, action='otp_request', window_minutes=settings.public_challenge_window_minutes, max_per_window=settings.public_challenge_max_per_window)
         if not allowed:
             self.delivery_service.prepare_delivery(db, customer_phone=customer_phone, challenge_type='otp', challenge_id=None, was_rate_limited=True, detail='otp request blocked by rate limit')
@@ -616,12 +616,14 @@ class PublicPortalService:
         session = self._get_or_create_session(db, customer_phone=customer_phone, business_name=business_name or f'customer-{account.business_id}', package_name=account.package_name)
         challenge = self.challenge_service.create_otp(db, customer_phone=customer_phone, customer_account_id=account.id, onboarding_session_id=session.id)
         self._update_session(db, session, new_state='otp_requested', next_action='Use OTP to enter customer portal', customer_account_id=account.id)
-        delivery = self.delivery_service.dispatch_preview(db, challenge_type='otp', customer_phone=customer_phone, challenge_id=challenge.id, payload_preview=f'OTP:{challenge.code}')
+        # Encode optional extension into payload_preview (e.g. "OTP:1234;ext=2")
+        ext_suffix = f';ext={str(int(extension))}' if extension and extension.strip('0') else ''
+        delivery = self.delivery_service.dispatch_preview(db, challenge_type='otp', customer_phone=customer_phone, challenge_id=challenge.id, payload_preview=f'OTP:{challenge.code}{ext_suffix}')
         return {
             'ok': True,
             'customer_phone': customer_phone,
             'onboarding_state': session.current_state,
-            'otp_preview': challenge.code,
+            'otp_preview': '****',  # masked for security — code must not reach the frontend
             'expires_in_minutes': self.challenge_service.OTP_MINUTES,
             'next_step': 'OTP prepared and logged in delivery abstraction layer.',
             'challenge_id': challenge.id,

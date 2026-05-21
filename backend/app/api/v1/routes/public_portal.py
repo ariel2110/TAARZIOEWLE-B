@@ -77,7 +77,7 @@ def demo_compare(customer_phone: str | None = Query(default=None), db: Session =
 @router.post('/request-otp', response_model=PublicRequestOtpResponse)
 def request_otp(payload: PublicRequestOtpRequest, db: Session = Depends(get_db), x_forwarded_for: str | None = Header(default=None), x_session_key: str | None = Header(default=None)):
     try:
-        return service.request_otp(db, payload.customer_phone, payload.business_name, x_forwarded_for, x_session_key)
+        return service.request_otp(db, payload.customer_phone, payload.business_name, x_forwarded_for, x_session_key, payload.extension)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 

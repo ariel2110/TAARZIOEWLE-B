@@ -147,13 +147,14 @@ class DemoCompareResponse(BaseModel):
 class PublicRequestOtpRequest(BaseModel):
     customer_phone: str
     business_name: str | None = None
+    extension: str | None = None  # optional phone extension (e.g. "002" → ext 2)
 
 
 class PublicRequestOtpResponse(BaseModel):
     ok: bool
     customer_phone: str
     onboarding_state: str | None = None
-    otp_preview: str
+    otp_preview: str = "****"  # always masked — code is never returned to the client
     expires_in_minutes: int
     next_step: str
     challenge_id: int | None = None

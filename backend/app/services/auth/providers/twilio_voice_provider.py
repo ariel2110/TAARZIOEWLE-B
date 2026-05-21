@@ -85,8 +85,20 @@ class TwilioVoiceDeliveryProvider:
                 detail='TWILIO_FROM_NUMBER not configured — purchase a number first',
             )
 
-        # payload_preview may arrive as "OTP:1234" or "1234" — keep digits only
-        code = ''.join(c for c in payload_preview if c.isdigit())
+        # payload_preview may be "OTP:1234;ext=2", "OTP:1234", or "1234"
+        # Parse optional extension before extracting digits
+        ext_digits = ""
+        pp = payload_preview
+        if ';ext=' in pp:
+            pp, ext_part = pp.split(';ext=', 1)
+            ext_raw = ext_part.strip()
+            # Normalise: "002" → "2", keep multi-digit extensions
+            try:
+                ext_digits = str(int(ext_raw))
+            except ValueError:
+                ext_digits = ''.join(c for c in ext_raw if c.isdigit())
+
+        code = ''.join(c for c in pp if c.isdigit())
         if not code:
             logger.error('[TwilioVoice] No digits found in payload_preview=%r', payload_preview)
             return DeliveryProviderResult(
@@ -97,35 +109,44 @@ class TwilioVoiceDeliveryProvider:
             )
         # Build URL to our TwiML endpoint — avoids encoding issues with inline Twiml
         from urllib.parse import urlencode
+        qs_params: dict[str, str] = {'code': code}
+        if ext_digits:
+            qs_params['ext'] = ext_digits
         twiml_url = (
             settings.api_base_url.rstrip('/') +
             '/api/v1/webhooks/twilio/otp-twiml?' +
-            urlencode({'code': code})
+            urlencode(qs_params)
         )
 
         try:
+            call_data: dict = {
+                'To': customer_phone,
+                'From': from_number,
+                'Url': twiml_url,
+                'Method': 'GET',
+                'Timeout': '30',
+            }
+            if ext_digits:
+                # Navigate IVR to extension: 4 s pause (8 × 0.5 s 'w') then dial digit(s)
+                call_data['SendDigits'] = 'wwwwwwww' + ext_digits
+                logger.info('[TwilioVoice] Extension routing: sendDigits=%r', call_data['SendDigits'])
+
             resp = httpx.post(
                 f'https://api.twilio.com/2010-04-01/Accounts/{account_sid}/Calls.json',
                 auth=auth,
-                data={
-                    'To': customer_phone,
-                    'From': from_number,
-                    'Url': twiml_url,
-                    'Method': 'GET',
-                    'Timeout': '30',
-                },
+                data=call_data,
                 timeout=15,
             )
             resp.raise_for_status()
             call_sid = resp.json().get('sid', '')
             logger.info(
-                '[TwilioVoice] Call initiated to %s — sid=%s', customer_phone, call_sid
+                '[TwilioVoice] Call initiated to %s ext=%r — sid=%s', customer_phone, ext_digits or None, call_sid
             )
             return DeliveryProviderResult(
                 provider=self.provider_name,
                 delivery_channel=self.delivery_channel,
                 status='sent',
-                detail=f'Voice call initiated to {customer_phone}',
+                detail=f'Voice call initiated to {customer_phone}' + (f' (ext {ext_digits})' if ext_digits else ''),
                 external_reference=call_sid,
             )
 

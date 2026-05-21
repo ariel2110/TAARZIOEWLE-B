@@ -108,6 +108,15 @@ class Settings(BaseSettings):
     twilio_api_key_secret: str | None = Field(default=None)
     twilio_from_number: str | None = Field(default=None)  # e.g. +12015551234
 
+    # ElevenLabs — real-time Hebrew TTS (voice-stream microservice)
+    elevenlabs_api_key: str | None = Field(default=None)
+    elevenlabs_voice_id: str | None = Field(default=None)  # Hebrew voice ID
+    elevenlabs_model: str = Field(default="eleven_turbo_v2_5")
+
+    # Voice stream microservice (set to enable ElevenLabs streaming mode)
+    # e.g. wss://stream.tazo-web.com
+    voice_stream_url: str | None = Field(default=None)
+
     # Rate limiting / anti-abuse
     public_challenge_window_minutes: int = Field(default=15)
     public_challenge_max_per_window: int = Field(default=5)

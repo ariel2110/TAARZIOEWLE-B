@@ -112,6 +112,27 @@
       redis:
         condition: service_healthy
 
+  voice_stream:
+    build:
+      context: ./voice-stream
+      dockerfile: Dockerfile
+    container_name: localbiz-voice-stream
+    env_file:
+      - ./voice-stream/.env           # copy .env.example → .env and fill values
+    environment:
+      PORT: '8001'
+    ports:
+      - '8001:8001'
+    networks:
+      - TAZO_WEB_net
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'python', '-c', "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+
 networks:
   TAZO_WEB_net:
     driver: bridge

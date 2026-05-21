@@ -192,19 +192,56 @@ async def ai_voice_webhook(
     CallStatus: str | None = Form(default=None),
     Direction: str | None = Form(default=None),
 ):
-    """Entry point — inbound calls and outbound call connect. Returns greeting TwiML."""
+    """
+    Entry point — inbound calls and outbound call connect.
+
+    Mode A (ElevenLabs streaming — VOICE_STREAM_URL is set):
+      Returns <Connect><Stream> TwiML so Twilio opens a WebSocket to the
+      voice-stream microservice. Caller context is passed as <Parameter> tags.
+
+    Mode B (fallback — Whisper + <Record> loop):
+      Returns <Say> greeting + <Record> TwiML (original approach).
+    """
     if not CallSid:
         raise HTTPException(status_code=400, detail="Missing CallSid")
 
     # Ignore terminal status callbacks — Twilio sends these after the call ends
     if CallStatus in ("completed", "busy", "failed", "no-answer", "canceled"):
-        logger.info("[AIVoiceBot] call=%s status=%s — ignoring terminal callback", CallSid[:8], CallStatus)
+        logger.info("[AIVoice] call=%s status=%s — ignoring terminal callback", CallSid[:8], CallStatus)
         return Response(content="<Response/>", media_type="application/xml")
 
     logger.info(
-        "[AIVoiceBot] call=%s from=%s status=%s dir=%s — greeting",
+        "[AIVoice] call=%s from=%s status=%s dir=%s",
         CallSid[:8], From, CallStatus, Direction,
     )
+
+    # ── Mode A: ElevenLabs real-time streaming ────────────────────────────────
+    stream_url = getattr(settings, "voice_stream_url", None)
+    if stream_url:
+        # Look up caller context from DB (reuse existing function)
+        ctx = await ai_bot._lookup_caller(From)
+
+        ws_url = stream_url.rstrip("/") + "/ws"
+        params = (
+            f'<Parameter name="caller_phone"   value="{From}"/>'
+            f'<Parameter name="caller_name"    value="{ctx.contact_name}"/>'
+            f'<Parameter name="is_customer"    value="{str(ctx.is_customer).lower()}"/>'
+            f'<Parameter name="business_name"  value="{ctx.business_name}"/>'
+        )
+        twiml = (
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<Response>'
+            '<Connect>'
+            f'<Stream url="{ws_url}">'
+            f'{params}'
+            '</Stream>'
+            '</Connect>'
+            '</Response>'
+        )
+        logger.info("[AIVoice] call=%s → streaming mode (ws=%s)", CallSid[:8], ws_url)
+        return Response(content=twiml, media_type="application/xml")
+
+    # ── Mode B: Record + Whisper fallback ────────────────────────────────────
     twiml = await ai_bot.greeting_twiml(CallSid, From)
     return Response(content=twiml, media_type="application/xml")
 

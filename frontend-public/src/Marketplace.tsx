@@ -850,11 +850,12 @@ function NearbySection({ query, autoStart = false, categoryId }: {
 }
 
 
-function MallView({ onCategory, onSearch, onJoin, onBusinessClick }: {
+function MallView({ onCategory, onSearch, onJoin, onBusinessClick, crossAuthPhone }: {
   onCategory: (c: Category) => void;
   onSearch: (q: string) => void;
   onJoin: () => void;
   onBusinessClick: (b: Business) => void;
+  crossAuthPhone?: string;
 }) {
   const [q, setQ] = useState('');
   const [featured, setFeatured] = useState<Business[]>([]);
@@ -1150,6 +1151,30 @@ export default function Marketplace({ onJoin, jumpCategory, onClearJumpCategory 
   const [buildStep, setBuildStep] = useState(0);
   const [notifyPhone, setNotifyPhone] = useState('');
   const [notifySent, setNotifySent] = useState(false);
+  const [crossAuthPhone, setCrossAuthPhone] = useState<string>('');
+  const [crossAuthBanner, setCrossAuthBanner] = useState(false);
+
+  // ── Cross-app SSO: consume token from tazo-go redirect ───────────────────
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('cross_auth');
+    if (!token) return;
+    // Remove the token from the URL (clean, no reload)
+    const cleanUrl = window.location.pathname + window.location.hash;
+    window.history.replaceState(null, '', cleanUrl);
+    fetch(`${API}/public/cross-auth/verify?token=${encodeURIComponent(token)}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.phone) {
+          setCrossAuthPhone(data.phone);
+          setCrossAuthBanner(true);
+          // Auto-hide banner after 8 s
+          setTimeout(() => setCrossAuthBanner(false), 8000);
+        }
+      })
+      .catch(() => { /* silent */ });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Jump to a category when instructed from the sidebar
   useEffect(() => {
@@ -1246,5 +1271,37 @@ export default function Marketplace({ onJoin, jumpCategory, onClearJumpCategory 
       onBack={() => { setView('mall'); setBusinesses([]); }}
     />;
   }
-  return <MallView onCategory={handleCategoryClick} onSearch={handleSearch} onJoin={onJoin} onBusinessClick={handleBusinessClick} />;
+  return (
+    <>
+      {crossAuthBanner && crossAuthPhone && (
+        <div style={{
+          position: 'fixed', top: 16, right: 16, left: 16, zIndex: 9999,
+          background: 'linear-gradient(135deg,rgba(255,107,43,.95),rgba(255,69,0,.95))',
+          border: '1px solid rgba(255,255,255,.2)', borderRadius: 16,
+          padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          boxShadow: '0 8px 32px rgba(0,0,0,.4)', backdropFilter: 'blur(12px)',
+          fontFamily: '"Heebo",sans-serif', direction: 'rtl',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ fontSize: '1.8rem' }}>👋</span>
+            <div>
+              <div style={{ fontWeight: 800, fontSize: '1rem', color: '#fff' }}>ברוך הבא מ-TAZO Go!</div>
+              <div style={{ fontSize: '.85rem', color: 'rgba(255,255,255,.8)', marginTop: 2 }}>
+                מחובר כ‑{crossAuthPhone} — רוצה לפתוח עסק?
+              </div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              onClick={() => { onJoin(); setCrossAuthBanner(false); }}
+              style={{ padding: '8px 16px', borderRadius: 10, background: '#fff', color: '#FF4500', fontWeight: 800, fontSize: '.82rem', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+            >הצטרף →</button>
+            <button onClick={() => setCrossAuthBanner(false)}
+              style={{ padding: '8px 12px', borderRadius: 10, background: 'rgba(255,255,255,.15)', color: '#fff', fontWeight: 700, fontSize: '.82rem', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>✕</button>
+          </div>
+        </div>
+      )}
+      <MallView onCategory={handleCategoryClick} onSearch={handleSearch} onJoin={() => { onJoin(); }} onBusinessClick={handleBusinessClick} crossAuthPhone={crossAuthPhone} />
+    </>
+  );
 }

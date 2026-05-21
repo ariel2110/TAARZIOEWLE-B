@@ -43,6 +43,7 @@ from app.api.v1.routes.admin_agent_connections import router as admin_agent_conn
 
 from app.api.v1.routes.public_mall import router as public_mall_router
 from app.api.v1.routes.public_site_orders import router as public_site_orders_router
+from app.api.v1.routes.public_cross_auth import router as public_cross_auth_router
 
 api_router = APIRouter()
 
@@ -56,6 +57,7 @@ api_router.include_router(public_intake_router)
 api_router.include_router(public_portal.router)
 api_router.include_router(public_mall_router)
 api_router.include_router(public_site_orders_router)
+api_router.include_router(public_cross_auth_router)
 api_router.include_router(customer_portal_router)
 # Webhooks arrive directly from Meta / Morning / Twilio — must NOT require portal headers
 api_router.include_router(webhooks_whatsapp_router)

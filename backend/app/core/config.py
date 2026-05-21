@@ -75,6 +75,11 @@ class Settings(BaseSettings):
     morning_success_url: str = Field(default='https://tazo-web.com/success')
     morning_cancel_url: str = Field(default='https://tazo-web.com')
 
+    # Cross-app SSO — shared secret with tazo-go for seamless cross-platform redirect
+    # Same value must be set in tazo-go's CROSS_APP_SECRET env var
+    cross_app_secret: str = Field(default='')
+    tazo_go_url: str = Field(default='https://tazo-go.com')   # tazo-go API base URL
+
     # Hostinger — domain registration & DNS
     hostinger_api_token: str | None = Field(default=None)
 

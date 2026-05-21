@@ -46,6 +46,11 @@ class CallerContext:
     package_name: str = ""
     business_category: str = ""
     business_city: str = ""
+    # Role of the caller across the TAZO ecosystem
+    # Values: web_customer | lead | unknown
+    user_role: str = "unknown"
+    # Best portal link to send this caller
+    portal_link: str = "https://tazo-web.com"
 
 
 def _normalize_phone_variants(phone: str) -> list[str]:
@@ -76,6 +81,8 @@ def _lookup_caller_sync(phone: str) -> CallerContext:
         )
         if ca:
             ctx.is_customer = True
+            ctx.user_role = "web_customer"
+            ctx.portal_link = "https://tazo-web.com"
             ctx.contact_name = ca.contact_name or ""
             ctx.package_name = ca.package_name or ""
             biz = ca.business  # eager/lazy loaded
@@ -92,6 +99,8 @@ def _lookup_caller_sync(phone: str) -> CallerContext:
         )
         if lead:
             ctx.is_lead = True
+            ctx.user_role = "lead"
+            ctx.portal_link = "https://tazo-web.com"
             ctx.contact_name = lead.imported_name or ""
             ctx.business_category = lead.category or ""
             ctx.business_city = lead.city or ""
@@ -283,6 +292,48 @@ _LINK_MESSAGE = (
     "שאלות? אנחנו כאן בשבילך!"
 )
 
+# Link URLs per type
+_LINK_URLS: dict[str, str] = {
+    "general":   "https://tazo-web.com",
+    "web":       "https://tazo-web.com",
+    "driver":    "https://driver.tazo-go.com",
+    "passenger": "https://tazo-go.com",
+    "courier":   "https://tazo-go.com",
+    "sync":      "https://tazo-sync.com",
+}
+
+# Message templates per language and link type
+_VOICE_LINK_MESSAGES: dict[str, dict[str, str]] = {
+    "he": {
+        "general":   "שלום מ-TAZO!\nהנה הקישור שלך:\n{link}\n\nשאלות? אנחנו כאן!",
+        "web":       "שלום מ-TAZO!\nהנה קישור לניהול העסק שלך:\n{link}\n\nנשמח לעזור!",
+        "driver":    "שלום מ-TAZO GO!\nאפליקציית הנהג:\n{link}\n\nבהצלחה בנסיעות!",
+        "passenger": "שלום מ-TAZO GO!\nלהזמנת נסיעה:\n{link}\n\nנסיעה בטוחה!",
+        "courier":   "שלום מ-TAZO GO!\nלאפליקציית השליח:\n{link}\n\nבהצלחה!",
+    },
+    "en": {
+        "general":   "Hello from TAZO!\nHere is your link:\n{link}\n\nQuestions? Reply here!",
+        "web":       "Hello from TAZO!\nManage your business:\n{link}\n\nWe're here to help!",
+        "driver":    "Hello from TAZO GO!\nDriver app:\n{link}\n\nHappy driving!",
+        "passenger": "Hello from TAZO GO!\nBook a ride:\n{link}\n\nSafe travels!",
+        "courier":   "Hello from TAZO GO!\nCourier app:\n{link}\n\nGood luck!",
+    },
+    "ar": {
+        "general":   "مرحباً من TAZO!\nإليك رابطك:\n{link}\n\nأي أسئلة؟ راسلنا!",
+        "web":       "مرحباً من TAZO!\nإدارة عملك:\n{link}\n\nنحن هنا للمساعدة!",
+        "driver":    "مرحباً من TAZO GO!\nتطبيق السائق:\n{link}\n\nقيادة موفقة!",
+        "passenger": "مرحباً من TAZO GO!\nاحجز رحلتك:\n{link}\n\nرحلة آمنة!",
+        "courier":   "مرحباً من TAZO GO!\nتطبيق المندوب:\n{link}\n\nحظاً موفقاً!",
+    },
+    "ru": {
+        "general":   "Привет от TAZO!\nВот ваша ссылка:\n{link}\n\nЕсть вопросы? Пишите!",
+        "web":       "Привет от TAZO!\nУправление бизнесом:\n{link}\n\nМы здесь!",
+        "driver":    "Привет от TAZO GO!\nПриложение водителя:\n{link}\n\nУдачных поездок!",
+        "passenger": "Привет от TAZO GO!\nЗаказать поездку:\n{link}\n\nБезопасной дороги!",
+        "courier":   "Привет от TAZO GO!\nПриложение курьера:\n{link}\n\nУдачи!",
+    },
+}
+
 
 def _send_link_sync(phone: str) -> bool:
     message = _LINK_MESSAGE.format(link=_REGISTRATION_LINK)
@@ -321,6 +372,43 @@ def _send_link_sync(phone: str) -> bool:
 async def _send_link(phone: str) -> bool:
     loop = asyncio.get_event_loop()
     return await loop.run_in_executor(None, _send_link_sync, phone)
+
+
+def _send_voice_link_sync(phone: str, link_type: str = "general", language: str = "he") -> bool:
+    """Send an appropriate WhatsApp/SMS link based on link_type and language."""
+    lang_msgs = _VOICE_LINK_MESSAGES.get(language, _VOICE_LINK_MESSAGES["he"])
+    msg_template = lang_msgs.get(link_type, lang_msgs["general"])
+    link = _LINK_URLS.get(link_type, _LINK_URLS["general"])
+    message = msg_template.format(link=link)
+
+    # 1. Try Meta WhatsApp
+    try:
+        from app.services.communications.meta_whatsapp_service import MetaWhatsAppService
+        wa = MetaWhatsAppService()
+        if wa._is_configured():
+            ok = wa.send_text(phone, message)
+            if ok:
+                logger.info("[AIVoiceBot] WA voice-link (%s) sent to %s***", link_type, (phone or "")[:7])
+                return True
+    except Exception:
+        pass
+
+    # 2. Twilio SMS fallback
+    try:
+        from twilio.rest import Client as TwilioClient  # type: ignore[import]
+        client = TwilioClient(settings.twilio_account_sid, settings.twilio_auth_token)
+        client.messages.create(body=message, from_=settings.twilio_from_number, to=phone)
+        logger.info("[AIVoiceBot] SMS voice-link (%s) sent to %s***", link_type, (phone or "")[:7])
+        return True
+    except Exception as exc:
+        logger.warning("[AIVoiceBot] Failed to send voice-link: %s", exc)
+        return False
+
+
+async def send_voice_link(phone: str, link_type: str = "general", language: str = "he") -> bool:
+    """Async wrapper — send appropriate link to caller via WhatsApp or SMS."""
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, _send_voice_link_sync, phone, link_type, language)
 
 
 # ── Lead saving ───────────────────────────────────────────────────────────────

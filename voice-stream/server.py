@@ -69,6 +69,8 @@ ELEVENLABS_VOICE_ID = os.environ.get("ELEVENLABS_VOICE_ID", "")   # Hebrew-capab
 ELEVENLABS_MODEL    = os.environ.get("ELEVENLABS_MODEL", "eleven_turbo_v2_5")
 OPENAI_API_KEY      = os.environ.get("OPENAI_API_KEY", "")
 PORT                = int(os.environ.get("PORT", "8001"))
+# Internal backend URL for sending WhatsApp/SMS links
+BACKEND_INTERNAL_URL = os.environ.get("BACKEND_INTERNAL_URL", "http://localbiz-backend:8000")
 
 # ElevenLabs WebSocket URL — ulaw_8000 is exactly what Twilio Media Streams
 # expects, so we forward the base64 payload without re-encoding.
@@ -90,17 +92,30 @@ _LANG_CONFIG: dict[str, dict] = {
         "lang_code": "he",
         "farewell": ("להתראות", "ביי", "bye"),
         "system": (
-            "אתה נציג שירות לקוחות של חברת TAZO — פלטפורמה המסייעת לעסקים מקומיים.\n"
-            "שמך הוא טאזו.\n"
-            "\nכללים חשובים:\n"
+            "אתה נציג שירות לקוחות של TAZO — קבוצת שירותים דיגיטליים ישראלית.\n"
+            "שמך הוא טאזו. תמיד דבר בגוף ראשון.\n"
+            "\n=== שירותי TAZO ===\n"
+            "• TAZO-WEB (tazo-web.com): בניית אתרי עסקים, דף עסקי, קבלת הזמנות WhatsApp,\n"
+            "  ניהול לקוחות ונאמנות, שיווק אוטומטי וסטטיסטיקות. לבעלי עסקים.\n"
+            "• TAZO-GO (tazo-go.com): מערכת הסעות — נוסעים, נהגי מונית/שיתופי ושליחים.\n"
+            "  נוסע: tazo-go.com | נהג: driver.tazo-go.com\n"
+            "• TAZO-SYNC (tazo-sync.com): חנות אונליין, מסחר לילה (Night Rescue), ניהול משלוחים.\n"
+            "• ODIN (tazo-app.com): כניסה מרכזית לכל שירותי TAZO (SSO + אימות זהות).\n"
+            "• VAULT: מטבע דיגיטלי TAZ — נצבר לנהגים ומשולם על נסיעות.\n"
+            "\n=== הכניסה לשירותים ===\n"
+            "• TAZO-WEB: כניסה ב-tazo-web.com, אימות דרך WhatsApp (ללא סיסמה).\n"
+            "• TAZO-GO נוסע: כניסה ב-tazo-go.com, מספר טלפון → קישור WhatsApp.\n"
+            "• TAZO-GO נהג/שליח: רישום ב-tazo-go.com → אימות זהות (KYC) → driver.tazo-go.com.\n"
+            "\n=== כלים שיש לך ===\n"
+            "• שליחת קישור ב-WhatsApp/SMS: ציין [SEND_LINK] בתחילת תגובתך כשהמשתמש מבקש קישור.\n"
+            "• אם ברור מה המשתמש: הוסף [SEND_LINK:driver], [SEND_LINK:passenger], [SEND_LINK:web] וכו'.\n"
+            "\n=== כללים ===\n"
             "1. ענה אך ורק בעברית תקינה.\n"
             "2. תשובות קצרות ותמציתיות — עד 2 משפטים (שיחת טלפון!).\n"
             "3. היה ידידותי, חם ומקצועי.\n"
-            "4. אם הלקוח אומר להתראות/ביי/תודה/לא מעניין — סיים: "
-            "'תודה שפנית, יום נעים. להתראות!'\n"
-            "5. TAZO מאפשרת לעסקים: הזמנות WhatsApp, דף עסקי, ניהול לקוחות, שיווק אוטומטי.\n"
-            "6. אם הלקוח מבקש קישור/הרשמה/להצטרף — ציין [SEND_LINK] בתחילת התשובה.\n"
-            "7. אל תחשוף מידע פנימי. אם אינך יודע — אמור שהצוות יחזור בהקדם."
+            "4. אם הלקוח אומר להתראות/ביי/תודה/לא מעניין — ענה: 'תודה שפנית, יום נעים. להתראות!'\n"
+            "5. אל תחשוף מידע פנימי: קוד, שמות לקוחות, פרטי שרת, מחירים מדויקים.\n"
+            "6. אם אינך יודע — אמור שהצוות יחזור בהקדם."
         ),
         "farewell_reply": "תודה שפנית לטאזו! יום נעים ומוצלח. להתראות!",
         "lang_change_ack": "עוברים לעברית.",
@@ -111,18 +126,30 @@ _LANG_CONFIG: dict[str, dict] = {
         "lang_code": "en",
         "farewell": ("goodbye", "bye", "that's all", "no thanks", "not interested"),
         "system": (
-            "You are a customer service representative for TAZO — a platform helping local businesses.\n"
-            "Your name is Tazo.\n"
-            "\nImportant rules:\n"
+            "You are a customer service representative for TAZO — an Israeli digital services group.\n"
+            "Your name is Tazo. Always speak in first person.\n"
+            "\n=== TAZO Services ===\n"
+            "• TAZO-WEB (tazo-web.com): business website builder, WhatsApp ordering, customer management,\n"
+            "  loyalty programs, automated marketing and analytics. For business owners.\n"
+            "• TAZO-GO (tazo-go.com): ride-hailing platform — passengers, taxi/rideshare drivers, couriers.\n"
+            "  Passenger: tazo-go.com | Driver: driver.tazo-go.com\n"
+            "• TAZO-SYNC (tazo-sync.com): e-commerce, night delivery (Night Rescue), courier management.\n"
+            "• ODIN (tazo-app.com): central authentication for all TAZO services (SSO + KYC).\n"
+            "• VAULT: TAZ digital currency — earned by drivers and used across TAZO.\n"
+            "\n=== Login & Registration ===\n"
+            "• TAZO-WEB: login at tazo-web.com, phone-based WhatsApp auth (no password).\n"
+            "• TAZO-GO passenger: sign up at tazo-go.com — phone number → WhatsApp login link.\n"
+            "• TAZO-GO driver/courier: register at tazo-go.com → KYC identity check → driver.tazo-go.com.\n"
+            "\n=== Available Actions ===\n"
+            "• Send a link via WhatsApp/SMS: include [SEND_LINK] at the start of your reply when the user asks for a link.\n"
+            "• If the user's role is clear, use: [SEND_LINK:driver], [SEND_LINK:passenger], [SEND_LINK:web] etc.\n"
+            "\n=== Rules ===\n"
             "1. Respond only in English.\n"
             "2. Keep answers short — up to 2 sentences (this is a phone call!).\n"
             "3. Be friendly, warm, and professional.\n"
-            "4. If the caller says goodbye/bye/not interested — end with: "
-            "'Thank you for calling TAZO! Have a great day. Goodbye!'\n"
-            "5. TAZO helps businesses with: WhatsApp orders, business pages, "
-            "customer management, automated marketing.\n"
-            "6. If the caller asks for a link/signup — prefix your reply with [SEND_LINK].\n"
-            "7. Do not reveal internal information. If unsure — say the team will follow up."
+            "4. If caller says goodbye/bye/not interested — end with: 'Thank you for calling TAZO! Have a great day. Goodbye!'\n"
+            "5. Do not reveal internal info: code, customer names, server details, exact prices.\n"
+            "6. If you don't know — say the team will follow up soon."
         ),
         "farewell_reply": "Thank you for calling TAZO! Have a wonderful day. Goodbye!",
         "lang_change_ack": "Switching to English.",
@@ -133,16 +160,30 @@ _LANG_CONFIG: dict[str, dict] = {
         "lang_code": "ar",
         "farewell": ("مع السلامة", "باي", "شكراً", "وداعاً", "لا يهمني"),
         "system": (
-            "أنت ممثل خدمة العملاء في شركة TAZO — منصة تساعد الأعمال التجارية المحلية.\n"
-            "اسمك تازو.\n"
-            "\nقواعد مهمة:\n"
+            "أنت ممثل خدمة العملاء في شركة TAZO — مجموعة خدمات رقمية إسرائيلية.\n"
+            "اسمك تازو. تحدث دائماً بضمير المتكلم.\n"
+            "\n=== خدمات TAZO ===\n"
+            "• TAZO-WEB (tazo-web.com): بناء مواقع للأعمال، طلبات واتساب، إدارة العملاء،\n"
+            "  برامج الولاء، التسويق الآلي والإحصاءات. لأصحاب الأعمال.\n"
+            "• TAZO-GO (tazo-go.com): منصة نقل — ركاب، سائقو تاكسي/مشاركة، سعاة توصيل.\n"
+            "  الراكب: tazo-go.com | السائق: driver.tazo-go.com\n"
+            "• TAZO-SYNC (tazo-sync.com): تجارة إلكترونية، توصيل ليلي (Night Rescue).\n"
+            "• ODIN (tazo-app.com): مصادقة مركزية لجميع خدمات TAZO.\n"
+            "• VAULT: عملة TAZ الرقمية — تُكسب للسائقين وتُستخدم عبر TAZO.\n"
+            "\n=== تسجيل الدخول والتسجيل ===\n"
+            "• TAZO-WEB: الدخول عبر tazo-web.com، مصادقة واتساب (بدون كلمة مرور).\n"
+            "• TAZO-GO راكب: التسجيل في tazo-go.com — رقم هاتف ← رابط واتساب.\n"
+            "• TAZO-GO سائق/ساعي: التسجيل في tazo-go.com ← التحقق من الهوية ← driver.tazo-go.com.\n"
+            "\n=== الإجراءات المتاحة ===\n"
+            "• إرسال رابط عبر واتساب/SMS: أضف [SEND_LINK] في بداية ردك عندما يطلب المتصل رابطاً.\n"
+            "• إذا كان دور المستخدم واضحاً، استخدم: [SEND_LINK:driver] أو [SEND_LINK:passenger] إلخ.\n"
+            "\n=== القواعد ===\n"
             "1. أجب فقط باللغة العربية.\n"
-            "2. إجابات قصيرة وموجزة — جملتان كحد أقصى (هذه مكالمة هاتفية!).\n"
+            "2. إجابات قصيرة — جملتان كحد أقصى (هذه مكالمة هاتفية!).\n"
             "3. كن ودياً ومحترفاً.\n"
             "4. إذا قال المتصل وداعاً — أنهِ بـ: 'شكراً لاتصالك بتازو! يوم سعيد. مع السلامة!'\n"
-            "5. TAZO تساعد الأعمال على: طلبات واتساب، صفحة الأعمال، إدارة العملاء، التسويق الآلي.\n"
-            "6. إذا طلب رابطاً أو تسجيلاً — ابدأ ردك بـ [SEND_LINK].\n"
-            "7. لا تكشف معلومات داخلية. إذا لم تكن متأكداً — قل إن الفريق سيتابع قريباً."
+            "5. لا تكشف معلومات داخلية.\n"
+            "6. إذا لم تكن متأكداً — قل إن الفريق سيتابع قريباً."
         ),
         "farewell_reply": "شكراً لاتصالك بتازو! يوم سعيد ومبارك. مع السلامة!",
         "lang_change_ack": "ننتقل إلى العربية.",
@@ -153,18 +194,30 @@ _LANG_CONFIG: dict[str, dict] = {
         "lang_code": "ru",
         "farewell": ("до свидания", "пока", "спасибо", "не интересует", "всё"),
         "system": (
-            "Вы представитель службы поддержки компании TAZO — платформы для местного бизнеса.\n"
-            "Вас зовут Тазо.\n"
-            "\nВажные правила:\n"
+            "Вы представитель службы поддержки компании TAZO — израильской группы цифровых услуг.\n"
+            "Вас зовут Тазо. Говорите всегда от первого лица.\n"
+            "\n=== Услуги TAZO ===\n"
+            "• TAZO-WEB (tazo-web.com): конструктор сайтов для бизнеса, заказы WhatsApp, управление\n"
+            "  клиентами, программы лояльности, автоматизированный маркетинг. Для владельцев бизнеса.\n"
+            "• TAZO-GO (tazo-go.com): сервис такси — пассажиры, водители (такси/каршеринг), курьеры.\n"
+            "  Пассажир: tazo-go.com | Водитель: driver.tazo-go.com\n"
+            "• TAZO-SYNC (tazo-sync.com): e-commerce, ночные доставки (Night Rescue).\n"
+            "• ODIN (tazo-app.com): централизованная аутентификация для всех сервисов TAZO.\n"
+            "• VAULT: цифровая валюта TAZ — начисляется водителям, используется в экосистеме.\n"
+            "\n=== Вход и регистрация ===\n"
+            "• TAZO-WEB: вход на tazo-web.com, аутентификация через WhatsApp (без пароля).\n"
+            "• TAZO-GO пассажир: регистрация на tazo-go.com — номер телефона → ссылка в WhatsApp.\n"
+            "• TAZO-GO водитель/курьер: регистрация → верификация личности (KYC) → driver.tazo-go.com.\n"
+            "\n=== Доступные действия ===\n"
+            "• Отправить ссылку через WhatsApp/SMS: добавьте [SEND_LINK] в начало ответа, когда клиент просит ссылку.\n"
+            "• Если роль пользователя ясна, используйте: [SEND_LINK:driver], [SEND_LINK:passenger], [SEND_LINK:web] и т.д.\n"
+            "\n=== Правила ===\n"
             "1. Отвечайте только на русском языке.\n"
             "2. Краткие ответы — максимум 2 предложения (это телефонный звонок!).\n"
             "3. Будьте дружелюбны и профессиональны.\n"
-            "4. Если клиент говорит до свидания/пока — завершите: "
-            "'Спасибо за звонок в TAZO! Хорошего дня. До свидания!'\n"
-            "5. TAZO помогает бизнесу: заказы WhatsApp, бизнес-страница, "
-            "управление клиентами, автоматизированный маркетинг.\n"
-            "6. Если клиент просит ссылку/регистрацию — начните ответ с [SEND_LINK].\n"
-            "7. Не раскрывайте внутреннюю информацию. Если не знаете — скажите, что команда свяжется."
+            "4. Если клиент говорит до свидания/пока — завершите: 'Спасибо за звонок в TAZO! Хорошего дня. До свидания!'\n"
+            "5. Не раскрывайте внутреннюю информацию.\n"
+            "6. Если не знаете — скажите, что команда свяжется."
         ),
         "farewell_reply": "Спасибо за звонок в TAZO! Хорошего дня. До свидания!",
         "lang_change_ack": "Переключаемся на русский.",
@@ -249,6 +302,10 @@ class VoiceSession:
     caller_name:    str = ""
     is_customer:    bool = False
     business_name:  str = ""
+    # Role across the TAZO ecosystem: web_customer | lead | unknown
+    user_role:      str = "unknown"
+    # Best portal link for this caller
+    portal_link:    str = "https://tazo-web.com"
 
     # Language selection (1=he 2=en 3=ar 4=ru via DTMF, or auto-detected)
     language:      str  = "he"
@@ -284,6 +341,19 @@ class VoiceSession:
             extra += "Greet them by name and assist warmly.\n"
         elif self.caller_name:
             extra = f"\nKnown contact: {self.caller_name}. Encourage them to join TAZO.\n"
+        # Always include the caller's appropriate portal link
+        if self.portal_link:
+            extra += f"\nBest link for this caller: {self.portal_link}\n"
+        # Role-based context
+        _role_notes = {
+            "web_customer": "This caller is an existing TAZO-WEB business customer.",
+            "lead":         "This caller is a known lead — encourage them to register on TAZO-WEB.",
+            "go_driver":    "This caller is a TAZO-GO driver. Focus on driver app and driver support.",
+            "go_passenger": "This caller is a TAZO-GO passenger. Focus on booking rides and passenger support.",
+            "go_courier":   "This caller is a TAZO-GO courier. Focus on courier app and delivery support.",
+        }
+        if self.user_role in _role_notes:
+            extra += f"\nCaller role note: {_role_notes[self.user_role]}\n"
         return base + extra
 
     def greeting_text(self) -> str:
@@ -336,6 +406,51 @@ async def _transcribe(mulaw_bytes: bytes, whisper_lang: str = "he") -> str:
     except Exception as exc:
         logger.error("[STT] Whisper error: %s", exc)
         return ""
+
+
+# ── WhatsApp / SMS link sender ────────────────────────────────────────────────
+
+# Map session user_role to backend link_type
+_ROLE_TO_LINK_TYPE: dict[str, str] = {
+    "web_customer": "web",
+    "lead":         "web",
+    "go_driver":    "driver",
+    "go_passenger": "passenger",
+    "go_courier":   "courier",
+    "unknown":      "general",
+}
+
+
+async def _send_whatsapp_link(session: VoiceSession, link_type_override: str = "") -> None:
+    """
+    Fire-and-forget: call the backend to send a WhatsApp/SMS link to the caller.
+    Derives link_type from session.user_role unless link_type_override is given.
+    """
+    if not session.caller_phone:
+        return
+    link_type = link_type_override or _ROLE_TO_LINK_TYPE.get(session.user_role, "general")
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.post(
+                f"{BACKEND_INTERNAL_URL}/api/v1/webhooks/twilio/ai-voice-wa",
+                data={
+                    "caller_phone": session.caller_phone,
+                    "link_type":    link_type,
+                    "language":     session.language,
+                },
+            )
+        if resp.status_code == 200:
+            logger.info(
+                "[WS] call=%s WA link sent (type=%s)",
+                session.call_sid[:8], link_type,
+            )
+        else:
+            logger.warning(
+                "[WS] call=%s WA link failed: HTTP %s",
+                session.call_sid[:8], resp.status_code,
+            )
+    except Exception as exc:
+        logger.warning("[WS] call=%s WA link error: %s", session.call_sid[:8], exc)
 
 
 # ── GPT streaming ─────────────────────────────────────────────────────────────
@@ -515,24 +630,37 @@ async def _process_utterance(session: VoiceSession, audio: bytes) -> None:
                     pass
             return
 
-        # 3. GPT streaming → TTS
-        async with session._tts_lock:
-            if session.language == "he":
-                # eleven_v3 (Hebrew) requires full text — collect GPT tokens first
-                tokens: list[str] = []
-                async for token in _gpt_stream(session):
-                    tokens.append(token)
-                spoken_text = "".join(tokens)
-                if spoken_text:
-                    await _play_tts_rest(session, spoken_text)
-            else:
-                spoken_text = await _play_tts(session, _gpt_stream(session))
+        # 3. GPT → collect all tokens (needed for Hebrew REST TTS and [SEND_LINK] detection)
+        tokens: list[str] = []
+        async for token in _gpt_stream(session):
+            tokens.append(token)
+        spoken_text = "".join(tokens)
 
         if spoken_text:
-            # Strip internal tags before storing in history
-            clean = spoken_text.replace("[SEND_LINK]", "").strip()
-            session.messages.append({"role": "assistant", "content": clean})
-            logger.info("[PROC] call=%s bot: %r", session.call_sid[:8], clean[:80])
+            # Detect [SEND_LINK] / [SEND_LINK:type] before speaking
+            import re as _re
+            _tag_pat = _re.compile(r"\[SEND_LINK(?::([a-z_]+))?\]", _re.IGNORECASE)
+            tag_match = _tag_pat.search(spoken_text)
+            link_type_override = tag_match.group(1) if tag_match and tag_match.group(1) else ""
+            should_send_link = tag_match is not None
+            tts_text = _tag_pat.sub("", spoken_text).strip()
+
+            async with session._tts_lock:
+                if tts_text:
+                    if session.language == "he":
+                        await _play_tts_rest(session, tts_text)
+                    else:
+                        await _play_tts(session, _iter_str(tts_text))
+
+            if should_send_link and session.caller_phone:
+                asyncio.create_task(_send_whatsapp_link(session, link_type_override))
+                logger.info(
+                    "[PROC] call=%s [SEND_LINK] triggered (type=%r)",
+                    session.call_sid[:8], link_type_override or "auto",
+                )
+
+            session.messages.append({"role": "assistant", "content": tts_text})
+            logger.info("[PROC] call=%s bot: %r", session.call_sid[:8], tts_text[:80])
 
 
 async def _iter_str(text: str) -> AsyncGenerator[str, None]:
@@ -566,6 +694,8 @@ async def _handle_media_stream(ws: WebSocket) -> None:
                 session.caller_name   = params.get("caller_name", "")
                 session.is_customer   = params.get("is_customer", "").lower() == "true"
                 session.business_name = params.get("business_name", "")
+                session.user_role     = params.get("user_role", "unknown")
+                session.portal_link   = params.get("portal_link", "https://tazo-web.com")
 
                 logger.info(
                     "[WS] Stream started — call=%s phone=%s*** name=%r customer=%s",

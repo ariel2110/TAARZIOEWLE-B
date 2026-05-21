@@ -34,6 +34,8 @@ def _stream_twiml(ws_url: str, lang: str, from_phone: str, ctx) -> str:
         f'<Parameter name="caller_name"    value="{_xml_escape(ctx.contact_name or "")}"/>'
         f'<Parameter name="is_customer"    value="{str(ctx.is_customer).lower()}"/>'
         f'<Parameter name="business_name"  value="{_xml_escape(ctx.business_name or "")}"/>'
+        f'<Parameter name="user_role"      value="{_xml_escape(getattr(ctx, "user_role", "unknown"))}"/>'
+        f'<Parameter name="portal_link"    value="{_xml_escape(getattr(ctx, "portal_link", "https://tazo-web.com"))}"/>'
         f'<Parameter name="lang"           value="{_xml_escape(lang)}"/>'
     )
     return (
@@ -264,6 +266,8 @@ async def ai_voice_webhook(
             f'<Parameter name="caller_name"    value="{_xml_escape(ctx.contact_name or "")}"/>'
             f'<Parameter name="is_customer"    value="{str(ctx.is_customer).lower()}"/>'
             f'<Parameter name="business_name"  value="{_xml_escape(ctx.business_name or "")}"/>'
+            f'<Parameter name="user_role"      value="{_xml_escape(getattr(ctx, "user_role", "unknown"))}"/>'
+            f'<Parameter name="portal_link"    value="{_xml_escape(getattr(ctx, "portal_link", "https://tazo-web.com"))}"/>'
             f'<Parameter name="lang"           value="he"/>'
         )
 
@@ -408,3 +412,29 @@ async def initiate_ai_call(
     data = resp.json()
     logger.info("[AIVoiceBot] Outbound call started: %s → %s", data.get("sid"), to)
     return {"ok": True, "call_sid": data.get("sid"), "status": data.get("status")}
+
+
+# ── Internal: voice-stream → send WhatsApp/SMS link ──────────────────────────
+
+@router.post("/ai-voice-wa")
+async def ai_voice_wa(
+    caller_phone: str = Form(default=""),
+    link_type: str = Form(default="general"),
+    language: str = Form(default="he"),
+):
+    """
+    Internal endpoint called by the voice-stream microservice to send a
+    contextual WhatsApp or SMS link to the caller after GPT emits [SEND_LINK].
+
+    link_type: general | web | driver | passenger | courier | sync
+    language:  he | en | ar | ru
+    """
+    if not caller_phone:
+        return {"ok": False, "reason": "no phone"}
+
+    ok = await ai_bot.send_voice_link(caller_phone, link_type, language)
+    logger.info(
+        "[AIVoiceWA] send link type=%s lang=%s phone=%s*** ok=%s",
+        link_type, language, (caller_phone or "")[:7], ok,
+    )
+    return {"ok": ok}

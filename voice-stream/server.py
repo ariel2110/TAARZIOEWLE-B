@@ -382,7 +382,6 @@ async def _play_tts(session: VoiceSession, text_gen: AsyncGenerator[str, None]) 
             ping_interval=None,
         ) as el_ws:
             # ── BOS (Beginning of Stream) ────────────────────────────────────
-            _lang_code = _LANG_CONFIG[session.language].get("lang_code", "he")
             await el_ws.send(json.dumps({
                 "text": " ",
                 "voice_settings": {
@@ -393,7 +392,6 @@ async def _play_tts(session: VoiceSession, text_gen: AsyncGenerator[str, None]) 
                 "generation_config": {
                     "chunk_length_schedule": [50, 100, 150],
                 },
-                "language_code": _lang_code,
             }))
 
             # ── Task: send GPT text chunks to ElevenLabs ─────────────────────
@@ -563,8 +561,17 @@ async def _handle_media_stream(ws: WebSocket) -> None:
                     session.is_customer,
                 )
 
-                # Play language selection menu (greeting deferred until language chosen)
-                asyncio.create_task(_play_greeting(session, _LANG_MENU))
+                # If language was already chosen via Twilio <Gather>, skip ElevenLabs menu
+                pre_lang = params.get("lang", "")
+                if pre_lang in _LANG_CONFIG:
+                    session.language = pre_lang
+                    session.lang_selected = True
+                    greeting = session.greeting_text()
+                    session.messages.append({"role": "assistant", "content": greeting})
+                    asyncio.create_task(_play_greeting(session, greeting))
+                else:
+                    # No pre-selection: play multilingual menu via ElevenLabs (fallback)
+                    asyncio.create_task(_play_greeting(session, _LANG_MENU))
 
             # ── dtmf (language selection / change) ────────────────────────
             elif event == "dtmf" and session:

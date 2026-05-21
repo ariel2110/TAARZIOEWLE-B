@@ -15,12 +15,37 @@ import base64
 import logging
 from urllib.parse import urlencode, parse_qsl
 
+from xml.sax.saxutils import escape as _xml_escape
+
 from fastapi import APIRouter, Form, Header, HTTPException, Query, Request
 from fastapi.responses import Response
 
 from app.core.config import settings
 from app.services.twilio_voice_flow_service import voice_flow_service
 from app.services import twilio_ai_voice_service as ai_bot
+
+_DTMF_TO_LANG = {"1": "he", "2": "en", "3": "ar", "4": "ru"}
+
+
+def _stream_twiml(ws_url: str, lang: str, from_phone: str, ctx) -> str:
+    """Build <Connect><Stream> TwiML with caller context + selected language."""
+    params = (
+        f'<Parameter name="caller_phone"   value="{_xml_escape(from_phone)}"/>'
+        f'<Parameter name="caller_name"    value="{_xml_escape(ctx.contact_name or "")}"/>'
+        f'<Parameter name="is_customer"    value="{str(ctx.is_customer).lower()}"/>'
+        f'<Parameter name="business_name"  value="{_xml_escape(ctx.business_name or "")}"/>'
+        f'<Parameter name="lang"           value="{_xml_escape(lang)}"/>'
+    )
+    return (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<Response>'
+        '<Connect>'
+        f'<Stream url="{_xml_escape(ws_url)}">'
+        f'{params}'
+        '</Stream>'
+        '</Connect>'
+        '</Response>'
+    )
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/webhooks/twilio", tags=["webhooks-twilio"])
@@ -231,28 +256,71 @@ async def ai_voice_webhook(
         ctx = await ai_bot._lookup_caller(From)
 
         ws_url = stream_url.rstrip("/") + "/ws"
-        params = (
-            f'<Parameter name="caller_phone"   value="{From}"/>'
-            f'<Parameter name="caller_name"    value="{ctx.contact_name}"/>'
+        action_url = settings.api_base_url.rstrip("/") + "/api/v1/webhooks/twilio/ai-voice-lang"
+
+        # Build fallback stream (timeout = no digit pressed → default to Hebrew)
+        fallback_params = (
+            f'<Parameter name="caller_phone"   value="{_xml_escape(From)}"/>'
+            f'<Parameter name="caller_name"    value="{_xml_escape(ctx.contact_name or "")}"/>'
             f'<Parameter name="is_customer"    value="{str(ctx.is_customer).lower()}"/>'
-            f'<Parameter name="business_name"  value="{ctx.business_name}"/>'
+            f'<Parameter name="business_name"  value="{_xml_escape(ctx.business_name or "")}"/>'
+            f'<Parameter name="lang"           value="he"/>'
         )
+
+        # Play multilingual menu via Twilio <Say> (supports Hebrew natively),
+        # gather a single DTMF digit, then redirect to /ai-voice-lang.
+        # Fallback: if no digit pressed within 10 s → connect stream in Hebrew.
         twiml = (
             '<?xml version="1.0" encoding="UTF-8"?>'
             '<Response>'
+            f'<Gather action="{_xml_escape(action_url)}" method="POST" numDigits="1" timeout="10">'
+            '<Say language="he-IL">ברוכים הבאים לטאזו! לעברית לחצו 1.</Say>'
+            '<Say language="en-US">For English press 2.</Say>'
+            '<Say language="ar-SA">للعربية اضغط 3.</Say>'
+            '<Say language="ru-RU">На русском нажмите 4.</Say>'
+            '</Gather>'
             '<Connect>'
-            f'<Stream url="{ws_url}">'
-            f'{params}'
+            f'<Stream url="{_xml_escape(ws_url)}">'
+            f'{fallback_params}'
             '</Stream>'
             '</Connect>'
             '</Response>'
         )
-        logger.info("[AIVoice] call=%s → streaming mode (ws=%s)", CallSid[:8], ws_url)
+        logger.info("[AIVoice] call=%s → menu+streaming mode (ws=%s)", CallSid[:8], ws_url)
         return Response(content=twiml, media_type="application/xml")
 
     # ── Mode B: Record + Whisper fallback ────────────────────────────────────
     twiml = await ai_bot.greeting_twiml(CallSid, From)
     return Response(content=twiml, media_type="application/xml")
+
+
+@router.post("/ai-voice-lang")
+async def ai_voice_lang_select(
+    CallSid: str = Form(default=""),
+    From: str = Form(default=""),
+    Digits: str = Form(default=""),
+):
+    """
+    Called by Twilio <Gather> action after the user presses a language digit.
+    Returns <Connect><Stream> TwiML with the chosen language as a parameter.
+    """
+    lang = _DTMF_TO_LANG.get(Digits, "he")
+
+    stream_url = getattr(settings, "voice_stream_url", None)
+    if not stream_url:
+        return Response(
+            content='<?xml version="1.0" encoding="UTF-8"?><Response><Hangup/></Response>',
+            media_type="application/xml",
+        )
+
+    ctx = await ai_bot._lookup_caller(From)
+    ws_url = stream_url.rstrip("/") + "/ws"
+
+    logger.info("[AIVoice] call=%s digit=%s → lang=%s → stream", CallSid[:8], Digits, lang)
+    return Response(
+        content=_stream_twiml(ws_url, lang, From, ctx),
+        media_type="application/xml",
+    )
 
 
 @router.post("/ai-voice-record")

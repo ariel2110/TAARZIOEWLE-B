@@ -192,8 +192,10 @@ class MorningService:
             body.get('eventType')
             or body.get('event_type')
             or body.get('type')
-            or 'unknown'
         )
+
+        if not event_type:
+            return None
 
         # Dig for the transaction / document block
         txn = body.get('transaction') or body.get('document') or body

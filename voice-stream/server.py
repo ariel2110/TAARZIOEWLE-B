@@ -71,13 +71,13 @@ PORT                = int(os.environ.get("PORT", "8001"))
 
 # ElevenLabs WebSocket URL — ulaw_8000 is exactly what Twilio Media Streams
 # expects, so we forward the base64 payload without re-encoding.
+# Auth is sent via the xi-api-key header (URL query-param auth was deprecated).
 _EL_WS_URL = (
     f"wss://api.elevenlabs.io/v1/text-to-speech/{ELEVENLABS_VOICE_ID}"
     f"/stream-input"
     f"?model_id={ELEVENLABS_MODEL}"
     f"&output_format=ulaw_8000"
     f"&optimize_streaming_latency=4"
-    f"&xi_api_key={ELEVENLABS_API_KEY}"
 )
 
 # ── Language configuration ────────────────────────────────────────────────────
@@ -374,6 +374,7 @@ async def _play_tts(session: VoiceSession, text_gen: AsyncGenerator[str, None]) 
     try:
         async with websockets.connect(
             _EL_WS_URL,
+            extra_headers={"xi-api-key": ELEVENLABS_API_KEY},
             ping_interval=None,
         ) as el_ws:
             # ── BOS (Beginning of Stream) ────────────────────────────────────

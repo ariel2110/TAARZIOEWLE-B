@@ -276,7 +276,7 @@ async def ai_voice_webhook(
             f'<Gather action="{_xml_escape(action_url)}" method="POST" numDigits="1" timeout="10">'
             '<Say language="he-IL">ברוכים הבאים לטאזו! לעברית לחצו 1.</Say>'
             '<Say language="en-US">For English press 2.</Say>'
-            '<Say language="ar-SA">للعربية اضغط 3.</Say>'
+            '<Say voice="Polly.Zeina">للعربية اضغط 3.</Say>'
             '<Say language="ru-RU">На русском нажмите 4.</Say>'
             '</Gather>'
             '<Connect>'

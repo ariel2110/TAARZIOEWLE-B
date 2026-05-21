@@ -49,6 +49,7 @@ from typing import AsyncGenerator
 
 import websockets
 import websockets.exceptions
+import httpx
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
 from openai import AsyncOpenAI
@@ -497,7 +498,10 @@ async def _process_utterance(session: VoiceSession, audio: bytes) -> None:
             bye = cfg["farewell_reply"]
             session.messages.append({"role": "assistant", "content": bye})
             async with session._tts_lock:
-                await _play_tts(session, _iter_str(bye))
+                if session.language == "he":
+                    await _play_tts_rest(session, bye)
+                else:
+                    await _play_tts(session, _iter_str(bye))
             # Hang up
             if session.stream_sid:
                 try:
@@ -510,9 +514,18 @@ async def _process_utterance(session: VoiceSession, audio: bytes) -> None:
                     pass
             return
 
-        # 3. GPT streaming → TTS (pipeline: GPT tokens flow directly into TTS)
+        # 3. GPT streaming → TTS
         async with session._tts_lock:
-            spoken_text = await _play_tts(session, _gpt_stream(session))
+            if session.language == "he":
+                # eleven_v3 (Hebrew) requires full text — collect GPT tokens first
+                tokens: list[str] = []
+                async for token in _gpt_stream(session):
+                    tokens.append(token)
+                spoken_text = "".join(tokens)
+                if spoken_text:
+                    await _play_tts_rest(session, spoken_text)
+            else:
+                spoken_text = await _play_tts(session, _gpt_stream(session))
 
         if spoken_text:
             # Strip internal tags before storing in history
@@ -654,10 +667,92 @@ async def _handle_media_stream(ws: WebSocket) -> None:
         logger.error("[WS] Unexpected error: %s", exc)
 
 
+async def _play_tts_rest(session: VoiceSession, text: str) -> str:
+    """
+    Use ElevenLabs REST streaming TTS with eleven_v3 (supports Hebrew + 70 languages).
+    Streams raw μ-law 8 kHz audio bytes directly to Twilio.
+    Returns the spoken text (for conversation history).
+    """
+    if not ELEVENLABS_API_KEY or not ELEVENLABS_VOICE_ID:
+        logger.warning("[TTS-REST] ElevenLabs not configured — skipping")
+        return text
+
+    session.ai_speaking = True
+    session.barge_in.clear()
+
+    try:
+        url = (
+            f"https://api.elevenlabs.io/v1/text-to-speech"
+            f"/{ELEVENLABS_VOICE_ID}/stream"
+            f"?output_format=ulaw_8000"
+            f"&optimize_streaming_latency=4"
+        )
+        headers = {
+            "xi-api-key": ELEVENLABS_API_KEY,
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "text": text,
+            "model_id": "eleven_v3",
+            "voice_settings": {
+                "stability": 0.45,
+                "similarity_boost": 0.80,
+                "use_speaker_boost": True,
+            },
+        }
+
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            async with client.stream("POST", url, json=payload, headers=headers) as resp:
+                if resp.status_code != 200:
+                    logger.error("[TTS-REST] ElevenLabs error %s", resp.status_code)
+                    return text
+
+                buffer = b""
+                async for chunk in resp.aiter_bytes(chunk_size=320):
+                    if session.barge_in.is_set():
+                        break
+                    buffer += chunk
+                    while len(buffer) >= 160:
+                        frame, buffer = buffer[:160], buffer[160:]
+                        b64 = base64.b64encode(frame).decode()
+                        await session.ws.send_text(json.dumps({
+                            "event": "media",
+                            "streamSid": session.stream_sid,
+                            "media": {"payload": b64},
+                        }))
+
+                if buffer and not session.barge_in.is_set():
+                    b64 = base64.b64encode(buffer).decode()
+                    await session.ws.send_text(json.dumps({
+                        "event": "media",
+                        "streamSid": session.stream_sid,
+                        "media": {"payload": b64},
+                    }))
+
+    except Exception as exc:
+        logger.error("[TTS-REST] Error: %s", exc)
+    finally:
+        session.ai_speaking = False
+        if session.stream_sid:
+            try:
+                await session.ws.send_text(json.dumps({
+                    "event": "mark",
+                    "streamSid": session.stream_sid,
+                    "mark": {"name": "tts_done"},
+                }))
+            except Exception:
+                pass
+
+    return text
+
+
 async def _play_greeting(session: VoiceSession, greeting: str) -> None:
-    """Play the greeting via TTS — wrapped in tts_lock."""
+    """Play the greeting via TTS — Hebrew uses REST (eleven_v3), others use WebSocket."""
     async with session._tts_lock:
-        await _play_tts(session, _iter_str(greeting))
+        if session.language == "he":
+            await _play_tts_rest(session, greeting)
+        else:
+            await _play_tts(session, _iter_str(greeting))
 
 
 # ── FastAPI app ───────────────────────────────────────────────────────────────

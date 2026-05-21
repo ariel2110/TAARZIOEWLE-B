@@ -374,7 +374,6 @@ async def _play_tts(session: VoiceSession, text_gen: AsyncGenerator[str, None]) 
     try:
         async with websockets.connect(
             _EL_WS_URL,
-            additional_headers={"xi-api-key": ELEVENLABS_API_KEY},
             ping_interval=None,
         ) as el_ws:
             # ── BOS (Beginning of Stream) ────────────────────────────────────

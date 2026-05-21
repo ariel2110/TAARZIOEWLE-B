@@ -577,6 +577,9 @@ async def _play_tts(session: VoiceSession, text_gen: AsyncGenerator[str, None]) 
         logger.error("[TTS] Unexpected TTS error: %s", exc)
     finally:
         session.ai_speaking = False
+        # Brief echo-prevention window: Twilio echoes bot audio back into the
+        # input stream for ~0.5-1s after playback ends — drop it.
+        session._ready_at = time.time() + 1.5
         # Send mark so we know AI audio finished
         if session.stream_sid:
             try:
@@ -882,6 +885,9 @@ async def _play_tts_rest(session: VoiceSession, text: str) -> str:
         logger.error("[TTS-REST] Error: %s", exc)
     finally:
         session.ai_speaking = False
+        # Brief echo-prevention window: Twilio echoes bot audio back into the
+        # input stream for ~0.5-1s after playback ends — drop it.
+        session._ready_at = time.time() + 1.5
         if session.stream_sid:
             try:
                 await session.ws.send_text(json.dumps({

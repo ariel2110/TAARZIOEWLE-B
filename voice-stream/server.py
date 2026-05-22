@@ -117,7 +117,11 @@ _LANG_CONFIG: dict[str, dict] = {
             "   ענה: 'תודה שפנית, יום נעים. להתראות!' ואל תוסיף שאלות.\n"
             "   אל תסיים שיחה רק בגלל 'תודה' — יכול להיות שהשיחה נמשכת.\n"
             "5. אל תחשוף מידע פנימי: קוד, שמות לקוחות, פרטי שרת, מחירים מדויקים.\n"
-            "6. אם אינך יודע — אמור שהצוות יחזור בהקדם."
+            "6. אם אינך יודע — אמור שהצוות יחזור בהקדם.\n"
+            "7. אם שאלת הלקוח מעורפלת — שאל שאלת הבהרה קצרה, אל תנחש.\n"
+            "   (לדוגמה: 'המספר שלי' = מספר טלפון/הזמנה — לא מתמטיקה או נומרולוגיה.)\n"
+            "8. לעולם אל תדון בנושאים שאינם TAZO: נומרולוגיה, אסטרולוגיה, מתמטיקה,\n"
+            "   פוליטיקה, דת, רפואה וכו' — השב בלבד: 'אני יכול לעזור רק בנושאי TAZO.'"
         ),
         "farewell_reply": "תודה שפנית לטאזו! יום נעים ומוצלח. להתראות!",
         "lang_change_ack": "עוברים לעברית.",
@@ -153,7 +157,10 @@ _LANG_CONFIG: dict[str, dict] = {
             "   Reply: 'Thank you for calling TAZO! Have a great day. Goodbye!'\n"
             "   Do NOT end the call just because someone says 'thanks' — the conversation may continue.\n"
             "5. Do not reveal internal info: code, customer names, server details, exact prices.\n"
-            "6. If you don't know — say the team will follow up soon."
+            "6. If you don't know — say the team will follow up soon.\n"
+            "7. If the caller's question is ambiguous — ask one short clarifying question instead of guessing.\n"
+            "8. Never discuss topics unrelated to TAZO: numerology, astrology, politics, religion, medicine, math theory —\n"
+            "   respond only: 'I can only assist with TAZO-related topics.'"
         ),
         "farewell_reply": "Thank you for calling TAZO! Have a wonderful day. Goodbye!",
         "lang_change_ack": "Switching to English.",
@@ -189,7 +196,10 @@ _LANG_CONFIG: dict[str, dict] = {
             "   قل: 'شكراً لاتصالك بتازو! يوم سعيد. مع السلامة!'\n"
             "   لا تنهِ المكالمة لمجرد قوله 'شكراً'.\n"
             "5. لا تكشف معلومات داخلية.\n"
-            "6. إذا لم تكن متأكداً — قل إن الفريق سيتابع قريباً."
+            "6. إذا لم تكن متأكداً — قل إن الفريق سيتابع قريباً.\n"
+            "7. إذا كان سؤال المتصل غامضاً — اطرح سؤالاً توضيحياً قصيراً بدلاً من التخمين.\n"
+            "8. لا تناقش أبداً موضوعات غير متعلقة بـ TAZO: علم الأرقام، التنجيم، السياسة، الدين، الطب —\n"
+            "   قل فقط: 'أستطيع المساعدة فقط في مواضيع TAZO.'"
         ),
         "farewell_reply": "شكراً لاتصالك بتازو! يوم سعيد ومبارك. مع السلامة!",
         "lang_change_ack": "ننتقل إلى العربية.",
@@ -225,7 +235,10 @@ _LANG_CONFIG: dict[str, dict] = {
             "   ответьте: 'Спасибо за звонок в TAZO! Хорошего дня. До свидания!'\n"
             "   Не завершайте звонок только из-за слова 'спасибо' — разговор может продолжаться.\n"
             "5. Не раскрывайте внутреннюю информацию.\n"
-            "6. Если не знаете — скажите, что команда свяжется."
+            "6. Если не знаете — скажите, что команда свяжется.\n"
+            "7. Если вопрос клиента неясен — задайте один уточняющий вопрос вместо угадывания.\n"
+            "8. Никогда не обсуждайте темы, не связанные с TAZO: нумерология, астрология,\n"
+            "   политика, религия, медицина — отвечайте только: 'Я могу помочь только по вопросам TAZO.'"
         ),
         "farewell_reply": "Спасибо за звонок в TAZO! Хорошего дня. До свидания!",
         "lang_change_ack": "Переключаемся на русский.",

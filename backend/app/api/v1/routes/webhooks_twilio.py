@@ -36,6 +36,9 @@ def _stream_twiml(ws_url: str, lang: str, from_phone: str, ctx) -> str:
         f'<Parameter name="business_name"  value="{_xml_escape(ctx.business_name or "")}"/>'
         f'<Parameter name="user_role"      value="{_xml_escape(getattr(ctx, "user_role", "unknown"))}"/>'
         f'<Parameter name="portal_link"    value="{_xml_escape(getattr(ctx, "portal_link", "https://tazo-web.com"))}"/>'
+        f'<Parameter name="go_role"        value="{_xml_escape(getattr(ctx, "go_role", ""))}"/>'
+        f'<Parameter name="taz_balance"    value="{getattr(ctx, "taz_balance", 0.0):.2f}"/>'
+        f'<Parameter name="passenger_balance" value="{getattr(ctx, "passenger_balance", 0.0):.2f}"/>'
         f'<Parameter name="lang"           value="{_xml_escape(lang)}"/>'
     )
     return (
@@ -268,6 +271,9 @@ async def ai_voice_webhook(
             f'<Parameter name="business_name"  value="{_xml_escape(ctx.business_name or "")}"/>'
             f'<Parameter name="user_role"      value="{_xml_escape(getattr(ctx, "user_role", "unknown"))}"/>'
             f'<Parameter name="portal_link"    value="{_xml_escape(getattr(ctx, "portal_link", "https://tazo-web.com"))}"/>'
+            f'<Parameter name="go_role"        value="{_xml_escape(getattr(ctx, "go_role", ""))}"/>'
+            f'<Parameter name="taz_balance"    value="{getattr(ctx, "taz_balance", 0.0):.2f}"/>'
+            f'<Parameter name="passenger_balance" value="{getattr(ctx, "passenger_balance", 0.0):.2f}"/>'
             f'<Parameter name="lang"           value="he"/>'
         )
 

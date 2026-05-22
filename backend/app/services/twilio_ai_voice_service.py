@@ -51,6 +51,10 @@ class CallerContext:
     user_role: str = "unknown"
     # Best portal link to send this caller
     portal_link: str = "https://tazo-web.com"
+    # TAZO-GO profile (populated if caller is a registered TAZO-GO user)
+    go_role: str = ""          # driver | passenger | courier | ""
+    taz_balance: float = 0.0   # TAZ coins in DriverWallet
+    passenger_balance: float = 0.0  # prepaid ₪ in PassengerWallet
 
 
 def _normalize_phone_variants(phone: str) -> list[str]:
@@ -111,9 +115,51 @@ def _lookup_caller_sync(phone: str) -> CallerContext:
     return ctx
 
 
+def _lookup_go_caller(phone: str, ctx: CallerContext) -> None:
+    """Enrich ctx with TAZO-GO profile data (fire-and-forget, never raises)."""
+    try:
+        go_url = getattr(settings, "tazo_go_url", "https://tazo-go.com").rstrip("/")
+        secret = getattr(settings, "cross_app_secret", "")
+        if not secret:
+            return
+        resp = __import__("httpx").get(
+            f"{go_url}/internal/voice/caller-info",
+            params={"phone": phone},
+            headers={"x-internal-key": secret},
+            timeout=3.0,
+        )
+        if resp.status_code == 200:
+            data = resp.json()
+            if data.get("found"):
+                ctx.go_role = data.get("role", "")
+                ctx.taz_balance = float(data.get("taz_balance", 0))
+                ctx.passenger_balance = float(data.get("passenger_balance", 0))
+                # Use TAZO-GO name if we don't already have one
+                if not ctx.contact_name and data.get("name"):
+                    ctx.contact_name = data["name"]
+                # Set appropriate role & portal link if not already a TAZO-WEB customer
+                if ctx.user_role == "unknown":
+                    role = ctx.go_role
+                    ctx.user_role = (
+                        "go_driver" if role == "driver"
+                        else "go_courier" if role == "courier"
+                        else "go_passenger" if role == "passenger"
+                        else "unknown"
+                    )
+                    ctx.portal_link = (
+                        "https://driver.tazo-go.com" if role in ("driver", "courier")
+                        else "https://tazo-go.com" if role == "passenger"
+                        else ctx.portal_link
+                    )
+    except Exception as exc:
+        logger.debug("[AIVoiceBot] TAZO-GO lookup skipped: %s", exc)
+
+
 async def _lookup_caller(phone: str) -> CallerContext:
     loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(None, _lookup_caller_sync, phone)
+    ctx = await loop.run_in_executor(None, _lookup_caller_sync, phone)
+    await loop.run_in_executor(None, _lookup_go_caller, phone, ctx)
+    return ctx
 
 
 # ── Dynamic system prompt ─────────────────────────────────────────────────────
@@ -155,6 +201,22 @@ def _build_system(ctx: CallerContext) -> str:
         if ctx.business_city:
             lines.append(f"עיר: {ctx.business_city}")
         lines.append("המתקשר פנה אלינו בעבר — עודד אותו להצטרף ל-TAZO.")
+        lines.append("")
+    # TAZO-GO profile (may exist alongside or instead of TAZO-WEB)
+    if ctx.go_role:
+        _role_he = {
+            "driver": "נהג", "courier": "שליח", "passenger": "נוסע", "business": "עסק",
+        }.get(ctx.go_role, ctx.go_role)
+        lines.append("=== פרופיל TAZO-GO ===")
+        if ctx.contact_name and not ctx.is_customer:
+            lines.append(f"שם: {ctx.contact_name}")
+        lines.append(f"תפקיד: {_role_he}")
+        if ctx.taz_balance > 0:
+            lines.append(f"יתרת TAZ: {ctx.taz_balance:.2f} TAZ")
+        elif ctx.go_role in ("driver", "courier"):
+            lines.append("יתרת TAZ: 0.00 TAZ")
+        if ctx.passenger_balance > 0:
+            lines.append(f"יתרת ארנק: ₪{ctx.passenger_balance:.2f}")
         lines.append("")
     lines += [
         "כללים חשובים:",

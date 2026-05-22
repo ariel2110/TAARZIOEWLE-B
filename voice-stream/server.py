@@ -323,10 +323,14 @@ class VoiceSession:
     caller_name:    str = ""
     is_customer:    bool = False
     business_name:  str = ""
-    # Role across the TAZO ecosystem: web_customer | lead | unknown
+    # Role across the TAZO ecosystem: web_customer | lead | go_driver | go_passenger | go_courier | unknown
     user_role:      str = "unknown"
     # Best portal link for this caller
     portal_link:    str = "https://tazo-web.com"
+    # TAZO-GO profile
+    go_role:           str   = ""   # driver | passenger | courier | ""
+    taz_balance:       float = 0.0  # TAZ coins in DriverWallet
+    passenger_balance: float = 0.0  # prepaid ₪ in PassengerWallet
 
     # Language selection (1=he 2=en 3=ar 4=ru via DTMF, or auto-detected)
     language:      str  = "he"
@@ -378,6 +382,13 @@ class VoiceSession:
         }
         if self.user_role in _role_notes:
             extra += f"\nCaller role note: {_role_notes[self.user_role]}\n"
+        # TAZO-GO wallet balances
+        if self.go_role in ("driver", "courier"):
+            extra += f"\nCaller TAZ balance: {self.taz_balance:.2f} TAZ coins\n"
+            extra += "If asked 'how much TAZ/money do I have', answer with this exact balance.\n"
+        elif self.go_role == "passenger" and self.passenger_balance > 0:
+            extra += f"\nCaller prepaid balance: ₪{self.passenger_balance:.2f}\n"
+            extra += "If asked about their balance/money, answer with this exact amount.\n"
         return base + extra
 
     def greeting_text(self) -> str:
@@ -723,6 +734,9 @@ async def _handle_media_stream(ws: WebSocket) -> None:
                 session.business_name = params.get("business_name", "")
                 session.user_role     = params.get("user_role", "unknown")
                 session.portal_link   = params.get("portal_link", "https://tazo-web.com")
+                session.go_role           = params.get("go_role", "")
+                session.taz_balance       = float(params.get("taz_balance", "0") or "0")
+                session.passenger_balance = float(params.get("passenger_balance", "0") or "0")
                 # Ignore audio for the first 2.5 s — Twilio may feed menu/ring
                 # audio into the stream before the caller actually speaks
                 session._ready_at = time.time() + 2.5

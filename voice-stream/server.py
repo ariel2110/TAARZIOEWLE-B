@@ -646,7 +646,29 @@ async def _process_utterance(session: VoiceSession, audio: bytes) -> None:
         logger.info("[PROC] call=%s user: %r", session.call_sid[:8], speech)
         session.messages.append({"role": "user", "content": speech})
 
-        # 2. Farewell shortcut — language-aware
+        # 2a. Interim phrase — play immediately while GPT is thinking
+        _INTERIM_PHRASES = {
+            "he": ["רגע, בודק עבורך...", "שנייה, מעלה נתונים...", "מכין תשובה...", "כבר בודק...", "מחפש את המידע..."],
+            "en": ["Just checking...", "One moment...", "Looking that up for you...", "Give me a second..."],
+            "ar": ["لحظة، أتحقق...", "ثانية من فضلك..."],
+            "ru": ["Секунду, проверяю...", "Одну минуту..."],
+        }
+
+        async def _play_interim_phrase() -> None:
+            import random
+            phrase = random.choice(_INTERIM_PHRASES.get(session.language, _INTERIM_PHRASES["he"]))
+            try:
+                async with session._tts_lock:
+                    if session.language == "he":
+                        await _play_tts_rest(session, phrase)
+                    else:
+                        await _play_tts(session, _iter_str(phrase))
+            except Exception as _e:
+                logger.debug("[PROC] interim phrase failed: %s", _e)
+
+        asyncio.create_task(_play_interim_phrase())
+
+        # 2b. Farewell shortcut — language-aware
         lower = speech.lower()
         if any(w in lower for w in cfg["farewell"]) and len(speech) < 30:
             bye = cfg["farewell_reply"]

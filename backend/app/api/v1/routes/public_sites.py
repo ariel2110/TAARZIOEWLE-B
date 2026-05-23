@@ -36,7 +36,7 @@ def _render_demo_html(demo: DemoSite) -> str:
             'is_demo': True,
         }
         return TemplateRenderService().render(ctx)
-    except Exception as e:
+    except Exception:
         pass  # Fall back to basic template on error
     rating = f"{demo.rating:.1f}" if demo.rating is not None else '4.8'
     reviews_count = demo.reviews_count or 0

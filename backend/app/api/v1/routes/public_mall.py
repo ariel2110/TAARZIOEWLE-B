@@ -1,9 +1,11 @@
 """Public Mall API — TAZO Mall v3 — Nearby Search + Build-from-Place."""
 from __future__ import annotations
-import logging, re, math
+import logging
+import re
+import math
 from typing import Optional
 import httpx
-from fastapi import APIRouter, BackgroundTasks, Depends, Query, Body
+from fastapi import APIRouter, BackgroundTasks, Depends, Query
 from pydantic import BaseModel, field_validator
 from sqlalchemy.orm import Session
 from app.db.session import get_db, SessionLocal
@@ -162,7 +164,7 @@ def _is_relevant_place(place: dict, target_type: str | None) -> bool:
         professional_types = {"electrician", "plumber", "general_contractor", "locksmith", "painter"}
         pet_types = {"veterinary_care", "pet_store", "pet_boarding"}
         school_types = {"school", "university", "preschool"}
-        relax_types = {"spa", "beauty_salon", "hair_care"}
+        _relax_types = {"spa", "beauty_salon", "hair_care"}
         # Group check — if target in a group, place must be in same group
         for grp in [food_types, beauty_types, health_types, vehicle_types,
                     professional_types, pet_types, school_types]:

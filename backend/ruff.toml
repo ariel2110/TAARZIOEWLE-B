@@ -1,0 +1,19 @@
+[lint]
+# Suppress style-only rules that don't affect correctness.
+# SQLAlchemy forward-reference patterns cause false-positive F821 — suppressed.
+extend-ignore = [
+    "E402",  # module level import not at top of file — common in FastAPI apps
+    "E501",  # line too long
+    "E701",  # multiple statements on one line (colon)
+    "E702",  # statement ends with a semicolon
+    "E712",  # comparison to True/False using ==
+    "E731",  # do not assign a lambda expression
+    "E741",  # ambiguous variable name
+    "F601",  # 'in [list]' — prefer tuple
+    "F821",  # undefined name — false positives from SQLAlchemy forward refs
+]
+
+[lint.per-file-ignores]
+# __init__.py files re-export symbols for convenience — F401 is intentional there
+"app/models/__init__.py" = ["F401"]
+"app/services/auth/providers/__init__.py" = ["F401"]

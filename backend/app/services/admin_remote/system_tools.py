@@ -380,7 +380,7 @@ def run_apify_scraper(target_url: str, platform: str = "instagram") -> dict[str,
             profile_data = {}
             if items:
                 owner = items[0].get("ownerUsername") or username
-                followers = items[0].get("likesCount")  # fallback
+                _followers = items[0].get("likesCount")  # fallback
                 profile_data = {
                     "username": owner,
                     "followers": items[0].get("followersCount"),

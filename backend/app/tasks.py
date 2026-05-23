@@ -373,7 +373,6 @@ def inbound_build_task(self: Task, business_id: int) -> dict:
                 result_draft = svc.generate_preview(db, draft.id)
             else:
                 # Save HTML to draft
-                from app.services.draft_sites.draft_site_service import DraftSiteService as _DSS
                 import os
                 draft.html_content = html
                 draft.status = 'preview_ready'
@@ -564,7 +563,6 @@ def finalize_deployment_task(self: Task, token: str) -> dict:
 
             # ── Domain price approval gate ─────────────────────────────────
             domain_approval = intake.domain_approval_status
-            domain_price = intake.domain_price_usd
 
             # If already rejected by admin — stop
             if domain_approval == 'rejected':
@@ -575,7 +573,6 @@ def finalize_deployment_task(self: Task, token: str) -> dict:
             if domain_approval != 'approved':
                 svc = HostingerService()
                 price = svc.get_domain_price(domain)
-                domain_price = price
 
                 # Persist the price regardless
                 intake.domain_price_usd = price

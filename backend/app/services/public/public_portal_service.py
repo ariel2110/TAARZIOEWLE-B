@@ -1,8 +1,7 @@
 
 from __future__ import annotations
 
-import secrets
-from datetime import datetime, timedelta
+from datetime import datetime
 from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.models.customer_account import CustomerAccount
@@ -410,24 +409,6 @@ class PublicPortalService:
             'availability': availability,
             'summary': summary,
             'recent_items': status['items'][:5],
-        }
-
-    def request_magic_link(self, db: Session, customer_phone: str, business_name: str | None = None):
-        account = db.query(CustomerAccount).filter(CustomerAccount.phone == customer_phone, CustomerAccount.is_active == True).first()
-        if not account:
-            raise ValueError('No active customer account found for this phone')
-        session = self._get_or_create_session(db, customer_phone=customer_phone, business_name=business_name or f'customer-{account.business_id}', package_name=account.package_name)
-        token = secrets.token_urlsafe(16)
-        session.magic_login_token = token
-        session.magic_token_expires_at = datetime.utcnow() + timedelta(minutes=self.MAGIC_LINK_MINUTES)
-        self._update_session(db, session, new_state='magic_link_requested', next_action='Use magic link to enter customer portal', customer_account_id=account.id)
-        return {
-            'ok': True,
-            'customer_phone': customer_phone,
-            'onboarding_state': session.current_state,
-            'token_preview': token[:8] + '…',
-            'expires_in_minutes': self.MAGIC_LINK_MINUTES,
-            'next_step': 'Magic-link foundation prepared. In a future step this token can be emailed or sent as an OTP-style access link.',
         }
 
     def request_demo(self, db: Session, payload):

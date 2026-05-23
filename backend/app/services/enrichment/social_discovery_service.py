@@ -330,7 +330,7 @@ class SocialDiscoveryService:
             data = json.loads(resp) if isinstance(resp, str) else resp
             score = int(data.get("confidence_score", 0))
             profile.social_confidence = min(100, max(0, score))
-            verified = set(data.get("verified_assets", []))
+            _verified = set(data.get("verified_assets", []))
             rejected = set(data.get("rejected_assets", []))
 
             if score >= 85:

@@ -351,7 +351,6 @@ def capture_phone(payload: CapturePhoneRequest, db: Session = Depends(get_db)):
 
     # Optionally notify CEO via Grok notification (fire-and-forget)
     try:
-        from app.services.ceo_agent.ceo_grok_service import CEOGrokService
         logger.info('[capture-phone] Inbound lead %s submitted phone for business %s', payload.phone, business.name)
     except Exception:
         pass

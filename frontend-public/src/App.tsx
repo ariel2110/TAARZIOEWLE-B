@@ -7,15 +7,17 @@ import IntakeForm from './IntakeForm';
 import SubmissionStatus from './SubmissionStatus';
 import PageGuide from './PageGuide';
 import TazoWebInstallBanner from './TazoWebInstallBanner';
+import About from './About';
 import './styles.css';
 
-export type AppPage = 'marketplace' | 'home' | 'intake' | 'status';
+export type AppPage = 'marketplace' | 'home' | 'intake' | 'status' | 'about';
 
 export default function App() {
   const [page, setPage] = useState<AppPage>(() => {
     if (window.location.hash.startsWith('#/status/')) return 'status';
     if (window.location.hash === '#/start') return 'intake';
     if (window.location.hash === '#/business') return 'home';
+    if (window.location.hash === '#/about') return 'about';
     return 'marketplace';
   });
   const [statusToken, setStatusToken] = useState<string>(() => {
@@ -66,8 +68,18 @@ export default function App() {
       }
       setPage('marketplace');
     } else if (target === 'home') goToBusinessLanding();
-    else if (target === 'intake') goToIntake(categoryId); // categoryId re-used as planName here
+    else if (target === 'intake') goToIntake(categoryId);
+    else if (target === 'about') { window.location.hash = '#/about'; setPage('about'); }
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  if (page === 'about') {
+    return (
+      <>
+        <Sidebar currentPage={page} onGoTo={handleGoTo} />
+        <About />
+      </>
+    );
   }
 
   if (page === 'status') {

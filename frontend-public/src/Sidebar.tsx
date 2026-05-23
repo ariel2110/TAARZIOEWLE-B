@@ -216,6 +216,7 @@ export default function Sidebar({ currentPage, onGoTo }: SidebarProps) {
             </div>
           </div>
           <NavItem icon="🛡️" label="Trust Center" sublabel="30 תרחישים + FAQ" onClick={() => window.open('https://tazo-app.com/trust-center','_blank')} />
+          <NavItem icon="✨" label="אודות TAZO" sublabel="הסיפור, הפלטפורמה, החזון" onClick={() => { onGoTo('about'); setOpen(false) }} />
           <NavItem icon="💬" label="צור קשר ב-WhatsApp" onClick={() => window.open('https://wa.me/972501234567','_blank')} />
           <NavItem icon="🔒" label="מדיניות פרטיות" onClick={() => window.open('https://tazo-web.com/privacy','_blank')} />
         </SectionBlock>

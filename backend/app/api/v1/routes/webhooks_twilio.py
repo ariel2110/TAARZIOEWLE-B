@@ -444,3 +444,37 @@ async def ai_voice_wa(
         link_type, language, (caller_phone or "")[:7], ok,
     )
     return {"ok": ok}
+
+
+# ── Internal: voice-stream → manager escalation ──────────────────────────────
+
+@router.post("/ai-voice-manager")
+async def ai_voice_manager_alert(
+    caller_phone: str = Form(default=""),
+    caller_name:  str = Form(default=""),
+    summary:      str = Form(default=""),
+    reason:       str = Form(default=""),
+    timestamp:    str = Form(default=""),
+):
+    """
+    Internal endpoint called by voice-stream when GPT emits [ESCALATE_MANAGER].
+    Sends a WhatsApp alert to the TAZO manager with caller context and conversation summary.
+    """
+    import datetime as _dt
+    ts = timestamp or _dt.datetime.now().strftime("%d/%m/%Y %H:%M")
+    phone_display = (caller_phone or "")[:7] + "***" if caller_phone else "לא ידוע"
+    msg = (
+        f"📞 *בקשת שיחה חזרה — TAZO Bot*\n"
+        f"⏰ {ts}\n"
+        f"👤 שם: {caller_name or 'לא ידוע'}\n"
+        f"📱 טלפון: {phone_display}\n"
+        f"💬 סיבה: {reason or 'לא פורט'}\n"
+        f"📋 תקציר השיחה: {summary or 'לא זמין'}"
+    )
+    manager_number = "+972546363350"
+    ok = await ai_bot.send_direct_message(manager_number, msg)
+    logger.info(
+        "[AIVoiceMgr] manager alert sent=%s caller=%s*** reason=%r",
+        ok, (caller_phone or "")[:7], (reason or "")[:60],
+    )
+    return {"ok": ok}

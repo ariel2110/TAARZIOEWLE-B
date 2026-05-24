@@ -90,10 +90,16 @@ _LANG_CONFIG: dict[str, dict] = {
         "name": "עברית",
         "whisper": "he",
         "lang_code": "he",
-        "farewell": ("להתראות", "ביי", "bye", "תודה להתראות", "לא מעניין"),
+        "farewell": (
+            "להתראות", "ביי", "bye",
+            "תודה להתראות", "לא מעניין",
+            "לא תודה", "לא צריך", "יופי תודה",
+            "תודה שלום", "ביי ביי", "הכל בסדר תודה", "הכל טוב תודה",
+        ),
         "system": (
             "אתה נציג שירות לקוחות של TAZO — קבוצת שירותים דיגיטליים ישראלית.\n"
             "שמך הוא טאזו. תמיד דבר בגוף ראשון.\n"
+            "השתמש בשמו הפרטי של המתקשר במהלך השיחה כשזה טבעי.\n"
             "\n=== שירותי TAZO ===\n"
             "• TAZO-WEB (tazo-web.com): בניית אתרי עסקים, דף עסקי, קבלת הזמנות WhatsApp,\n"
             "  ניהול לקוחות ונאמנות, שיווק אוטומטי וסטטיסטיקות. לבעלי עסקים.\n"
@@ -109,19 +115,22 @@ _LANG_CONFIG: dict[str, dict] = {
             "\n=== כלים שיש לך ===\n"
             "• שליחת קישור ב-WhatsApp/SMS: ציין [SEND_LINK] בתחילת תגובתך כשהמשתמש מבקש קישור.\n"
             "• אם ברור מה המשתמש: הוסף [SEND_LINK:driver], [SEND_LINK:passenger], [SEND_LINK:web] וכו'.\n"
+            "• הסלמה למנהל: אם המתקשר מבקש לדבר עם מנהל/אחראי, ציין [ESCALATE_MANAGER: <סיבה קצרה>]\n"
+            "  בתחילת תגובתך, ואמור: 'בשמחה! הצוות יחזור אליך בהקדם. יום נעים, להתראות!'\n"
             "\n=== כללים ===\n"
             "1. ענה אך ורק בעברית תקינה.\n"
             "2. תשובות קצרות ותמציתיות — עד 2 משפטים (שיחת טלפון!).\n"
             "3. היה ידידותי, חם ומקצועי.\n"
-            "4. סיים שיחה רק אם הלקוח אמר בבירור: 'להתראות', 'ביי', 'לא מעניין', 'לא צריך' —\n"
+            "4. סיים שיחה רק אם הלקוח אמר בבירור שהסתיים: 'להתראות', 'ביי', 'לא מעניין', 'לא צריך' —\n"
             "   ענה: 'תודה שפנית, יום נעים. להתראות!' ואל תוסיף שאלות.\n"
             "   אל תסיים שיחה רק בגלל 'תודה' — יכול להיות שהשיחה נמשכת.\n"
+            "   אם שאלת שאלה ובמשיב אומר רק 'לא' — תאמר: 'בסדר גמור, אם תצטרך עזרה — אני כאן. יום נעים!'\n"
             "5. אל תחשוף מידע פנימי: קוד, שמות לקוחות, פרטי שרת, מחירים מדויקים.\n"
             "6. אם אינך יודע — אמור שהצוות יחזור בהקדם.\n"
             "7. אם שאלת הלקוח מעורפלת — שאל שאלת הבהרה קצרה, אל תנחש.\n"
-            "   (לדוגמה: 'המספר שלי' = מספר טלפון/הזמנה — לא מתמטיקה או נומרולוגיה.)\n"
-            "8. לעולם אל תדון בנושאים שאינם TAZO: נומרולוגיה, אסטרולוגיה, מתמטיקה,\n"
-            "   פוליטיקה, דת, רפואה וכו' — השב בלבד: 'אני יכול לעזור רק בנושאי TAZO.'"
+            "8. אתה יכול לעזור גם בשאלות כלליות (מסלולים, שעות, מזג אוויר כללי, המלצות וכו').\n"
+            "   אם השאלה אינה קשורה ל-TAZO ואינך יכול לעזור — אמור בנימוס שאתה מתמחה ב-TAZO.\n"
+            "9. לעולם אל תדון בנושאים רגישים: נומרולוגיה, אסטרולוגיה, פוליטיקה, דת, רפואה."
         ),
         "farewell_reply": "תודה שפנית לטאזו! יום נעים ומוצלח. להתראות!",
         "lang_change_ack": "עוברים לעברית.",
@@ -264,7 +273,7 @@ _FAREWELL_WORDS = ("להתראות", "ביי", "bye")  # kept for backwards-comp
 # Twilio sends 20 ms chunks of μ-law 8 kHz audio = 160 bytes / chunk
 _FRAME_MS           = 20
 _SPEECH_THRESHOLD   = 300    # μ-law linear-energy threshold to detect voice
-_BARGE_IN_THRESHOLD = 250    # lower threshold for barge-in detection (more sensitive)
+_BARGE_IN_THRESHOLD = 600    # must be HIGHER than _SPEECH_THRESHOLD — only intentional interruptions
 _SILENCE_FRAMES     = 25     # 25 × 20 ms = 500 ms of silence → end of utterance
 _MIN_SPEECH_FRAMES  = 6      # at least 120 ms of voice before processing
 
@@ -521,14 +530,14 @@ async def _send_whatsapp_link(session: VoiceSession, link_type_override: str = "
 # ── GPT streaming ─────────────────────────────────────────────────────────────
 
 async def _gpt_stream(session: VoiceSession) -> AsyncGenerator[str, None]:
-    """Stream GPT-4o-mini reply tokens for the current conversation."""
+    """Stream gpt-4.1-mini reply tokens for the current conversation."""
     try:
         oai = AsyncOpenAI(api_key=OPENAI_API_KEY)
         stream = await oai.chat.completions.create(
-            model="gpt-4o-mini",
+            model="gpt-4.1-mini",
             messages=[{"role": "system", "content": session.system_prompt()}]
             + session.messages[-20:],
-            max_tokens=150,
+            max_tokens=100,
             temperature=0.7,
             stream=True,
         )
@@ -648,6 +657,37 @@ async def _play_tts(session: VoiceSession, text_gen: AsyncGenerator[str, None]) 
     return "".join(full_text)
 
 
+# ── Manager escalation (הסלמה למנהל) ─────────────────────────────────────────
+
+async def _send_manager_alert(session: VoiceSession, reason: str) -> None:
+    """
+    Fire-and-forget: notify the TAZO manager via WhatsApp with caller details + conversation summary.
+    Calls the backend POST /api/v1/webhooks/twilio/ai-voice-manager endpoint.
+    """
+    import time as _time
+    # Build a short conversation summary (last 3 user turns)
+    user_turns = [m["content"] for m in session.messages if m["role"] == "user"]
+    summary = " / ".join(user_turns[-3:]) if user_turns else "לא דווח"
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.post(
+                f"{BACKEND_INTERNAL_URL}/api/v1/webhooks/twilio/ai-voice-manager",
+                data={
+                    "caller_phone": session.caller_phone,
+                    "caller_name":  session.caller_name or "לא ידוע",
+                    "summary":      summary,
+                    "reason":       reason,
+                    "timestamp":    _time.strftime("%d/%m/%Y %H:%M"),
+                },
+            )
+        if resp.status_code == 200:
+            logger.info("[MGR] call=%s manager alert sent", session.call_sid[:8])
+        else:
+            logger.warning("[MGR] call=%s manager alert failed: HTTP %s", session.call_sid[:8], resp.status_code)
+    except Exception as exc:
+        logger.warning("[MGR] call=%s manager alert error: %s", session.call_sid[:8], exc)
+
+
 # ── Utterance processing ──────────────────────────────────────────────────────
 
 async def _process_utterance(session: VoiceSession, audio: bytes) -> None:
@@ -669,10 +709,10 @@ async def _process_utterance(session: VoiceSession, audio: bytes) -> None:
 
         # 2a. Interim phrase — fire BEFORE STT so there's no silence while Whisper runs
         _INTERIM_PHRASES = {
-            "he": ["רגע, בודקת...", "שנייה, מעלה נתונים...", "מכינה תשובה...", "כבר בודקת...", "מחפשת את המידע..."],
-            "en": ["Just a second...", "One moment...", "Looking that up for you...", "Give me a second..."],
-            "ar": ["لحظة، أتحقق...", "ثانية من فضلك..."],
-            "ru": ["Секунду, проверяю...", "Одну минуту..."],
+            "he": ["שנייה...", "כן, שמעתי...", "רגע...", "אני כאן, שנייה...", "הבנתי..."],
+            "en": ["Just a second...", "One moment...", "Sure, hold on...", "Give me a second..."],
+            "ar": ["لحظة...", "نعم، سمعتك..."],
+            "ru": ["Секунду...", "Да, слушаю..."],
         }
 
         async def _play_interim_phrase() -> None:
@@ -700,9 +740,15 @@ async def _process_utterance(session: VoiceSession, audio: bytes) -> None:
         session.messages.append({"role": "user", "content": speech})
 
         # 2b. Farewell shortcut — language-aware
-        lower = speech.lower()
-        if any(w in lower for w in cfg["farewell"]) and len(speech) < 30:
-            bye = cfg["farewell_reply"]
+        lower = speech.lower().strip()
+        # Also detect: short "לא" reply after bot asked a question
+        _last_bot = session.messages[-2]["content"] if len(session.messages) >= 2 and session.messages[-2]["role"] == "assistant" else ""
+        _short_no = (lower in ("לא", "לא.", "לא!") and _last_bot.rstrip().endswith("?") and len(speech) <= 5)
+        if (any(w in lower for w in cfg["farewell"]) and len(speech) < 40) or _short_no:
+            if _short_no:
+                bye = "בסדר גמור! אם תצטרך עזרה — אני כאן. יום נעים!"
+            else:
+                bye = cfg["farewell_reply"]
             session.messages.append({"role": "assistant", "content": bye})
             async with session._tts_lock:
                 if session.language == "he":
@@ -728,13 +774,17 @@ async def _process_utterance(session: VoiceSession, audio: bytes) -> None:
         spoken_text = "".join(tokens)
 
         if spoken_text:
-            # Detect [SEND_LINK] / [SEND_LINK:type] before speaking
+            # Detect [SEND_LINK] / [SEND_LINK:type] and [ESCALATE_MANAGER: reason] before speaking
             import re as _re
             _tag_pat = _re.compile(r"\[SEND_LINK(?::([a-z_]+))?\]", _re.IGNORECASE)
+            _esc_pat = _re.compile(r"\[ESCALATE_MANAGER:\s*([^\]]+)\]", _re.IGNORECASE)
             tag_match = _tag_pat.search(spoken_text)
+            esc_match = _esc_pat.search(spoken_text)
             link_type_override = tag_match.group(1) if tag_match and tag_match.group(1) else ""
             should_send_link = tag_match is not None
-            tts_text = _tag_pat.sub("", spoken_text).strip()
+            should_escalate = esc_match is not None
+            escalate_reason = esc_match.group(1).strip() if esc_match else ""
+            tts_text = _esc_pat.sub("", _tag_pat.sub("", spoken_text)).strip()
 
             async with session._tts_lock:
                 if tts_text:
@@ -763,6 +813,13 @@ async def _process_utterance(session: VoiceSession, audio: bytes) -> None:
                             await _play_tts_rest(session, tts_text)
                         else:
                             await _play_tts(session, _iter_str(tts_text))
+
+            if should_escalate:
+                asyncio.create_task(_send_manager_alert(session, escalate_reason))
+                logger.info(
+                    "[PROC] call=%s [ESCALATE_MANAGER] triggered (reason=%r)",
+                    session.call_sid[:8], escalate_reason[:60],
+                )
 
             session.messages.append({"role": "assistant", "content": tts_text})
             logger.info("[PROC] call=%s bot: %r", session.call_sid[:8], tts_text[:80])

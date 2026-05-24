@@ -483,6 +483,38 @@ async def send_voice_link(phone: str, link_type: str = "general", language: str 
     return await loop.run_in_executor(None, _send_voice_link_sync, phone, link_type, language)
 
 
+def _send_direct_message_sync(phone: str, message: str) -> bool:
+    """Send an arbitrary text message to any phone number via WhatsApp or SMS fallback."""
+    # 1. Try Meta WhatsApp
+    try:
+        from app.services.communications.meta_whatsapp_service import MetaWhatsAppService
+        wa = MetaWhatsAppService()
+        if wa._is_configured():
+            ok = wa.send_text(phone, message)
+            if ok:
+                logger.info("[AIVoiceBot] Direct WA message sent to %s***", (phone or "")[:7])
+                return True
+    except Exception:
+        pass
+
+    # 2. Twilio SMS fallback
+    try:
+        from twilio.rest import Client as TwilioClient  # type: ignore[import]
+        client = TwilioClient(settings.twilio_account_sid, settings.twilio_auth_token)
+        client.messages.create(body=message, from_=settings.twilio_from_number, to=phone)
+        logger.info("[AIVoiceBot] Direct SMS sent to %s***", (phone or "")[:7])
+        return True
+    except Exception as exc:
+        logger.warning("[AIVoiceBot] Failed to send direct message: %s", exc)
+        return False
+
+
+async def send_direct_message(phone: str, message: str) -> bool:
+    """Async wrapper — send an arbitrary WhatsApp/SMS message to any number."""
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, _send_direct_message_sync, phone, message)
+
+
 # ── Lead saving ───────────────────────────────────────────────────────────────
 
 def _save_lead_sync(session: _Session) -> None:

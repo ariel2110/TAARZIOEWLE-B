@@ -637,19 +637,10 @@ async def _process_utterance(session: VoiceSession, audio: bytes) -> None:
 
         cfg = _LANG_CONFIG[session.language]
 
-        # 1. STT — use language-appropriate Whisper hint
-        speech = await _transcribe(audio, cfg["whisper"])
-        if not speech:
-            logger.warning("[PROC] Empty transcript — skipping")
-            return
-
-        logger.info("[PROC] call=%s user: %r", session.call_sid[:8], speech)
-        session.messages.append({"role": "user", "content": speech})
-
-        # 2a. Interim phrase — play immediately while GPT is thinking
+        # 2a. Interim phrase — fire BEFORE STT so there's no silence while Whisper runs
         _INTERIM_PHRASES = {
-            "he": ["רגע, בודק עבורך...", "שנייה, מעלה נתונים...", "מכין תשובה...", "כבר בודק...", "מחפש את המידע..."],
-            "en": ["Just checking...", "One moment...", "Looking that up for you...", "Give me a second..."],
+            "he": ["רגע, בודקת...", "שנייה, מעלה נתונים...", "מכינה תשובה...", "כבר בודקת...", "מחפשת את המידע..."],
+            "en": ["Just a second...", "One moment...", "Looking that up for you...", "Give me a second..."],
             "ar": ["لحظة، أتحقق...", "ثانية من فضلك..."],
             "ru": ["Секунду, проверяю...", "Одну минуту..."],
         }
@@ -666,7 +657,17 @@ async def _process_utterance(session: VoiceSession, audio: bytes) -> None:
             except Exception as _e:
                 logger.debug("[PROC] interim phrase failed: %s", _e)
 
+        # Start speaking "בודקת..." immediately — plays during Whisper + GPT latency
         asyncio.create_task(_play_interim_phrase())
+
+        # 1. STT — use language-appropriate Whisper hint
+        speech = await _transcribe(audio, cfg["whisper"])
+        if not speech:
+            logger.warning("[PROC] Empty transcript — skipping")
+            return
+
+        logger.info("[PROC] call=%s user: %r", session.call_sid[:8], speech)
+        session.messages.append({"role": "user", "content": speech})
 
         # 2b. Farewell shortcut — language-aware
         lower = speech.lower()
@@ -718,6 +719,20 @@ async def _process_utterance(session: VoiceSession, audio: bytes) -> None:
                     "[PROC] call=%s [SEND_LINK] triggered (type=%r)",
                     session.call_sid[:8], link_type_override or "auto",
                 )
+                # GPT returned only [SEND_LINK] with no spoken text — add a fallback confirmation
+                if not tts_text:
+                    _LINK_CONFIRM = {
+                        "he": "שלחתי לך הודעה ב-וואטסאפ. יש עוד שאלה?",
+                        "en": "I sent you a WhatsApp message. Anything else?",
+                        "ar": "أرسلت لك رسالة واتساب. هل تحتاج شيئاً آخر؟",
+                        "ru": "Я отправил вам сообщение в WhatsApp. Что-то ещё?",
+                    }
+                    tts_text = _LINK_CONFIRM.get(session.language, _LINK_CONFIRM["he"])
+                    async with session._tts_lock:
+                        if session.language == "he":
+                            await _play_tts_rest(session, tts_text)
+                        else:
+                            await _play_tts(session, _iter_str(tts_text))
 
             session.messages.append({"role": "assistant", "content": tts_text})
             logger.info("[PROC] call=%s bot: %r", session.call_sid[:8], tts_text[:80])

@@ -360,35 +360,65 @@ class VoiceSession:
         cfg = _LANG_CONFIG[self.language]
         base = cfg["system"]
         extra = ""
-        if self.is_customer:
-            extra = "\n=== Existing customer ===\n"
-            if self.caller_name:
-                extra += f"Name: {self.caller_name}\n"
-            if self.business_name:
-                extra += f"Business: {self.business_name}\n"
-            extra += "Greet them by name and assist warmly.\n"
-        elif self.caller_name:
-            extra = f"\nKnown contact: {self.caller_name}. Encourage them to join TAZO.\n"
-        # Always include the caller's appropriate portal link
-        if self.portal_link:
-            extra += f"\nBest link for this caller: {self.portal_link}\n"
-        # Role-based context
-        _role_notes = {
-            "web_customer": "This caller is an existing TAZO-WEB business customer.",
-            "lead":         "This caller is a known lead — encourage them to register on TAZO-WEB.",
-            "go_driver":    "This caller is a TAZO-GO driver. Focus on driver app and driver support.",
-            "go_passenger": "This caller is a TAZO-GO passenger. Focus on booking rides and passenger support.",
-            "go_courier":   "This caller is a TAZO-GO courier. Focus on courier app and delivery support.",
-        }
-        if self.user_role in _role_notes:
-            extra += f"\nCaller role note: {_role_notes[self.user_role]}\n"
-        # TAZO-GO wallet balances
-        if self.go_role in ("driver", "courier"):
-            extra += f"\nCaller TAZ balance: {self.taz_balance:.2f} TAZ coins\n"
-            extra += "If asked 'how much TAZ/money do I have', answer with this exact balance.\n"
-        elif self.go_role == "passenger" and self.passenger_balance > 0:
-            extra += f"\nCaller prepaid balance: ₪{self.passenger_balance:.2f}\n"
-            extra += "If asked about their balance/money, answer with this exact amount.\n"
+        lang = self.language
+
+        # ── caller identity section (language-aware) ─────────────────────
+        if lang == "he":
+            if self.is_customer:
+                extra = "\n=== מידע על המתקשר ===\n"
+                if self.caller_name:
+                    extra += f"שם: {self.caller_name}\n"
+                if self.business_name:
+                    extra += f"עסק: {self.business_name}\n"
+                extra += "המתקשר הוא לקוח קיים — פנה אליו בשמו ועזור בחום.\n"
+            elif self.caller_name:
+                extra = f"\nמתקשר מוכר: {self.caller_name}. עודד אותו להצטרף ל-TAZO.\n"
+            if self.portal_link:
+                extra += f"קישור מתאים למתקשר: {self.portal_link}\n"
+            _role_notes = {
+                "web_customer": "לקוח עסקי קיים של TAZO-WEB.",
+                "lead":         "ליד ידוע — עודד אותו להירשם ב-TAZO-WEB.",
+                "go_driver":    "נהג TAZO-GO — התמקד בסיוע לנהגים ובאפליקציית הנהגים.",
+                "go_passenger": "נוסע TAZO-GO — התמקד בהזמנת נסיעות ובסיוע לנוסעים.",
+                "go_courier":   "שליח TAZO-GO — התמקד בסיוע לשליחים ובאפליקציית השליחים.",
+            }
+            if self.user_role in _role_notes:
+                extra += f"תפקיד המתקשר: {_role_notes[self.user_role]}\n"
+            if self.go_role in ("driver", "courier"):
+                extra += f"יתרת TAZ של המתקשר: {self.taz_balance:.2f} מטבעות TAZ\n"
+                extra += "אם שואלים 'כמה TAZ יש לי' — השב עם היתרה המדויקת הזו.\n"
+            elif self.go_role == "passenger" and self.passenger_balance > 0:
+                extra += f"יתרת ארנק של המתקשר: ₪{self.passenger_balance:.2f}\n"
+                extra += "אם שואלים על יתרה/כסף — השב עם הסכום המדויק הזה.\n"
+        else:
+            # English / Arabic / Russian — keep extra in English
+            if self.is_customer:
+                extra = "\n=== Caller info ===\n"
+                if self.caller_name:
+                    extra += f"Name: {self.caller_name}\n"
+                if self.business_name:
+                    extra += f"Business: {self.business_name}\n"
+                extra += "Existing customer — greet by name and assist warmly.\n"
+            elif self.caller_name:
+                extra = f"\nKnown contact: {self.caller_name}. Encourage them to join TAZO.\n"
+            if self.portal_link:
+                extra += f"Best link for this caller: {self.portal_link}\n"
+            _role_notes_en = {
+                "web_customer": "Existing TAZO-WEB business customer.",
+                "lead":         "Known lead — encourage to register on TAZO-WEB.",
+                "go_driver":    "TAZO-GO driver — focus on driver app and support.",
+                "go_passenger": "TAZO-GO passenger — focus on ride booking and support.",
+                "go_courier":   "TAZO-GO courier — focus on courier app and support.",
+            }
+            if self.user_role in _role_notes_en:
+                extra += f"Caller role: {_role_notes_en[self.user_role]}\n"
+            if self.go_role in ("driver", "courier"):
+                extra += f"Caller TAZ balance: {self.taz_balance:.2f} TAZ\n"
+                extra += "If asked 'how much TAZ/money do I have', answer with this exact balance.\n"
+            elif self.go_role == "passenger" and self.passenger_balance > 0:
+                extra += f"Caller prepaid balance: ₪{self.passenger_balance:.2f}\n"
+                extra += "If asked about balance/money, answer with this exact amount.\n"
+
         return base + extra
 
     def greeting_text(self) -> str:

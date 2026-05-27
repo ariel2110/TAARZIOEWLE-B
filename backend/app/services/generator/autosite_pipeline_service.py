@@ -893,11 +893,11 @@ class AutoSitePipelineService:
                 if tone and tone in tone_map:
                     user_msg += f"\n\n=== TONE OF VOICE ===\n{tone_map[tone]}\nהתאם את הכתיבה לסגנון זה."
                 if legacy_snippets:
-                    user_msg += f"\n\n=== PROFESSIONAL CONTENT FROM LEGACY SITE ===\n"
+                    user_msg += "\n\n=== PROFESSIONAL CONTENT FROM LEGACY SITE ===\n"
                     user_msg += "השתמש בקטעי הטקסט הבאים (מהאתר הישן של העסק) כמקור לתוכן מקצועי, שנות ניסיון, הסמכות וכו':\n"
                     user_msg += "\n".join(f'- {s}' for s in legacy_snippets)
                 if easy_services:
-                    user_msg += f"\n\n=== SERVICES FROM EASY DIRECTORY ===\nשירותים מאומתים מ-Easy:\n"
+                    user_msg += "\n\n=== SERVICES FROM EASY DIRECTORY ===\nשירותים מאומתים מ-Easy:\n"
                     user_msg += "\n".join(f'- {s}' for s in easy_services)
             response = LLMRouterService().call_tracked(
                 "generate_site_copy",

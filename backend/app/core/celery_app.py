@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import os
 
-from celery.schedules import crontab
 from celery import Celery
 
 _BROKER = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0')

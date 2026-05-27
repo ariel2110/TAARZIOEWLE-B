@@ -9,7 +9,6 @@ from __future__ import annotations
 import re
 import logging
 import httpx
-from urllib.parse import quote_plus
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)

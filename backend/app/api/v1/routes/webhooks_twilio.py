@@ -13,7 +13,6 @@ import hashlib
 import hmac
 import base64
 import logging
-from urllib.parse import urlencode, parse_qsl
 
 from xml.sax.saxutils import escape as _xml_escape
 
@@ -189,7 +188,6 @@ async def initiate_voice_call(
         raise HTTPException(status_code=503, detail="Twilio not configured")
 
     import httpx
-    from xml.sax.saxutils import escape as xml_escape
 
     webhook_url = f"{settings.api_base_url}/api/v1/webhooks/twilio/voice?s=greeting"
     auth = (

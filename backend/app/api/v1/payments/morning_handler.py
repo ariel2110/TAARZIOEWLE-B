@@ -33,7 +33,7 @@ import threading
 from typing import Callable
 
 from app.core.config import settings
-from app.services.morning_service import MorningService, PLAN_LABELS
+from app.services.morning_service import MorningService
 
 logger = logging.getLogger(__name__)
 _morning = MorningService()
@@ -272,7 +272,6 @@ def handle_morning_event(body: dict, parsed: dict) -> dict:
 
 def _order_paid_auto(ctx: dict) -> dict:
     """39 NIS automated pipeline: mark intake as paid and queue Celery task."""
-    import secrets as _secrets
     import threading as _threading
 
     external_id = ctx['external_id']

@@ -106,7 +106,7 @@ class CEOReportService:
         if open_security_alerts > 0:
             what_needed.append(f'🚨 {open_security_alerts} התראות אבטחה פתוחות{" (כולל HIGH/CRITICAL)" if high_security_alerts > 0 else ""}')
         if total_customers == 0 and total_businesses > 0:
-            what_needed.append(f'👥 אין לקוחות רשומים — לחץ "סנכרן לקוחות מדמו" בדף לקוחות')
+            what_needed.append('👥 אין לקוחות רשומים — לחץ "סנכרן לקוחות מדמו" בדף לקוחות')
 
         static_summary = (
             f'📊 דו"ח מנהלים — {now_he}\n\n'

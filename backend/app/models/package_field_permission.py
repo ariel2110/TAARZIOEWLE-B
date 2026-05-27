@@ -1,5 +1,5 @@
 
-from sqlalchemy import String, Boolean, Integer
+from sqlalchemy import String, Boolean
 from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base
 from app.models.mixins import TimestampMixin

@@ -7,7 +7,6 @@ VIP flow: POST /public/google-vip  →  exchange Google ID token for a short-liv
 """
 import json
 import logging
-import os
 import re
 import secrets
 import uuid
@@ -196,7 +195,6 @@ def _run_intake_pipeline(token: str) -> None:
     is configured, and updates intake status to 'in_review' when done.
     """
     from app.services.generator.autosite_pipeline_service import AutoSitePipelineService
-    from app.services.communications.meta_whatsapp_service import MetaWhatsAppService
 
     db = None
     try:

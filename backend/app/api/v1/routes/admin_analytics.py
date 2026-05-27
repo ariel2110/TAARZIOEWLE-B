@@ -82,7 +82,6 @@ def agent_global_stats(
     - Total sites built this month
     """
     from app.models.agent_usage_log import AgentUsageLog
-    from app.models.system_daily_analytics import SystemDailyAnalytics
     from app.models.public_intake import PublicIntake
     from app.core.pricing_config import PLAN_REVENUE_ILS, AGENT_DISPLAY
 
@@ -161,7 +160,7 @@ def agent_status(
     Includes projected cost per site-generation run.
     """
     from app.core.config import settings
-    from app.core.pricing_config import TOKEN_PRICING, AGENT_DISPLAY, USD_TO_ILS, PLAN_REVENUE_ILS
+    from app.core.pricing_config import TOKEN_PRICING, AGENT_DISPLAY, USD_TO_ILS
     from app.models.agent_usage_log import AgentUsageLog
 
     today = datetime.date.today()

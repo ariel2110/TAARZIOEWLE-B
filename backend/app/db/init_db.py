@@ -1,6 +1,3 @@
-import app.models
-from app.models.customer_login_event import CustomerLoginEvent
-from app.models.customer_account import CustomerAccount
 from app.core.config import settings
 from app.db.base import Base
 from app.db.session import engine, SessionLocal

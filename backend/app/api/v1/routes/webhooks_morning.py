@@ -270,7 +270,7 @@ def _notify_admin_pro_payment(
     }
 
     cfg = tier_config.get(tier, tier_config['starter'])
-    admin_panel_url = f"https://api.TAZO-WEB.site/api/v1/admin/public-flow"
+    admin_panel_url = "https://api.TAZO-WEB.site/api/v1/admin/public-flow"
 
     msg = (
         f"{cfg['emoji']} *TAZO-WEB — {cfg['title']}*\n\n"

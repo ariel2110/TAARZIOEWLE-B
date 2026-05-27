@@ -43,7 +43,6 @@ from app.services.admin_remote.agents_config import (
     GEMINI_SYSTEM_PROMPT,
     CLAUDE_SYSTEM_PROMPT,
     GPT_SYSTEM_PROMPT,
-    AGENT_MAP,
 )
 from app.services.admin_remote.system_tools import (
     TOOLS_SCHEMA,

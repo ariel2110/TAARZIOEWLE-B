@@ -7,7 +7,7 @@ approval endpoints for queued outreach messages.
 Approval routes require a valid admin JWT (same as all other admin routes).
 """
 import httpx
-from fastapi import APIRouter, Request, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Optional

@@ -1,4 +1,3 @@
-import json
 import re
 from html import escape as _e
 
@@ -38,7 +37,6 @@ def _clean_phone(phone: str) -> str:
 
 
 import re as _re
-from html import escape as _esc
 
 _FOOD_RE = _re.compile(r'פיצ|גריל|שוורמ|פלאפל|המבורגר|מסעד|סושי|אוכל|קפה|מאפ|restaurant|food|pizza|grill|burger|bakery|cafe', _re.I)
 

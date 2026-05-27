@@ -13,7 +13,6 @@ from typing import Optional
 
 from app.api.deps import get_current_admin
 from app.core.config import settings
-from app.models.user import User
 
 router = APIRouter(
     prefix='/admin/whatsapp',

@@ -237,6 +237,8 @@ def _build_system(ctx: CallerContext) -> str:
         "10. אם אינך יודע — אמור שהצוות יחזור בהקדם.",
         "11. אם שאלת הלקוח מעורפלת (לדוגמה 'המספר שלי') — שאל שאלת הבהרה קצרה, אל תנחש.",
         "    ('המספר שלי' = מספר טלפון/הזמנה — לא מתמטיקה.)",
+        "12. אם המשתמש מבקש לדבר עם מנהל/נציג אנושי — כלול [ESCALATE_MANAGER] בתחילת התשובה,",
+        "    ואמור שנעביר למנהל אריאל ושיחזרו אליו בהקדם ועד 24 שעות.",
     ]
     return "\n".join(lines)
 
@@ -578,10 +580,46 @@ _LINK_TRIGGER_WORDS = (
     "שלח לי", "תשלח לי", "sms", "אסמס", "וואטסאפ", "whatsapp",
 )
 
+_MANAGER_TRIGGER_WORDS = (
+    "מנהל", "מנהלת", "נציג", "נציג אנושי", "בן אדם", "אדם אמיתי",
+    "שירות אנושי", "אחראי", "אריאל", "human", "agent", "manager", "representative",
+)
+
 
 def _wants_link(text: str) -> bool:
     lower = text.lower()
     return any(w in lower for w in _LINK_TRIGGER_WORDS)
+
+
+def _wants_manager(text: str) -> bool:
+    lower = text.lower()
+    return any(w in lower for w in _MANAGER_TRIGGER_WORDS)
+
+
+async def _escalate_manager(session: _Session, reason: str, summary: str) -> None:
+    ts = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
+    manager_number = (getattr(settings, "whatsapp_owner_phone", "") or "972546363350").strip()
+    full_summary = summary[:1400] if summary else "לא זמין"
+    msg = (
+        f"📞 *בקשת שיחה עם מנהל — TAZO*\n"
+        f"🧭 מקור: voice_record_bot\n"
+        f"⏰ {ts}\n"
+        f"🆔 Call SID: {session.call_sid}\n"
+        f"👤 שם לקוח: {session.collected_name or session.context.contact_name or 'לא ידוע'}\n"
+        f"🏢 עסק: {session.context.business_name or 'לא ידוע'}\n"
+        f"👥 תפקיד משתמש: {session.context.user_role or 'unknown'}\n"
+        f"📱 טלפון לקוח: {session.caller_phone or 'לא ידוע'}\n"
+        f"🌐 קישור רלוונטי: {session.context.portal_link or 'לא ידוע'}\n"
+        f"💬 סיבה: {reason or 'לא פורט'}\n"
+        f"📋 סיכום שיחה: {full_summary}"
+    )
+    await send_direct_message(manager_number, msg)
+
+    if session.caller_phone:
+        await send_direct_message(
+            session.caller_phone,
+            "הבקשה הועברה עכשיו למנהל אריאל. נחזור אליך בהקדם ועד 24 שעות. תודה על הפנייה.",
+        )
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
@@ -667,8 +705,31 @@ async def respond_from_recording(
         session.messages.append({"role": "assistant", "content": reply})
         return _speak_and_listen(reply)
 
+    if _wants_manager(speech):
+        convo_summary = " | ".join(
+            f"{'לקוח' if m.get('role') == 'user' else 'בוט'}: {(m.get('content') or '').strip()}"
+            for m in session.messages[-8:]
+            if (m.get('content') or '').strip()
+        )
+        asyncio.create_task(_escalate_manager(session, speech[:200], convo_summary))
+        reply = "בשמחה, העברתי עכשיו בקשה למנהל אריאל. נחזור אליך בהקדם ועד 24 שעות."
+        session.messages.append({"role": "assistant", "content": reply})
+        return _speak_and_listen(reply)
+
     # GPT reply
     reply = await _gpt_reply(session)
+
+    if "[ESCALATE_MANAGER]" in reply:
+        convo_summary = " | ".join(
+            f"{'לקוח' if m.get('role') == 'user' else 'בוט'}: {(m.get('content') or '').strip()}"
+            for m in session.messages[-8:]
+            if (m.get('content') or '').strip()
+        )
+        asyncio.create_task(_escalate_manager(session, "GPT escalation", convo_summary))
+        reply = reply.replace("[ESCALATE_MANAGER]", "").strip()
+        if not reply:
+            reply = "בשמחה, העברתי עכשיו בקשה למנהל אריאל. נחזור אליך בהקדם ועד 24 שעות."
+
     session.messages.append({"role": "assistant", "content": reply})
     logger.info("[AIVoiceBot] call=%s bot: %r", call_sid[:8], reply)
 

@@ -113,8 +113,11 @@ _LANG_CONFIG: dict[str, dict] = {
             "• TAZO-GO נוסע: כניסה ב-tazo-go.com, מספר טלפון → קישור WhatsApp.\n"
             "• TAZO-GO נהג/שליח: רישום ב-tazo-go.com → אימות זהות (KYC) → driver.tazo-go.com.\n"
             "\n=== כלים שיש לך ===\n"
-            "• שליחת קישור ב-WhatsApp/SMS: ציין [SEND_LINK] בתחילת תגובתך כשהמשתמש מבקש קישור.\n"
-            "• אם ברור מה המשתמש: הוסף [SEND_LINK:driver], [SEND_LINK:passenger], [SEND_LINK:web] וכו'.\n"
+            "• שליחת קישור ב-WhatsApp/SMS:\n"
+            "  כשהמשתמש מבקש קישור, לינק, הרשמה, או אומר 'תשלח/שלח/שלחי לי' —\n"
+            "  חובה לכתוב [SEND_LINK] כמילה הראשונה בתגובתך (לפני כל טקסט אחר).\n"
+            "  אם ברור המוצר: [SEND_LINK:driver] / [SEND_LINK:passenger] / [SEND_LINK:web].\n"
+            "  ⚠️ חשוב: אסור לומר 'שולחת/שולח/שלחתי קישור' בלי [SEND_LINK] — בלעדיו לא נשלח כלום!\n"
             "• הסלמה למנהל: אם המתקשר מבקש לדבר עם מנהל/אחראי, ציין [ESCALATE_MANAGER: <סיבה קצרה>]\n"
             "  בתחילת תגובתך, ואמור: 'בשמחה! הצוות יחזור אליך בהקדם. יום נעים, להתראות!'\n"
             "\n=== כללים ===\n"
@@ -156,8 +159,11 @@ _LANG_CONFIG: dict[str, dict] = {
             "• TAZO-GO passenger: sign up at tazo-go.com — phone number → WhatsApp login link.\n"
             "• TAZO-GO driver/courier: register at tazo-go.com → KYC identity check → driver.tazo-go.com.\n"
             "\n=== Available Actions ===\n"
-            "• Send a link via WhatsApp/SMS: include [SEND_LINK] at the start of your reply when the user asks for a link.\n"
-            "• If the user's role is clear, use: [SEND_LINK:driver], [SEND_LINK:passenger], [SEND_LINK:web] etc.\n"
+            "• Send a link via WhatsApp/SMS:\n"
+            "  When the user asks for a link, registration, or says 'send me' —\n"
+            "  you MUST write [SEND_LINK] as the very first word of your reply (before any text).\n"
+            "  If the product is clear: [SEND_LINK:driver] / [SEND_LINK:passenger] / [SEND_LINK:web].\n"
+            "  ⚠️ Never say 'I'll send you a link' without [SEND_LINK] — without the tag nothing is sent!\n"
             "\n=== Rules ===\n"
             "1. Respond only in English.\n"
             "2. Keep answers short — up to 2 sentences (this is a phone call!).\n"
@@ -195,8 +201,11 @@ _LANG_CONFIG: dict[str, dict] = {
             "• TAZO-GO راكب: التسجيل في tazo-go.com — رقم هاتف ← رابط واتساب.\n"
             "• TAZO-GO سائق/ساعي: التسجيل في tazo-go.com ← التحقق من الهوية ← driver.tazo-go.com.\n"
             "\n=== الإجراءات المتاحة ===\n"
-            "• إرسال رابط عبر واتساب/SMS: أضف [SEND_LINK] في بداية ردك عندما يطلب المتصل رابطاً.\n"
-            "• إذا كان دور المستخدم واضحاً، استخدم: [SEND_LINK:driver] أو [SEND_LINK:passenger] إلخ.\n"
+            "• إرسال رابط عبر واتساب/SMS:\n"
+            "  عندما يطلب المتصل رابطاً أو تسجيلاً أو يقول 'أرسل لي' —\n"
+            "  يجب كتابة [SEND_LINK] كأول كلمة في ردك (قبل أي نص آخر).\n"
+            "  إذا كان الدور واضحاً: [SEND_LINK:driver] / [SEND_LINK:passenger] / [SEND_LINK:web].\n"
+            "  ⚠️ لا تقل أبداً 'سأرسل لك رابطاً' بدون [SEND_LINK] — بدون التاغ لا يُرسل شيء!\n"
             "\n=== القواعد ===\n"
             "1. أجب فقط باللغة العربية.\n"
             "2. إجابات قصيرة — جملتان كحد أقصى (هذه مكالمة هاتفية!).\n"
@@ -234,8 +243,11 @@ _LANG_CONFIG: dict[str, dict] = {
             "• TAZO-GO пассажир: регистрация на tazo-go.com — номер телефона → ссылка в WhatsApp.\n"
             "• TAZO-GO водитель/курьер: регистрация → верификация личности (KYC) → driver.tazo-go.com.\n"
             "\n=== Доступные действия ===\n"
-            "• Отправить ссылку через WhatsApp/SMS: добавьте [SEND_LINK] в начало ответа, когда клиент просит ссылку.\n"
-            "• Если роль пользователя ясна, используйте: [SEND_LINK:driver], [SEND_LINK:passenger], [SEND_LINK:web] и т.д.\n"
+            "• Отправить ссылку через WhatsApp/SMS:\n"
+            "  Когда клиент просит ссылку или говорит 'пришли мне' —\n"
+            "  ОБЯЗАТЕЛЬНО пишите [SEND_LINK] как первое слово в ответе (перед любым текстом).\n"
+            "  Если роль ясна: [SEND_LINK:driver] / [SEND_LINK:passenger] / [SEND_LINK:web].\n"
+            "  ⚠️ Никогда не говорите 'отправлю ссылку' без [SEND_LINK] — без тега ничего не отправится!\n"
             "\n=== Правила ===\n"
             "1. Отвечайте только на русском языке.\n"
             "2. Краткие ответы — максимум 2 предложения (это телефонный звонок!).\n"
@@ -273,8 +285,9 @@ _FAREWELL_WORDS = ("להתראות", "ביי", "bye")  # kept for backwards-comp
 # Twilio sends 20 ms chunks of μ-law 8 kHz audio = 160 bytes / chunk
 _FRAME_MS           = 20
 _SPEECH_THRESHOLD   = 300    # μ-law linear-energy threshold to detect voice
-_BARGE_IN_THRESHOLD = 600    # must be HIGHER than _SPEECH_THRESHOLD — only intentional interruptions
-_SILENCE_FRAMES     = 25     # 25 × 20 ms = 500 ms of silence → end of utterance
+_BARGE_IN_THRESHOLD = 650    # must be HIGHER than _SPEECH_THRESHOLD — only intentional interruptions
+_BARGE_IN_CONSEC    = 4      # consecutive frames required to confirm barge-in (4×20ms=80ms)
+_SILENCE_FRAMES     = 18     # 18 × 20 ms = 360 ms of silence → end of utterance
 _MIN_SPEECH_FRAMES  = 6      # at least 120 ms of voice before processing
 
 # ── μ-law helpers ─────────────────────────────────────────────────────────────
@@ -347,6 +360,7 @@ class VoiceSession:
 
     # Conversation history for GPT
     messages: list[dict] = field(default_factory=list)
+    manager_alert_sent: bool = False
 
     # VAD state
     audio_buffer:  bytearray = field(default_factory=bytearray)
@@ -355,8 +369,9 @@ class VoiceSession:
     in_speech:     bool = False
 
     # TTS / barge-in state
-    ai_speaking:   bool = False
-    barge_in:      asyncio.Event = field(default_factory=asyncio.Event)
+    ai_speaking:      bool = False
+    barge_in:         asyncio.Event = field(default_factory=asyncio.Event)
+    barge_in_frames:  int  = 0       # consecutive high-energy frames (self-echo guard)
 
     # Guards: only one TTS stream + one utterance processor at a time
     _tts_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
@@ -665,9 +680,14 @@ async def _send_manager_alert(session: VoiceSession, reason: str) -> None:
     Calls the backend POST /api/v1/webhooks/twilio/ai-voice-manager endpoint.
     """
     import time as _time
-    # Build a short conversation summary (last 3 user turns)
-    user_turns = [m["content"] for m in session.messages if m["role"] == "user"]
-    summary = " / ".join(user_turns[-3:]) if user_turns else "לא דווח"
+    # Build a concise transcript summary from the last turns (user+assistant)
+    turns: list[str] = []
+    for m in session.messages[-8:]:
+        role = "לקוח" if m.get("role") == "user" else "בוט"
+        content = (m.get("content") or "").strip()
+        if content:
+            turns.append(f"{role}: {content}")
+    summary = " | ".join(turns)[:1400] if turns else "לא דווח"
     try:
         async with httpx.AsyncClient(timeout=10) as client:
             resp = await client.post(
@@ -675,6 +695,12 @@ async def _send_manager_alert(session: VoiceSession, reason: str) -> None:
                 data={
                     "caller_phone": session.caller_phone,
                     "caller_name":  session.caller_name or "לא ידוע",
+                    "call_sid":      session.call_sid,
+                    "channel":       "voice_bot",
+                    "business_name": session.business_name or "",
+                    "user_role":     session.user_role or "unknown",
+                    "portal_link":   session.portal_link or "",
+                    "language":      session.language,
                     "summary":      summary,
                     "reason":       reason,
                     "timestamp":    _time.strftime("%d/%m/%Y %H:%M"),
@@ -786,6 +812,38 @@ async def _process_utterance(session: VoiceSession, audio: bytes) -> None:
             escalate_reason = esc_match.group(1).strip() if esc_match else ""
             tts_text = _esc_pat.sub("", _tag_pat.sub("", spoken_text)).strip()
 
+            if should_escalate:
+                _ESC_ACK = {
+                    "he": "בשמחה. העברתי עכשיו את הבקשה למנהל אריאל. נחזור אליך בהקדם ועד 24 שעות.",
+                    "en": "Done. I have forwarded your request to manager Ariel. We will get back to you within 24 hours.",
+                    "ar": "تم إرسال طلبك الآن إلى المدير أريئيل. سنعود إليك خلال 24 ساعة.",
+                    "ru": "Запрос передан менеджеру Ариэлю. Мы свяжемся с вами в течение 24 часов.",
+                }
+                # Always confirm SLA verbally when escalation is triggered.
+                tts_text = _ESC_ACK.get(session.language, _ESC_ACK["he"])
+
+            # ── Verbal fallback: GPT said "sending a link" without the tag ──
+            # Catches cases where the model verbally promises a link but omits [SEND_LINK].
+            if not should_send_link and session.caller_phone:
+                _lower_spoken = spoken_text.lower()
+                _verbal_he = any(w in _lower_spoken for w in (
+                    "שולח", "שולחת", "שלחתי", "אשלח", "נשלח",
+                ))
+                _verbal_content = any(w in _lower_spoken for w in (
+                    "קישור", "לינק", "link", "וואטסאפ", "whatsapp",
+                    "הרשמה", "הצטרפות", "sms", "אסמס",
+                ))
+                _verbal_en = any(p in _lower_spoken for p in (
+                    "sending you", "sent you", "i'll send", "i will send",
+                    "i've sent", "sending a link", "sending the link",
+                ))
+                if (_verbal_he and _verbal_content) or _verbal_en:
+                    should_send_link = True
+                    logger.info(
+                        "[PROC] call=%s verbal SEND_LINK fallback triggered (no tag in GPT output)",
+                        session.call_sid[:8],
+                    )
+
             async with session._tts_lock:
                 if tts_text:
                     if session.language == "he":
@@ -814,7 +872,8 @@ async def _process_utterance(session: VoiceSession, audio: bytes) -> None:
                         else:
                             await _play_tts(session, _iter_str(tts_text))
 
-            if should_escalate:
+            if should_escalate and not session.manager_alert_sent:
+                session.manager_alert_sent = True
                 asyncio.create_task(_send_manager_alert(session, escalate_reason))
                 logger.info(
                     "[PROC] call=%s [ESCALATE_MANAGER] triggered (reason=%r)",
@@ -918,16 +977,26 @@ async def _handle_media_stream(ws: WebSocket) -> None:
                 if time.time() < session._ready_at:
                     continue
 
-                # Barge-in detection: caller speaks while AI is talking
+                # Barge-in detection: caller speaks while AI is talking.
+                # Requires _BARGE_IN_CONSEC consecutive frames above threshold to
+                # avoid self-triggering on Twilio's loopback echo of the bot's audio.
                 if session.ai_speaking and energy > _BARGE_IN_THRESHOLD:
-                    logger.info("[VAD] Barge-in detected (energy=%.0f)", energy)
-                    session.barge_in.set()
-                    # Clear Twilio's audio buffer
-                    await ws.send_text(json.dumps({
-                        "event": "clear",
-                        "streamSid": session.stream_sid,
-                    }))
-                    session.ai_speaking = False
+                    session.barge_in_frames += 1
+                    if session.barge_in_frames >= _BARGE_IN_CONSEC:
+                        logger.info(
+                            "[VAD] Barge-in confirmed (%d frames, energy=%.0f)",
+                            session.barge_in_frames, energy,
+                        )
+                        session.barge_in.set()
+                        session.barge_in_frames = 0
+                        # Clear Twilio's audio buffer
+                        await ws.send_text(json.dumps({
+                            "event": "clear",
+                            "streamSid": session.stream_sid,
+                        }))
+                        session.ai_speaking = False
+                else:
+                    session.barge_in_frames = 0
 
                 # VAD: accumulate speech when AI is silent
                 if not session.ai_speaking:
@@ -983,6 +1052,10 @@ async def _play_tts_rest(session: VoiceSession, text: str) -> str:
 
     session.ai_speaking = True
     session.barge_in.clear()
+    session.barge_in_frames = 0
+    # Brief immunity at TTS start: prevents the bot's own echo (arrives ~50-200ms
+    # after playback begins via Twilio loopback) from immediately triggering barge-in.
+    session._ready_at = time.time() + 0.5
 
     try:
         url = (

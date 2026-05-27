@@ -452,6 +452,12 @@ async def ai_voice_wa(
 async def ai_voice_manager_alert(
     caller_phone: str = Form(default=""),
     caller_name:  str = Form(default=""),
+    call_sid:     str = Form(default=""),
+    channel:      str = Form(default="voice_bot"),
+    business_name: str = Form(default=""),
+    user_role:    str = Form(default="unknown"),
+    portal_link:  str = Form(default=""),
+    language:     str = Form(default="he"),
     summary:      str = Form(default=""),
     reason:       str = Form(default=""),
     timestamp:    str = Form(default=""),
@@ -461,20 +467,41 @@ async def ai_voice_manager_alert(
     Sends a WhatsApp alert to the TAZO manager with caller context and conversation summary.
     """
     import datetime as _dt
+
+    ctx = await ai_bot._lookup_caller(caller_phone) if caller_phone else None
     ts = timestamp or _dt.datetime.now().strftime("%d/%m/%Y %H:%M")
-    phone_display = (caller_phone or "")[:7] + "***" if caller_phone else "לא ידוע"
+    resolved_name = (caller_name or (ctx.contact_name if ctx else "") or "לא ידוע").strip()
+    resolved_business = (business_name or (ctx.business_name if ctx else "") or "לא ידוע").strip()
+    resolved_role = user_role or (ctx.user_role if ctx else "unknown") or "unknown"
+    resolved_link = portal_link or (ctx.portal_link if ctx else "")
+
     msg = (
-        f"📞 *בקשת שיחה חזרה — TAZO Bot*\n"
+        f"📞 *בקשת שיחה עם מנהל — TAZO*\n"
+        f"🧭 מקור: {channel or 'voice_bot'}\n"
         f"⏰ {ts}\n"
-        f"👤 שם: {caller_name or 'לא ידוע'}\n"
-        f"📱 טלפון: {phone_display}\n"
+        f"🆔 Call SID: {call_sid or 'לא ידוע'}\n"
+        f"👤 שם לקוח: {resolved_name}\n"
+        f"🏢 עסק: {resolved_business}\n"
+        f"👥 תפקיד משתמש: {resolved_role}\n"
+        f"📱 טלפון לקוח: {caller_phone or 'לא ידוע'}\n"
+        f"🌐 קישור רלוונטי: {resolved_link or 'לא ידוע'}\n"
+        f"🗣️ שפה: {language or 'he'}\n"
         f"💬 סיבה: {reason or 'לא פורט'}\n"
-        f"📋 תקציר השיחה: {summary or 'לא זמין'}"
+        f"📋 סיכום שיחה: {summary or 'לא זמין'}"
     )
-    manager_number = "+972546363350"
+    manager_number = (getattr(settings, "whatsapp_owner_phone", "") or "972546363350").strip()
     ok = await ai_bot.send_direct_message(manager_number, msg)
+
+    # Confirmation message to the caller: request forwarded, callback SLA <= 24h.
+    if caller_phone:
+        caller_ack = (
+            "הבקשה הועברה עכשיו למנהל אריאל. "
+            "נחזור אליך בהקדם ועד 24 שעות. תודה על הפנייה."
+        )
+        await ai_bot.send_direct_message(caller_phone, caller_ack)
+
     logger.info(
-        "[AIVoiceMgr] manager alert sent=%s caller=%s*** reason=%r",
-        ok, (caller_phone or "")[:7], (reason or "")[:60],
+        "[AIVoiceMgr] manager alert sent=%s caller=%s reason=%r",
+        ok, caller_phone or "", (reason or "")[:60],
     )
     return {"ok": ok}

@@ -271,13 +271,33 @@ input,textarea{{font-family:inherit}}
       <textarea id="c-notes" placeholder="ללא גלוטן, פיצוי... כל הערה שתרצה"></textarea>
     </div>
     <button class="wa-order-btn" onclick="sendOrder()">
-      💬 שלח הזמנה ב-WhatsApp
+      &#x1f4ac; שלח הזמנה ב-WhatsApp
     </button>
     <button onclick="document.getElementById('checkout-overlay').classList.remove('open')" style="width:100%;padding:12px;border-radius:12px;background:rgba(255,255,255,.06);color:white;font-size:14px;margin-top:10px;cursor:pointer;font-family:inherit">
-      ← חזרה לתפריט
+      &#x2190; חזרה לתפריט
     </button>
   </div>
 </div>
+
+<!-- Order Confirmation Overlay -->
+<div id="confirm-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px">
+  <div style="background:linear-gradient(135deg,#0f1723,#1a2744);border:1px solid rgba(34,211,238,0.2);border-radius:24px;padding:36px 28px;max-width:360px;width:100%;text-align:center">
+    <div style="font-size:54px;margin-bottom:12px">&#x2705;</div>
+    <h2 style="font-size:22px;font-weight:900;color:white;margin-bottom:8px">ההזמנה נשלחה!</h2>
+    <p style="color:rgba(255,255,255,0.55);font-size:14px;margin-bottom:22px">ההזמנה שלך הועברה. מספר מעקב:</p>
+    <div style="background:rgba(34,211,238,0.1);border:1px solid rgba(34,211,238,0.3);border-radius:14px;padding:16px;margin-bottom:18px">
+      <div style="font-size:28px;font-weight:900;color:#22d3ee;letter-spacing:3px" id="confirm-code">—</div>
+      <div style="color:rgba(255,255,255,0.4);font-size:11px;margin-top:4px">שמרו מספר זה למעקב</div>
+    </div>
+    <a id="confirm-track-link" href="#" target="_blank" style="display:none;align-items:center;justify-content:center;gap:8px;background:linear-gradient(135deg,#0284c7,#22d3ee);border-radius:50px;padding:13px 28px;color:white;font-weight:800;font-size:14px;margin-bottom:14px">&#x1f4e6; עקוב אחר ההזמנה</a>
+    <button onclick="document.getElementById('confirm-overlay').style.display='none'" style="width:100%;padding:12px;border-radius:50px;background:rgba(255,255,255,0.07);border:none;color:rgba(255,255,255,0.6);font-size:14px;cursor:pointer;font-family:inherit">סגור</button>
+  </div>
+</div>
+<script>
+document.getElementById('confirm-overlay').addEventListener('click', function(e){{
+  if(e.target===this) this.style.display='none';
+}});
+</script>
 
 <script>
 const MENU = {menu_json};
@@ -398,7 +418,7 @@ function openCheckout() {{
   document.getElementById("checkout-overlay").classList.add("open");
 }}
 
-function sendOrder() {{
+async function sendOrder() {{
   const name = document.getElementById("c-name").value.trim();
   const phone = document.getElementById("c-phone").value.trim();
   const address = document.getElementById("c-address")?.value.trim() || "";
@@ -418,9 +438,13 @@ function sendOrder() {{
   const target = BIZ_PHONE || "972546363350";
   const encoded = encodeURIComponent(msg);
   window.open(`https://wa.me/${{target}}?text=${{encoded}}`, "_blank");
-  // Async tracking — best-effort
+
+  // Forward to TAZO-SYNC and show tracking code
+  document.getElementById("checkout-overlay").classList.remove("open");
+  cart = {{}};
+  updateCartBadge();
   try {{
-    fetch(TAZO_API + "/public/site-order", {{
+    const resp = await fetch(TAZO_API + "/public/site-order", {{
       method: "POST",
       headers: {{"Content-Type":"application/json"}},
       body: JSON.stringify({{
@@ -428,11 +452,19 @@ function sendOrder() {{
         items: items, total: total, order_type: orderType,
         notes: notes, business_phone: BIZ_PHONE
       }})
-    }}).catch(() => {{}});
+    }});
+    const data = await resp.json();
+    if (data.deliveryCode) {{
+      const overlay = document.getElementById("confirm-overlay");
+      document.getElementById("confirm-code").textContent = data.deliveryCode;
+      if (data.trackingUrl) {{
+        const link = document.getElementById("confirm-track-link");
+        link.href = data.trackingUrl;
+        link.style.display = "inline-flex";
+      }}
+      overlay.style.display = "flex";
+    }}
   }} catch(e) {{}}
-  document.getElementById("checkout-overlay").classList.remove("open");
-  cart = {{}};
-  updateCartBadge();
 }}
 
 renderMenu();
@@ -601,15 +633,585 @@ a{{text-decoration:none;color:inherit}}
 </footer>
 </body></html>"""
 
+# ──────────────────────────────────────────────────────────────────────────────
+# PREMIUM CATEGORY TEMPLATES
+# ──────────────────────────────────────────────────────────────────────────────
+
+import re as _re_cat
+
+_HEALTH_RE  = _re_cat.compile(r'פיזיותרפ|יוגה|פילאטיס|כושר|ספורט|רפואה|רופא|שיניים|אופטיק|קליניק|gym|fitness|health|yoga|pilates|physio|clinic|dentist|optic', _re_cat.I)
+_VEHICLE_RE = _re_cat.compile(r'מוסך|מכונא|צמיג|רכב|גרר|שטיפת רכב|ביטוח רכב|חלקי חילוף|garage|auto|mechanic|tire|car repair|car wash', _re_cat.I)
+_REPAIR_RE  = _re_cat.compile(r'חשמלאי|שרברב|מזגן|שיפוץ|נגר|צביעה|ריצוף|גבס|אחזקה|plumber|electrician|hvac|renovation|carpenter|contractor', _re_cat.I)
+_EVENTS_RE  = _re_cat.compile(r'אירוע|חתונה|קייטרינג|צלם|דיג\'יי|הופעה|אולם|event|wedding|catering|photographer|dj|venue|ceremony', _re_cat.I)
+_EDUCATION_RE = _re_cat.compile(r'גן ילד|חינוך|בית ספר|לימוד|קורס|אנגלית|מורה|שיעור|kindergarten|school|education|tutor|lessons|course', _re_cat.I)
+
+def _is_health(cat, types):  return bool(_HEALTH_RE.search(f"{cat} {types}"))
+def _is_vehicle(cat, types): return bool(_VEHICLE_RE.search(f"{cat} {types}"))
+def _is_repair(cat, types):  return bool(_REPAIR_RE.search(f"{cat} {types}"))
+def _is_events(cat, types):  return bool(_EVENTS_RE.search(f"{cat} {types}"))
+def _is_education(cat, types): return bool(_EDUCATION_RE.search(f"{cat} {types}"))
+
+
+# ── Health / Fitness / Clinic ──────────────────────────────────────────────────
+def _health_services(cat, types):
+    txt = f"{cat} {types}".lower()
+    if _re_cat.search(r'שיניים|dentist', txt):
+        return [
+            {'name':'בדיקת שיניים שגרתית','desc':'בדיקה מקיפה + ייעוץ','price':'150'},
+            {'name':'לבנת שיניים','desc':'מערכת מקצועית','price':'800–1,200'},
+            {'name':'טיפול שורש','desc':'שמירה על השן','price':'800–1,500'},
+            {'name':'קראון פורצלן','desc':'כתר אחרי טיפול','price':'1,500–2,500'},
+            {'name':'יישור שקוף','desc':'Invisalign / אורתו','price':'לפי הצעה'},
+        ]
+    if _re_cat.search(r'פיזיותרפ|physio', txt):
+        return [
+            {'name':'הערכה ראשונית','desc':'בדיקה ותוכנית טיפול','price':'300'},
+            {'name':'טיפול פיזיותרפי','desc':'60 דקות, כולל עיסוי','price':'250'},
+            {'name':'טיפול בכאב גב','desc':'טכניקות מתקדמות','price':'280'},
+            {'name':'שיקום ספורטאים','desc':'חזרה מהירה לפעילות','price':'300'},
+            {'name':'מניעת פציעות','desc':'ייעוץ ותרגילים','price':'200'},
+        ]
+    if _re_cat.search(r'כושר|gym|fitness', txt):
+        return [
+            {'name':'מנוי חודשי','desc':'גישה מלאה לציוד','price':'200'},
+            {'name':'אימון אישי — מפגש','desc':'עם מאמן מוסמך','price':'250'},
+            {'name':'חבילת 10 אימונים','desc':'חיסכון משמעותי','price':'2,000'},
+            {'name':'יוגה / פילאטיס','desc':'כיתה שבועית','price':'80'},
+            {'name':'תוכנית תזונה','desc':'מותאמת אישית','price':'400'},
+        ]
+    return [
+        {'name':'ייעוץ ראשוני','desc':'בדיקה ואבחון','price':'200–300'},
+        {'name':'טיפול פרטני','desc':'60 דקות','price':'250'},
+        {'name':'חבילת טיפולים','desc':'5 מפגשים','price':'1,000'},
+        {'name':'מעקב ובקרה','desc':'ביקור חוזר','price':'150'},
+    ]
+
+def _render_health(c: dict) -> str:
+    from html import escape as _e
+    import re as _r
+    name_raw = _r.sub(r'\s*Draft Site$', '', c.get('site_title') or c.get('hero_title') or 'קליניקה')
+    name  = _e(name_raw)
+    phone = _e(c.get('phone') or '')
+    phone_c = _r.sub(r'\D', '', phone)
+    city  = _e(c.get('city') or '')
+    tagline = _e(c.get('tagline') or 'בריאות ואיכות חיים — בידיים מקצועיות')
+    about = _e(c.get('about_text') or 'מרפאה / קליניקה עם ניסיון של שנים. הגישה שלנו: מקצועית, אישית ויעילה.')
+    rating = c.get('rating')
+    reviews = c.get('reviews_count') or 0
+    maps_url = _e(c.get('maps_url') or '')
+    is_demo = c.get('is_demo', True)
+    cat = c.get('category') or ''
+    types = c.get('business_types') or ''
+    svcs = _health_services(cat, types)
+    wa_phone = phone_c or '972546363350'
+    wa_url = f"https://wa.me/{wa_phone}?text={'קביעת%20תור%20ב'+name_raw.replace(' ','%20')}"
+    demo_banner = (f'<div style="background:linear-gradient(90deg,#0f766e,#059669);color:white;padding:10px 20px;text-align:center;font-size:13px;font-weight:700">אתר הדגמה | <a href="{wa_url}" target="_blank" style="color:white;text-decoration:underline">לאישור ועריכה — לחץ כאן</a></div>') if is_demo else ''
+    stars_str = ('★'*int(rating)+'☆'*(5-int(rating))) if rating else ''
+    svcs_html = ''.join(
+        f'<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(16,185,129,0.15);border-radius:14px;padding:18px 22px;display:flex;justify-content:space-between;align-items:center">'
+        f'<div><div style="font-weight:700;font-size:15px;color:white">{_e(s["name"])}</div>'
+        f'<div style="color:rgba(255,255,255,0.45);font-size:13px;margin-top:3px">{_e(s["desc"])}</div></div>'
+        f'<div style="font-size:17px;font-weight:800;color:#34d399;white-space:nowrap">&#x20aa;{_e(s["price"])}</div></div>'
+        for s in svcs
+    )
+    return f"""<!doctype html><html lang="he" dir="rtl"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>{name}</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700;800;900&display=swap" rel="stylesheet">
+<style>*{{box-sizing:border-box;margin:0;padding:0}}body{{font-family:Heebo,sans-serif;background:#030f0d;color:white;direction:rtl}}a{{text-decoration:none;color:inherit}}.appt-btn{{background:linear-gradient(135deg,#0f766e,#059669);border:none;border-radius:50px;padding:15px 34px;color:white;font-weight:800;font-size:15px;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:9px;box-shadow:0 8px 28px rgba(5,150,105,0.45)}}</style>
+</head><body>
+{demo_banner}
+<section style="min-height:90vh;background:linear-gradient(135deg,#030f0d,#042f2e 50%,#064e3b 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:80px 24px;position:relative;overflow:hidden">
+  <div style="position:absolute;top:-100px;right:-100px;width:400px;height:400px;background:radial-gradient(circle,rgba(5,150,105,0.15),transparent);border-radius:50%"></div>
+  <div style="position:relative;max-width:680px">
+    <div style="display:inline-block;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);border-radius:50px;padding:6px 18px;font-size:12px;font-weight:700;color:#34d399;margin-bottom:20px;letter-spacing:1px">&#x1f3e5; שירות מקצועי ברמה הגבוהה ביותר</div>
+    <h1 style="font-size:clamp(34px,6vw,62px);font-weight:900;line-height:1.1;margin-bottom:14px;background:linear-gradient(135deg,#fff,#6ee7b7);-webkit-background-clip:text;-webkit-text-fill-color:transparent">{name}</h1>
+    <p style="font-size:18px;color:rgba(255,255,255,0.55);margin-bottom:10px">{tagline}</p>
+    {f'<p style="color:rgba(255,255,255,0.3);font-size:14px;margin-bottom:24px">&#128205; {city}</p>' if city else '<div style="margin-bottom:24px"></div>'}
+    {f'<div style="color:#34d399;font-size:20px;letter-spacing:2px;margin-bottom:28px">{stars_str} <span style="color:rgba(255,255,255,0.5);font-size:13px">{rating} ({reviews} ביקורות)</span></div>' if rating else ''}
+    <div style="display:flex;flex-wrap:wrap;gap:14px;justify-content:center">
+      <a href="{wa_url}" target="_blank" class="appt-btn">&#x1f4ac; קביעת תור עכשיו</a>
+      {f'<a href="tel:{phone_c}" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:50px;padding:15px 28px;color:white;font-weight:700;font-size:14px;display:inline-flex;align-items:center;gap:8px">&#128222; {phone}</a>' if phone else ''}
+    </div>
+  </div>
+</section>
+<section style="padding:72px 24px;max-width:700px;margin:0 auto">
+  <h2 style="font-size:28px;font-weight:900;text-align:center;margin-bottom:10px">השירותים שלנו</h2>
+  <p style="text-align:center;color:rgba(255,255,255,0.35);font-size:13px;margin-bottom:40px">מחירים מנחים — לפרטים מדויקים צרו קשר</p>
+  <div style="display:flex;flex-direction:column;gap:10px">{svcs_html}</div>
+  <div style="text-align:center;margin-top:40px"><a href="{wa_url}" target="_blank" class="appt-btn">&#x1f4cb; קביעת תור</a></div>
+</section>
+<section style="padding:56px 24px;background:rgba(16,185,129,0.04);border-top:1px solid rgba(16,185,129,0.1)">
+  <div style="max-width:660px;margin:0 auto;text-align:center">
+    <h2 style="font-size:24px;font-weight:800;margin-bottom:16px">&#x2764; אודותינו</h2>
+    <p style="color:rgba(255,255,255,0.55);font-size:15px;line-height:1.9">{about}</p>
+  </div>
+</section>
+<section style="padding:64px 24px;text-align:center">
+  <div style="max-width:520px;margin:0 auto">
+    <h2 style="font-size:26px;font-weight:900;margin-bottom:10px">נשמח לעזור &#x1f91d;</h2>
+    <p style="color:rgba(255,255,255,0.4);margin-bottom:26px;font-size:14px">שלחו הודעה ונחזור מיד</p>
+    <a href="{wa_url}" target="_blank" class="appt-btn" style="font-size:16px;padding:17px 44px">&#x1f4ac; שלחו הודעה ב-WhatsApp</a>
+    {f'<div style="margin-top:16px"><a href="{maps_url}" target="_blank" style="color:rgba(255,255,255,0.35);font-size:13px">&#128205; הצג במפות גוגל</a></div>' if maps_url else ''}
+  </div>
+</section>
+<footer style="background:#020a08;color:rgba(255,255,255,0.25);text-align:center;padding:22px;font-size:12px;border-top:1px solid rgba(16,185,129,0.08)">
+  <span style="color:rgba(255,255,255,0.45);font-weight:700">{name}</span>{'  |  '+city if city else ''}
+  <div style="margin-top:8px">&#169; 2026 <a href="https://tazo-web.com" style="color:#059669;font-weight:700">TAZO</a> | כל הזכויות שמורות{'  |  <span style="font-size:10px">אתר הדגמה</span>' if is_demo else ''}</div>
+</footer>
+</body></html>"""
+
+
+# ── Vehicles / Garage / Mechanic ──────────────────────────────────────────────
+def _vehicle_services(cat, types):
+    txt = f"{cat} {types}".lower()
+    if _re_cat.search(r'צמיג|tire|wheel', txt):
+        return [
+            {'name':'החלפת צמיגים','desc':'לכל סוגי הרכבים','price':'60/צמיג'},
+            {'name':'מיזוג גלגלים','desc':'איזון מקצועי','price':'80'},
+            {'name':'בדיקת לחץ + תיקון','desc':'שרות מהיר','price':'30–80'},
+            {'name':'אחסון עונתי','desc':'חורף/קיץ','price':'200/עונה'},
+            {'name':'ייעוץ רכישה','desc':'ידע מקצועי','price':'חינם'},
+        ]
+    if _re_cat.search(r'שטיפה|car wash', txt):
+        return [
+            {'name':'שטיפה חיצונית','desc':'מים בלחץ + ניקוי בסיסי','price':'30'},
+            {'name':'שטיפה פנימית+חיצונית','desc':'ניקוי מלא','price':'60–80'},
+            {'name':'פוליש + ציפוי','desc':'הגנה מפני קרינה','price':'150–250'},
+            {'name':'ניקוי עמוק','desc':'שמפו שטיחים + ריפוד','price':'200'},
+            {'name':'ציפוי ננו','desc':'הגנה ארוכת טווח','price':'400'},
+        ]
+    return [
+        {'name':'בדיקת רכב שנתית','desc':'טסט + רשיון ישיר','price':'200'},
+        {'name':'החלפת שמן','desc':'סינטטי/חצי סינטטי','price':'150–250'},
+        {'name':'בלמים — בדיקה ותיקון','desc':'בטיחות מקסימלית','price':'200–500'},
+        {'name':'מערכת קירור','desc':'תחזוקה ותיקון','price':'200–400'},
+        {'name':'מיזוג אוויר ברכב','desc':'טעינת גז + תיקון','price':'150–350'},
+        {'name':'חשמל ואלקטרוניקה','desc':'אבחון ממוחשב','price':'100+'},
+    ]
+
+def _render_vehicles(c: dict) -> str:
+    from html import escape as _e
+    import re as _r
+    name_raw = _r.sub(r'\s*Draft Site$', '', c.get('site_title') or c.get('hero_title') or 'מוסך')
+    name  = _e(name_raw)
+    phone = _e(c.get('phone') or '')
+    phone_c = _r.sub(r'\D', '', phone)
+    city  = _e(c.get('city') or '')
+    tagline = _e(c.get('tagline') or 'שירות מהיר. עבודה ישרה. מחיר הוגן.')
+    about = _e(c.get('about_text') or 'מוסך מקצועי עם שנות ניסיון. כל הרכבים, כל התקלות. אנחנו לצדכם על הדרך.')
+    rating = c.get('rating')
+    reviews = c.get('reviews_count') or 0
+    maps_url = _e(c.get('maps_url') or '')
+    is_demo = c.get('is_demo', True)
+    cat = c.get('category') or ''
+    types = c.get('business_types') or ''
+    svcs = _vehicle_services(cat, types)
+    wa_phone = phone_c or '972546363350'
+    wa_url = f"https://wa.me/{wa_phone}?text={'שלום%2C%20אשמח%20לקבל%20שירות%20ב'+name_raw.replace(' ','%20')}"
+    demo_banner = (f'<div style="background:linear-gradient(90deg,#b45309,#d97706);color:white;padding:10px 20px;text-align:center;font-size:13px;font-weight:700">אתר הדגמה | <a href="{wa_url}" target="_blank" style="color:white;text-decoration:underline">לאישור ועריכה — לחץ כאן</a></div>') if is_demo else ''
+    stars_str = ('★'*int(rating)+'☆'*(5-int(rating))) if rating else ''
+    svcs_html = ''.join(
+        f'<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(217,119,6,0.2);border-radius:14px;padding:18px 22px;display:flex;justify-content:space-between;align-items:center">'
+        f'<div><div style="font-weight:700;font-size:15px;color:white">{_e(s["name"])}</div>'
+        f'<div style="color:rgba(255,255,255,0.4);font-size:13px;margin-top:3px">{_e(s["desc"])}</div></div>'
+        f'<div style="font-size:16px;font-weight:800;color:#fbbf24;white-space:nowrap">&#x20aa;{_e(s["price"])}</div></div>'
+        for s in svcs
+    )
+    return f"""<!doctype html><html lang="he" dir="rtl"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>{name}</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700;800;900&display=swap" rel="stylesheet">
+<style>*{{box-sizing:border-box;margin:0;padding:0}}body{{font-family:Heebo,sans-serif;background:#0c0a00;color:white;direction:rtl}}a{{text-decoration:none;color:inherit}}.svc-btn{{background:linear-gradient(135deg,#b45309,#d97706);border:none;border-radius:50px;padding:15px 34px;color:white;font-weight:800;font-size:15px;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:9px;box-shadow:0 8px 28px rgba(180,83,9,0.5)}}</style>
+</head><body>
+{demo_banner}
+<section style="background:linear-gradient(135deg,#0c0a00,#1c1200 40%,#292000 100%);padding:90px 24px 70px;text-align:center;position:relative;overflow:hidden">
+  <div style="position:absolute;inset:0;background:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22><path d=%22M0 60L60 0%22 stroke=%22rgba(180,83,9,0.06)%22 stroke-width=%221%22/></svg>')"></div>
+  <div style="position:relative;max-width:700px;margin:0 auto">
+    <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(217,119,6,0.12);border:1px solid rgba(217,119,6,0.25);border-radius:50px;padding:6px 16px;font-size:12px;font-weight:700;color:#fbbf24;margin-bottom:22px">&#x1f527; שירות מהיר ואמין</div>
+    <h1 style="font-size:clamp(32px,6vw,60px);font-weight:900;line-height:1.1;margin-bottom:14px;background:linear-gradient(135deg,#fff,#fde68a);-webkit-background-clip:text;-webkit-text-fill-color:transparent">{name}</h1>
+    <p style="font-size:18px;color:rgba(255,255,255,0.5);margin-bottom:10px">{tagline}</p>
+    {f'<p style="color:rgba(255,255,255,0.3);font-size:14px;margin-bottom:24px">&#128205; {city}</p>' if city else '<div style="margin-bottom:24px"></div>'}
+    {f'<div style="color:#fbbf24;font-size:20px;margin-bottom:28px">{stars_str} <span style="color:rgba(255,255,255,0.45);font-size:13px">{rating} ({reviews} ביקורות)</span></div>' if rating else ''}
+    <div style="display:flex;flex-wrap:wrap;gap:14px;justify-content:center">
+      <a href="{wa_url}" target="_blank" class="svc-btn">&#x1f697; פנייה לשירות</a>
+      {f'<a href="tel:{phone_c}" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:50px;padding:15px 28px;color:white;font-weight:700;font-size:14px;display:inline-flex;align-items:center;gap:8px">&#128222; {phone}</a>' if phone else ''}
+    </div>
+  </div>
+</section>
+<section style="padding:70px 24px;max-width:700px;margin:0 auto">
+  <h2 style="font-size:28px;font-weight:900;text-align:center;margin-bottom:8px">השירותים שלנו</h2>
+  <p style="text-align:center;color:rgba(255,255,255,0.3);font-size:13px;margin-bottom:38px">מחירים משוערים — לפרטים מדויקים צרו קשר</p>
+  <div style="display:flex;flex-direction:column;gap:10px">{svcs_html}</div>
+  <div style="text-align:center;margin-top:38px"><a href="{wa_url}" target="_blank" class="svc-btn">&#x1f4ac; שלחו הודעה לקביעת תור</a></div>
+</section>
+<section style="padding:52px 24px;background:rgba(180,83,9,0.05);border-top:1px solid rgba(180,83,9,0.12);border-bottom:1px solid rgba(180,83,9,0.12)">
+  <div style="max-width:660px;margin:0 auto;text-align:center">
+    <h2 style="font-size:23px;font-weight:800;margin-bottom:16px">&#x1f6e0; אודות המוסך</h2>
+    <p style="color:rgba(255,255,255,0.5);font-size:15px;line-height:1.9">{about}</p>
+  </div>
+</section>
+<section style="padding:64px 24px;text-align:center">
+  <h2 style="font-size:25px;font-weight:900;margin-bottom:10px">נשמח לטפל ברכבכם &#x1f91d;</h2>
+  <p style="color:rgba(255,255,255,0.35);margin-bottom:26px;font-size:14px">שלחו הודעה ונחזור מיד</p>
+  <a href="{wa_url}" target="_blank" class="svc-btn" style="font-size:16px;padding:17px 44px">&#x1f4ac; WhatsApp</a>
+  {f'<div style="margin-top:14px"><a href="{maps_url}" target="_blank" style="color:rgba(255,255,255,0.3);font-size:13px">&#128205; הצג במפות גוגל</a></div>' if maps_url else ''}
+</section>
+<footer style="background:#080600;color:rgba(255,255,255,0.25);text-align:center;padding:22px;font-size:12px;border-top:1px solid rgba(180,83,9,0.1)">
+  <span style="color:rgba(255,255,255,0.45);font-weight:700">{name}</span>{'  |  '+city if city else ''}
+  <div style="margin-top:8px">&#169; 2026 <a href="https://tazo-web.com" style="color:#d97706;font-weight:700">TAZO</a> | כל הזכויות שמורות{'  |  <span style="font-size:10px">אתר הדגמה</span>' if is_demo else ''}</div>
+</footer>
+</body></html>"""
+
+
+# ── Repairs / Electrician / Plumber / Contractor ──────────────────────────────
+def _repair_services(cat, types):
+    txt = f"{cat} {types}".lower()
+    if _re_cat.search(r'חשמלאי|electrician', txt):
+        return [
+            {'name':'תיקון תקלה חשמלית','desc':'אבחון + תיקון','price':'200–400'},
+            {'name':'התקנת נקודות חשמל','desc':'לכל סוג חדר','price':'150/נקודה'},
+            {'name':'התקנת גוף תאורה','desc':'LED, ספוטים, נברשות','price':'100–200'},
+            {'name':'לוח חשמל — תיקון/שדרוג','desc':'על פי תקן','price':'500–1,500'},
+            {'name':'הכנה לבדיקת חשמל','desc':'בדיקות בטיחות','price':'300'},
+            {'name':'התקנת אינטרקום/קלוזד','desc':'גישה מאובטחת','price':'400+'},
+        ]
+    if _re_cat.search(r'שרברב|plumber|אינסטלצ', txt):
+        return [
+            {'name':'תיקון נזילה','desc':'איתור ותיקון מהיר','price':'200–400'},
+            {'name':'פתיחת סתימה','desc':'כיור, אסלה, ביוב','price':'150–300'},
+            {'name':'החלפת ברז/מקלחת','desc':'כולל חומרים','price':'200–400'},
+            {'name':'התקנת מדחס/סוילר','desc':'חימום מים','price':'500–800'},
+            {'name':'הכנה לשיפוץ','desc':'תשתיות חדשות','price':'לפי פרויקט'},
+        ]
+    if _re_cat.search(r'מזגן|hvac|air', txt):
+        return [
+            {'name':'התקנת מזגן','desc':'כולל חיבור + אטימה','price':'600–900'},
+            {'name':'ניקוי + תחזוקה','desc':'עונתי, מומלץ שנתי','price':'150–250'},
+            {'name':'תיקון מזגן','desc':'אבחון + חלקים','price':'200–500'},
+            {'name':'טעינת גז','desc':'R410A / R32','price':'250–400'},
+            {'name':'הסרת מזגן ישן','desc':'כולל פירוק','price':'200'},
+        ]
+    return [
+        {'name':'שיפוץ חדר אמבטיה','desc':'מלא + חלקי','price':'לפי פרויקט'},
+        {'name':'צביעה פנימית','desc':'סלון, חדרי שינה','price':'25/מ"ר'},
+        {'name':'ריצוף + חיפוי','desc':'כל הסוגים','price':'50/מ"ר+'},
+        {'name':'גבס ותקרות','desc':'גבסניות ותקרות מתוחות','price':'לפי פרויקט'},
+        {'name':'נגרות ורהיטנות','desc':'ארונות מטבח + שירות','price':'לפי מידה'},
+        {'name':'בדיקת נכס + הצעת מחיר','desc':'ייעוץ ראשוני','price':'חינם'},
+    ]
+
+def _render_repairs(c: dict) -> str:
+    from html import escape as _e
+    import re as _r
+    name_raw = _r.sub(r'\s*Draft Site$', '', c.get('site_title') or c.get('hero_title') or 'שירות שיפוצים')
+    name  = _e(name_raw)
+    phone = _e(c.get('phone') or '')
+    phone_c = _r.sub(r'\D', '', phone)
+    city  = _e(c.get('city') or '')
+    tagline = _e(c.get('tagline') or 'עבודה מקצועית. תוצאה מושלמת. מחיר הוגן.')
+    about = _e(c.get('about_text') or 'בעל מקצוע מנוסה עם שנות ניסיון. אנחנו לוקחים אחריות מלאה על כל עבודה.')
+    rating = c.get('rating')
+    reviews = c.get('reviews_count') or 0
+    maps_url = _e(c.get('maps_url') or '')
+    is_demo = c.get('is_demo', True)
+    cat = c.get('category') or ''
+    types = c.get('business_types') or ''
+    svcs = _repair_services(cat, types)
+    wa_phone = phone_c or '972546363350'
+    wa_url = f"https://wa.me/{wa_phone}?text={'שלום%2C%20אשמח%20לקבל%20הצעת%20מחיר%20מ'+name_raw.replace(' ','%20')}"
+    demo_banner = (f'<div style="background:linear-gradient(90deg,#1d4ed8,#0ea5e9);color:white;padding:10px 20px;text-align:center;font-size:13px;font-weight:700">אתר הדגמה | <a href="{wa_url}" target="_blank" style="color:white;text-decoration:underline">לאישור ועריכה — לחץ כאן</a></div>') if is_demo else ''
+    stars_str = ('★'*int(rating)+'☆'*(5-int(rating))) if rating else ''
+    svcs_html = ''.join(
+        f'<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(30,64,175,0.25);border-radius:14px;padding:18px 22px;display:flex;justify-content:space-between;align-items:center">'
+        f'<div><div style="font-weight:700;font-size:15px;color:white">{_e(s["name"])}</div>'
+        f'<div style="color:rgba(255,255,255,0.4);font-size:13px;margin-top:3px">{_e(s["desc"])}</div></div>'
+        f'<div style="font-size:16px;font-weight:800;color:#60a5fa;white-space:nowrap">&#x20aa;{_e(s["price"])}</div></div>'
+        for s in svcs
+    )
+    return f"""<!doctype html><html lang="he" dir="rtl"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>{name}</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700;800;900&display=swap" rel="stylesheet">
+<style>*{{box-sizing:border-box;margin:0;padding:0}}body{{font-family:Heebo,sans-serif;background:#020814;color:white;direction:rtl}}a{{text-decoration:none;color:inherit}}.rep-btn{{background:linear-gradient(135deg,#1d4ed8,#0ea5e9);border:none;border-radius:50px;padding:15px 34px;color:white;font-weight:800;font-size:15px;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:9px;box-shadow:0 8px 28px rgba(14,165,233,0.4)}}</style>
+</head><body>
+{demo_banner}
+<section style="background:linear-gradient(135deg,#020814,#0c1445 50%,#1e3a8a 100%);padding:90px 24px 70px;text-align:center;position:relative;overflow:hidden">
+  <div style="position:absolute;bottom:-60px;left:50%;transform:translateX(-50%);width:600px;height:300px;background:radial-gradient(ellipse,rgba(14,165,233,0.1),transparent);border-radius:50%"></div>
+  <div style="position:relative;max-width:700px;margin:0 auto">
+    <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(14,165,233,0.1);border:1px solid rgba(14,165,233,0.25);border-radius:50px;padding:6px 16px;font-size:12px;font-weight:700;color:#38bdf8;margin-bottom:22px">&#x26a1; מקצועיות ומהירות בשירות אחד</div>
+    <h1 style="font-size:clamp(32px,6vw,60px);font-weight:900;line-height:1.1;margin-bottom:14px;background:linear-gradient(135deg,#fff,#bae6fd);-webkit-background-clip:text;-webkit-text-fill-color:transparent">{name}</h1>
+    <p style="font-size:18px;color:rgba(255,255,255,0.5);margin-bottom:10px">{tagline}</p>
+    {f'<p style="color:rgba(255,255,255,0.3);font-size:14px;margin-bottom:24px">&#128205; {city}</p>' if city else '<div style="margin-bottom:24px"></div>'}
+    {f'<div style="color:#60a5fa;font-size:20px;margin-bottom:28px">{stars_str} <span style="color:rgba(255,255,255,0.45);font-size:13px">{rating} ({reviews} ביקורות)</span></div>' if rating else ''}
+    <div style="display:flex;flex-wrap:wrap;gap:14px;justify-content:center">
+      <a href="{wa_url}" target="_blank" class="rep-btn">&#x1f4ac; קבלת הצעת מחיר</a>
+      {f'<a href="tel:{phone_c}" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:50px;padding:15px 28px;color:white;font-weight:700;font-size:14px;display:inline-flex;align-items:center;gap:8px">&#128222; {phone}</a>' if phone else ''}
+    </div>
+  </div>
+</section>
+<section style="padding:70px 24px;max-width:700px;margin:0 auto">
+  <h2 style="font-size:28px;font-weight:900;text-align:center;margin-bottom:8px">השירותים שלנו</h2>
+  <p style="text-align:center;color:rgba(255,255,255,0.3);font-size:13px;margin-bottom:38px">מחירים לדוגמה — הצעת מחיר מדויקת חינם</p>
+  <div style="display:flex;flex-direction:column;gap:10px">{svcs_html}</div>
+  <div style="text-align:center;margin-top:38px"><a href="{wa_url}" target="_blank" class="rep-btn">&#x1f527; בקשת הצעת מחיר</a></div>
+</section>
+<section style="padding:52px 24px;background:rgba(30,58,138,0.08);border-top:1px solid rgba(30,58,138,0.2);border-bottom:1px solid rgba(30,58,138,0.2)">
+  <div style="max-width:660px;margin:0 auto;text-align:center">
+    <h2 style="font-size:23px;font-weight:800;margin-bottom:16px">&#x1f3e0; אודותינו</h2>
+    <p style="color:rgba(255,255,255,0.5);font-size:15px;line-height:1.9">{about}</p>
+  </div>
+</section>
+<section style="padding:64px 24px;text-align:center">
+  <h2 style="font-size:25px;font-weight:900;margin-bottom:10px">מוכנים להתחיל? &#x1f91d;</h2>
+  <p style="color:rgba(255,255,255,0.35);margin-bottom:26px;font-size:14px">שלחו הודעה ונחזור מיד לתיאום</p>
+  <a href="{wa_url}" target="_blank" class="rep-btn" style="font-size:16px;padding:17px 44px">&#x1f4ac; WhatsApp</a>
+  {f'<div style="margin-top:14px"><a href="{maps_url}" target="_blank" style="color:rgba(255,255,255,0.3);font-size:13px">&#128205; הצג במפות גוגל</a></div>' if maps_url else ''}
+</section>
+<footer style="background:#01050f;color:rgba(255,255,255,0.25);text-align:center;padding:22px;font-size:12px;border-top:1px solid rgba(30,58,138,0.15)">
+  <span style="color:rgba(255,255,255,0.45);font-weight:700">{name}</span>{'  |  '+city if city else ''}
+  <div style="margin-top:8px">&#169; 2026 <a href="https://tazo-web.com" style="color:#0ea5e9;font-weight:700">TAZO</a> | כל הזכויות שמורות{'  |  <span style="font-size:10px">אתר הדגמה</span>' if is_demo else ''}</div>
+</footer>
+</body></html>"""
+
+
+# ── Events / Catering / Photography ──────────────────────────────────────────
+def _events_services(cat, types):
+    txt = f"{cat} {types}".lower()
+    if _re_cat.search(r'קייטרינג|catering', txt):
+        return [
+            {'name':'ארוחת עסקים','desc':'מגש אוכל לישיבות','price':'35/אורח'},
+            {'name':'חתונה / בר מצווה','desc':'מנות מלאות + שרות','price':'לפי הצעה'},
+            {'name':'מסיבות וימי הולדת','desc':'בופה + שרות','price':'לפי הצעה'},
+            {'name':'מגשי פרי וחטיפים','desc':'מגוון גדול','price':'120+/מגש'},
+            {'name':'כשרות מהדרין','desc':'עם תעודת כשרות','price':'לפי תפריט'},
+        ]
+    if _re_cat.search(r'צלם|photographer|photo', txt):
+        return [
+            {'name':'צילום חתונה','desc':'יום מלא + עריכה','price':'3,500–7,000'},
+            {'name':'צילום בר/בת מצווה','desc':'אירוע מלא','price':'2,000–4,000'},
+            {'name':'צילום תדמית','desc':'לעסקים ורשתות','price':'600–1,500'},
+            {'name':'צילום רגעים (לידה, ...)','desc':'מיוחד ואינטימי','price':'1,200–2,500'},
+            {'name':'עריכה בלבד','desc':'אולפן עריכה מקצועי','price':'100/שעה'},
+        ]
+    return [
+        {'name':'שכירת אולם לאירוע','desc':'עד 200 אורחים','price':'לפי תאריך'},
+        {'name':'חבילת חתונה מלאה','desc':'אוכל, שמע, תאורה','price':'לפי הצעה'},
+        {'name':'אירוע חברה','desc':'ניהול אירוע מקצועי','price':'לפי הצעה'},
+        {'name':'דיג\'יי + ציוד שמע','desc':'עד 500 אורחים','price':'2,000–4,000'},
+        {'name':'עיצוב ופרחים','desc':'קישוט מקצועי','price':'לפי בקשה'},
+    ]
+
+def _render_events(c: dict) -> str:
+    from html import escape as _e
+    import re as _r
+    name_raw = _r.sub(r'\s*Draft Site$', '', c.get('site_title') or c.get('hero_title') or 'שירותי אירועים')
+    name  = _e(name_raw)
+    phone = _e(c.get('phone') or '')
+    phone_c = _r.sub(r'\D', '', phone)
+    city  = _e(c.get('city') or '')
+    tagline = _e(c.get('tagline') or 'כל אירוע — חוויה בלתי נשכחת')
+    about = _e(c.get('about_text') or 'אנחנו מתמחים בהפקת אירועים ייחודיים עם תשומת לב לכל פרט. מרגש, מקצועי, בלתי נשכח.')
+    rating = c.get('rating')
+    reviews = c.get('reviews_count') or 0
+    maps_url = _e(c.get('maps_url') or '')
+    is_demo = c.get('is_demo', True)
+    cat = c.get('category') or ''
+    types = c.get('business_types') or ''
+    svcs = _events_services(cat, types)
+    wa_phone = phone_c or '972546363350'
+    wa_url = f"https://wa.me/{wa_phone}?text={'שלום%2C%20אשמח%20לשמוע%20פרטים%20על%20'+name_raw.replace(' ','%20')}"
+    demo_banner = (f'<div style="background:linear-gradient(90deg,#7c3aed,#a855f7);color:white;padding:10px 20px;text-align:center;font-size:13px;font-weight:700">אתר הדגמה | <a href="{wa_url}" target="_blank" style="color:white;text-decoration:underline">לאישור ועריכה — לחץ כאן</a></div>') if is_demo else ''
+    stars_str = ('★'*int(rating)+'☆'*(5-int(rating))) if rating else ''
+    svcs_html = ''.join(
+        f'<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(167,139,250,0.2);border-radius:14px;padding:18px 22px;display:flex;justify-content:space-between;align-items:center">'
+        f'<div><div style="font-weight:700;font-size:15px;color:white">{_e(s["name"])}</div>'
+        f'<div style="color:rgba(255,255,255,0.4);font-size:13px;margin-top:3px">{_e(s["desc"])}</div></div>'
+        f'<div style="font-size:16px;font-weight:800;color:#c4b5fd;white-space:nowrap">{_e(s["price"])}</div></div>'
+        for s in svcs
+    )
+    return f"""<!doctype html><html lang="he" dir="rtl"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>{name}</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700;800;900&display=swap" rel="stylesheet">
+<style>*{{box-sizing:border-box;margin:0;padding:0}}body{{font-family:Heebo,sans-serif;background:#07030f;color:white;direction:rtl}}a{{text-decoration:none;color:inherit}}.evt-btn{{background:linear-gradient(135deg,#7c3aed,#a855f7);border:none;border-radius:50px;padding:15px 34px;color:white;font-weight:800;font-size:15px;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:9px;box-shadow:0 8px 32px rgba(168,85,247,0.45)}}</style>
+</head><body>
+{demo_banner}
+<section style="background:linear-gradient(135deg,#07030f,#1a0b2e 50%,#2d1254 100%);padding:100px 24px 80px;text-align:center;position:relative;overflow:hidden">
+  <div style="position:absolute;top:-80px;right:-80px;width:500px;height:500px;background:radial-gradient(circle,rgba(168,85,247,0.12),transparent);border-radius:50%"></div>
+  <div style="position:absolute;bottom:-80px;left:-60px;width:400px;height:400px;background:radial-gradient(circle,rgba(251,191,36,0.06),transparent);border-radius:50%"></div>
+  <div style="position:relative;max-width:720px;margin:0 auto">
+    <div style="font-size:64px;margin-bottom:18px">✨</div>
+    <h1 style="font-size:clamp(34px,6vw,64px);font-weight:900;line-height:1.1;margin-bottom:14px;background:linear-gradient(135deg,#fff 30%,#c4b5fd 70%,#fbbf24);-webkit-background-clip:text;-webkit-text-fill-color:transparent">{name}</h1>
+    <p style="font-size:19px;color:rgba(255,255,255,0.5);margin-bottom:10px">{tagline}</p>
+    {f'<p style="color:rgba(255,255,255,0.3);font-size:14px;margin-bottom:28px">&#128205; {city}</p>' if city else '<div style="margin-bottom:28px"></div>'}
+    {f'<div style="color:#c4b5fd;font-size:20px;margin-bottom:32px">{stars_str} <span style="color:rgba(255,255,255,0.45);font-size:13px">{rating} ({reviews} ביקורות)</span></div>' if rating else ''}
+    <div style="display:flex;flex-wrap:wrap;gap:14px;justify-content:center">
+      <a href="{wa_url}" target="_blank" class="evt-btn">&#x1f4ac; יצירת קשר לתיאום</a>
+      {f'<a href="tel:{phone_c}" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:50px;padding:15px 28px;color:white;font-weight:700;font-size:14px;display:inline-flex;align-items:center;gap:8px">&#128222; {phone}</a>' if phone else ''}
+    </div>
+  </div>
+</section>
+<section style="padding:70px 24px;max-width:700px;margin:0 auto">
+  <h2 style="font-size:28px;font-weight:900;text-align:center;margin-bottom:8px">השירותים שלנו</h2>
+  <p style="text-align:center;color:rgba(255,255,255,0.3);font-size:13px;margin-bottom:38px">מחירים לדוגמה — לפרטים ותאומים צרו קשר</p>
+  <div style="display:flex;flex-direction:column;gap:10px">{svcs_html}</div>
+  <div style="text-align:center;margin-top:38px"><a href="{wa_url}" target="_blank" class="evt-btn">&#x1f4ac; שלחו פרטים לקבלת הצעה</a></div>
+</section>
+<section style="padding:52px 24px;background:rgba(124,58,237,0.05);border-top:1px solid rgba(124,58,237,0.15);border-bottom:1px solid rgba(124,58,237,0.15)">
+  <div style="max-width:660px;margin:0 auto;text-align:center">
+    <h2 style="font-size:23px;font-weight:800;margin-bottom:16px">&#x1f39e; אודותינו</h2>
+    <p style="color:rgba(255,255,255,0.5);font-size:15px;line-height:1.9">{about}</p>
+  </div>
+</section>
+<section style="padding:64px 24px;text-align:center;background:linear-gradient(135deg,#0f0520,#1a0b2e)">
+  <h2 style="font-size:25px;font-weight:900;margin-bottom:10px">בואו נעשה את האירוע שלכם מושלם &#x1f48e;</h2>
+  <p style="color:rgba(255,255,255,0.35);margin-bottom:26px;font-size:14px">שלחו הודעה ונחזור מיד</p>
+  <a href="{wa_url}" target="_blank" class="evt-btn" style="font-size:16px;padding:17px 44px">&#x1f4ac; WhatsApp</a>
+  {f'<div style="margin-top:14px"><a href="{maps_url}" target="_blank" style="color:rgba(255,255,255,0.3);font-size:13px">&#128205; הצג במפות גוגל</a></div>' if maps_url else ''}
+</section>
+<footer style="background:#050209;color:rgba(255,255,255,0.25);text-align:center;padding:22px;font-size:12px;border-top:1px solid rgba(124,58,237,0.12)">
+  <span style="color:rgba(255,255,255,0.45);font-weight:700">{name}</span>{'  |  '+city if city else ''}
+  <div style="margin-top:8px">&#169; 2026 <a href="https://tazo-web.com" style="color:#a855f7;font-weight:700">TAZO</a> | כל הזכויות שמורות{'  |  <span style="font-size:10px">אתר הדגמה</span>' if is_demo else ''}</div>
+</footer>
+</body></html>"""
+
+
+# ── Education / Childcare / Tutoring ─────────────────────────────────────────
+def _education_services(cat, types):
+    txt = f"{cat} {types}".lower()
+    if _re_cat.search(r'גן ילד|kindergarten|daycare', txt):
+        return [
+            {'name':'גן יום מלא','desc':'7:00–16:00 כולל ארוחות','price':'לפי מקום'},
+            {'name':'צהרון','desc':'עד 18:00, פעילויות','price':'לפי מקום'},
+            {'name':'חוג בוקר','desc':'פעילות מועשרת','price':'250/חודש'},
+            {'name':'קייטנת קיץ','desc':'יולי–אוגוסט','price':'לפי תוכנית'},
+        ]
+    if _re_cat.search(r'שיעור|tutor|teacher|מורה', txt):
+        return [
+            {'name':'שיעור פרטי — מתמטיקה','desc':'כל שכבות הגיל','price':'120–180/שעה'},
+            {'name':'שיעור פרטי — אנגלית','desc':'יסודי עד בגרות','price':'120–160/שעה'},
+            {'name':'שיעור פרטי — פיזיקה/כימיה','desc':'תיכון ובגרות','price':'140–200/שעה'},
+            {'name':'חבילת 5 שיעורים','desc':'חיסכון 10%','price':'מ-550'},
+            {'name':'שיעור קבוצתי','desc':'עד 4 תלמידים','price':'80/שעה/תלמיד'},
+        ]
+    return [
+        {'name':'שיעורי הכנה לבגרות','desc':'כל המקצועות','price':'150/שעה'},
+        {'name':'חוג מחשבים','desc':'קידוד ופיתוח','price':'200/חודש'},
+        {'name':'לימוד שפות','desc':'אנגלית, ספרדית, ערבית','price':'120/שעה'},
+        {'name':'שיעורי עברית','desc':'לעולים חדשים','price':'100/שעה'},
+        {'name':'ייעוץ חינוכי','desc':'תכנון מסלול לימוד','price':'250/שעה'},
+    ]
+
+def _render_education(c: dict) -> str:
+    from html import escape as _e
+    import re as _r
+    name_raw = _r.sub(r'\s*Draft Site$', '', c.get('site_title') or c.get('hero_title') or 'שירות חינוכי')
+    name  = _e(name_raw)
+    phone = _e(c.get('phone') or '')
+    phone_c = _r.sub(r'\D', '', phone)
+    city  = _e(c.get('city') or '')
+    tagline = _e(c.get('tagline') or 'ידע הוא כוח — אנחנו כאן ללמד')
+    about = _e(c.get('about_text') or 'מוסד חינוכי מוביל עם גישה חמה ומקצועית. כל ילד ותלמיד מקבל יחס אישי.')
+    rating = c.get('rating')
+    reviews = c.get('reviews_count') or 0
+    maps_url = _e(c.get('maps_url') or '')
+    is_demo = c.get('is_demo', True)
+    cat = c.get('category') or ''
+    types = c.get('business_types') or ''
+    svcs = _education_services(cat, types)
+    wa_phone = phone_c or '972546363350'
+    wa_url = f"https://wa.me/{wa_phone}?text={'שלום%2C%20אשמח%20לשמוע%20פרטים%20על%20'+name_raw.replace(' ','%20')}"
+    demo_banner = (f'<div style="background:linear-gradient(90deg,#0284c7,#6366f1);color:white;padding:10px 20px;text-align:center;font-size:13px;font-weight:700">אתר הדגמה | <a href="{wa_url}" target="_blank" style="color:white;text-decoration:underline">לאישור ועריכה — לחץ כאן</a></div>') if is_demo else ''
+    stars_str = ('★'*int(rating)+'☆'*(5-int(rating))) if rating else ''
+    svcs_html = ''.join(
+        f'<div style="background:linear-gradient(135deg,rgba(2,132,199,0.08),rgba(99,102,241,0.08));border:1px solid rgba(99,102,241,0.2);border-radius:16px;padding:18px 22px;display:flex;justify-content:space-between;align-items:center">'
+        f'<div><div style="font-weight:700;font-size:15px;color:white">{_e(s["name"])}</div>'
+        f'<div style="color:rgba(255,255,255,0.45);font-size:13px;margin-top:3px">{_e(s["desc"])}</div></div>'
+        f'<div style="font-size:16px;font-weight:800;color:#a5b4fc;white-space:nowrap">&#x20aa;{_e(s["price"])}</div></div>'
+        for s in svcs
+    )
+    return f"""<!doctype html><html lang="he" dir="rtl"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>{name}</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700;800;900&display=swap" rel="stylesheet">
+<style>*{{box-sizing:border-box;margin:0;padding:0}}body{{font-family:Heebo,sans-serif;background:#020c18;color:white;direction:rtl}}a{{text-decoration:none;color:inherit}}.edu-btn{{background:linear-gradient(135deg,#0284c7,#6366f1);border:none;border-radius:50px;padding:15px 34px;color:white;font-weight:800;font-size:15px;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:9px;box-shadow:0 8px 28px rgba(99,102,241,0.45)}}</style>
+</head><body>
+{demo_banner}
+<section style="background:linear-gradient(135deg,#020c18,#0a1f35 40%,#0e2d4e 100%);padding:90px 24px 70px;text-align:center;position:relative;overflow:hidden">
+  <div style="position:absolute;top:-80px;left:50%;transform:translateX(-50%);width:600px;height:400px;background:radial-gradient(ellipse,rgba(99,102,241,0.1),transparent);border-radius:50%"></div>
+  <div style="position:relative;max-width:700px;margin:0 auto">
+    <div style="font-size:60px;margin-bottom:18px">&#x1f393;</div>
+    <h1 style="font-size:clamp(32px,6vw,60px);font-weight:900;line-height:1.1;margin-bottom:14px;background:linear-gradient(135deg,#fff,#a5b4fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent">{name}</h1>
+    <p style="font-size:18px;color:rgba(255,255,255,0.5);margin-bottom:10px">{tagline}</p>
+    {f'<p style="color:rgba(255,255,255,0.3);font-size:14px;margin-bottom:24px">&#128205; {city}</p>' if city else '<div style="margin-bottom:24px"></div>'}
+    {f'<div style="color:#a5b4fc;font-size:20px;margin-bottom:28px">{stars_str} <span style="color:rgba(255,255,255,0.45);font-size:13px">{rating} ({reviews} ביקורות)</span></div>' if rating else ''}
+    <div style="display:flex;flex-wrap:wrap;gap:14px;justify-content:center">
+      <a href="{wa_url}" target="_blank" class="edu-btn">&#x1f4ac; צרו קשר עכשיו</a>
+      {f'<a href="tel:{phone_c}" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:50px;padding:15px 28px;color:white;font-weight:700;font-size:14px;display:inline-flex;align-items:center;gap:8px">&#128222; {phone}</a>' if phone else ''}
+    </div>
+  </div>
+</section>
+<section style="padding:70px 24px;max-width:700px;margin:0 auto">
+  <h2 style="font-size:28px;font-weight:900;text-align:center;margin-bottom:8px">תוכניות ושירותים</h2>
+  <p style="text-align:center;color:rgba(255,255,255,0.3);font-size:13px;margin-bottom:38px">מחירים משוערים — לפרטים מדויקים צרו קשר</p>
+  <div style="display:flex;flex-direction:column;gap:10px">{svcs_html}</div>
+  <div style="text-align:center;margin-top:38px"><a href="{wa_url}" target="_blank" class="edu-btn">&#x1f4da; שלחו הודעה לפרטים</a></div>
+</section>
+<section style="padding:52px 24px;background:rgba(2,132,199,0.05);border-top:1px solid rgba(2,132,199,0.1);border-bottom:1px solid rgba(2,132,199,0.1)">
+  <div style="max-width:660px;margin:0 auto;text-align:center">
+    <h2 style="font-size:23px;font-weight:800;margin-bottom:16px">&#x1f31f; אודותינו</h2>
+    <p style="color:rgba(255,255,255,0.5);font-size:15px;line-height:1.9">{about}</p>
+  </div>
+</section>
+<section style="padding:64px 24px;text-align:center">
+  <h2 style="font-size:25px;font-weight:900;margin-bottom:10px">נשמח לדבר &#x1f44b;</h2>
+  <p style="color:rgba(255,255,255,0.35);margin-bottom:26px;font-size:14px">שלחו הודעה ונחזור מיד</p>
+  <a href="{wa_url}" target="_blank" class="edu-btn" style="font-size:16px;padding:17px 44px">&#x1f4ac; WhatsApp</a>
+  {f'<div style="margin-top:14px"><a href="{maps_url}" target="_blank" style="color:rgba(255,255,255,0.3);font-size:13px">&#128205; הצג במפות גוגל</a></div>' if maps_url else ''}
+</section>
+<footer style="background:#010c18;color:rgba(255,255,255,0.25);text-align:center;padding:22px;font-size:12px;border-top:1px solid rgba(2,132,199,0.1)">
+  <span style="color:rgba(255,255,255,0.45);font-weight:700">{name}</span>{'  |  '+city if city else ''}
+  <div style="margin-top:8px">&#169; 2026 <a href="https://tazo-web.com" style="color:#6366f1;font-weight:700">TAZO</a> | כל הזכויות שמורות{'  |  <span style="font-size:10px">אתר הדגמה</span>' if is_demo else ''}</div>
+</footer>
+</body></html>"""
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+
 class TemplateRenderService:
     def render(self, context: dict) -> str:
         c = context
-        # Food/cafe template with cart ordering
-        if _is_food(c.get('category', ''), c.get('business_types', '')):
+        cat   = c.get('category') or ''
+        types = c.get('business_types') or ''
+
+        # Food/cafe template with full cart ordering
+        if _is_food(cat, types):
             return _render_food(c)
 
-        if _is_beauty(c.get('category') or '', c.get('business_types') or ''):
+        # Beauty / salon / nail / spa
+        if _is_beauty(cat, types):
             return _render_beauty(c)
+
+        # Health / fitness / clinic
+        if _is_health(cat, types):
+            return _render_health(c)
+
+        # Vehicles / mechanic / tire / car wash
+        if _is_vehicle(cat, types):
+            return _render_vehicles(c)
+
+        # Repairs / electrician / plumber / contractor
+        if _is_repair(cat, types):
+            return _render_repairs(c)
+
+        # Events / catering / photography
+        if _is_events(cat, types):
+            return _render_events(c)
+
+        # Education / childcare / tutoring
+        if _is_education(cat, types):
+            return _render_education(c)
 
         name = c.get('site_title') or c.get('hero_title') or 'עסק'
         # Strip " Draft Site" suffix if present

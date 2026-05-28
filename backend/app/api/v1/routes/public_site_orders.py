@@ -7,7 +7,6 @@ Orders are:
 """
 from __future__ import annotations
 
-import threading
 import httpx
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
@@ -48,17 +47,20 @@ def _send_wa(phone: str, text: str) -> None:
         pass
 
 
-def _forward_to_sync(payload: dict) -> None:
-    """Forward order to TAZO-SYNC in a background thread."""
+def _forward_to_sync(payload: dict) -> dict:
+    """Forward order to TAZO-SYNC and return parsed response (with deliveryCode)."""
     try:
-        httpx.post(
+        resp = httpx.post(
             _SYNC_URL,
             json=payload,
             headers={'Authorization': f'Bearer {_SYNC_KEY}', 'Content-Type': 'application/json'},
-            timeout=10,
+            timeout=12,
         )
+        if resp.status_code < 300:
+            return resp.json()
     except Exception:
         pass
+    return {}
 
 
 def _clean_phone(raw: str) -> str:
@@ -127,7 +129,14 @@ def create_site_order(order: SiteOrderIn, db: Session = Depends(get_db)):
         'notes':     order.notes or '',
         'creditOffer': 0,   # skip auth requirement
     }
-    t = threading.Thread(target=_forward_to_sync, args=(sync_payload,), daemon=True)
-    t.start()
+    # Forward to TAZO-SYNC synchronously to capture deliveryCode
+    sync_resp   = _forward_to_sync(sync_payload)
+    delivery_code = sync_resp.get('deliveryCode') or sync_resp.get('data', {}).get('deliveryCode')
+    tracking_url  = f'https://tazo-sync.com/track/{delivery_code}' if delivery_code else None
 
-    return {'ok': True, 'order_received': True}
+    return {
+        'ok': True,
+        'order_received': True,
+        'deliveryCode': delivery_code,
+        'trackingUrl': tracking_url,
+    }

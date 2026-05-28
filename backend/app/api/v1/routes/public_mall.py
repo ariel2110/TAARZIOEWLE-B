@@ -863,3 +863,69 @@ async def notify_me(payload: NotifyMeRequest):
     except Exception as e:
         logger.warning(f"notify-me WA failed: {e}")
     return {"status": "ok"}
+
+
+# ── /public/biz-live/{slug} — live menu + status from tazo-sync ────────────
+import time as _time
+import os as _os
+
+_BIZ_LIVE_CACHE: dict[str, tuple[float, dict]] = {}  # slug → (expires_at, data)
+_BIZ_LIVE_TTL = 300  # 5-minute TTL
+
+
+@router.get("/public/biz-live/{slug}", summary="Live menu & status for a site slug")
+async def get_biz_live(slug: str, db: Session = Depends(get_db)):
+    """Returns live products + promotions from tazo-sync for the given demo site slug.
+    Cached for 5 minutes. Falls back to minimal static info if tazo-sync is unreachable.
+    """
+    # Validate slug exists
+    site = db.query(DemoSite).filter(DemoSite.slug == slug).first()
+    if not site:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Site not found")
+
+    # Return from cache if still fresh
+    cached = _BIZ_LIVE_CACHE.get(slug)
+    if cached and _time.time() < cached[0]:
+        return cached[1]
+
+    sync_base = _os.environ.get("TAZO_SYNC_BASE_URL", "https://tazo-sync.com")
+    sync_key  = _os.environ.get("TAZO_SYNC_INTERNAL_KEY", "")
+
+    # Build the place_id / business_id to use as query key
+    query_params = {}
+    if site.place_id:
+        query_params["placeId"] = site.place_id
+
+    try:
+        async with httpx.AsyncClient(timeout=8) as cl:
+            # Fetch products
+            prod_resp = await cl.get(
+                f"{sync_base}/products",
+                params={**query_params, "available": "true", "limit": "30"},
+                headers={"Authorization": f"Bearer {sync_key}"} if sync_key else {},
+            )
+            products = prod_resp.json() if prod_resp.status_code == 200 else []
+
+            # Fetch active promotions (best-effort)
+            promo_resp = await cl.get(
+                f"{sync_base}/api/inventory",
+                params={**query_params, "active": "true"},
+                headers={"Authorization": f"Bearer {sync_key}"} if sync_key else {},
+            )
+            promotions = promo_resp.json() if promo_resp.status_code == 200 else []
+    except Exception as e:
+        logger.warning(f"[biz-live] tazo-sync unreachable for {slug}: {e}")
+        products, promotions = [], []
+
+    result = {
+        "slug":        slug,
+        "businessName": site.business_name,
+        "isOpen":      True,  # TODO: wire to tazo-sync business hours when available
+        "products":    products[:30] if isinstance(products, list) else [],
+        "promotions":  promotions[:10] if isinstance(promotions, list) else [],
+        "cachedAt":    int(_time.time()),
+    }
+
+    _BIZ_LIVE_CACHE[slug] = (_time.time() + _BIZ_LIVE_TTL, result)
+    return result

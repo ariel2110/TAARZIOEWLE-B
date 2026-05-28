@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://tazo-web.com/sitemap.xml

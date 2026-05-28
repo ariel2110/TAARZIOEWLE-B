@@ -1,14 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <!-- TAZO-WEB Public favicon: Gold star + TW on dark navy -->
-  <rect width="64" height="64" rx="14" fill="#0F172A"/>
-  <!-- Outer ring -->
-  <circle cx="32" cy="32" r="26" fill="none" stroke="#F59E0B" stroke-width="2" opacity="0.4"/>
-  <!-- T letter -->
-  <rect x="9" y="17" width="21" height="5" rx="2" fill="#F59E0B"/>
-  <rect x="16" y="17" width="6" height="22" rx="2" fill="#F59E0B"/>
-  <!-- W letter -->
-  <polygon points="32,17 36,36 40,25 44,36 48,17 45,17 40,31 36,19.5 32,31 29,17" fill="#F59E0B"/>
-  <!-- Gold dot bottom -->
-  <circle cx="32" cy="50" r="2.5" fill="#F59E0B" opacity="0.8"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="TAZO Web">
+  <defs>
+    <linearGradient id="bg" x1="6" y1="4" x2="58" y2="62" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#142847"/>
+      <stop offset="1" stop-color="#080f1f"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="16" y1="12" x2="48" y2="52" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF9A4D"/>
+      <stop offset="1" stop-color="#FF6F5A"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#bg)"/>
+  <rect x="10" y="10" width="44" height="44" rx="13" fill="none" stroke="rgba(255,255,255,0.28)"/>
+  <path d="M19 20h26v8H36v17h-8V28h-9z" fill="url(#accent)"/>
+  <circle cx="47" cy="47" r="4" fill="#FF9A4D"/>
 </svg>
 

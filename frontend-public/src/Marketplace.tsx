@@ -1056,9 +1056,9 @@ function BuildingView({ business, buildStep, notifyPhone, setNotifyPhone, notify
       <div style={{ maxWidth: 560, width: '100%', textAlign: 'center' }}>
         <div style={{ fontSize: 80, marginBottom: 24 }}>{done ? '🎉' : '🔨'}</div>
 
-        <h1 style={{ fontSize: 'clamp(28px,5vw,42px)', fontWeight: 900, marginBottom: 12 }}>
+        <h2 style={{ fontSize: 'clamp(28px,5vw,42px)', fontWeight: 900, marginBottom: 12 }}>
           {done ? 'האתר יהיה מוכן בקרוב!' : 'בונים את האתר עכשיו...'}
-        </h1>
+        </h2>
 
         {business && (
           <div style={{ display: 'inline-block', background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 12, padding: '12px 24px', marginBottom: 32, fontSize: 18, fontWeight: 700, color: '#f59e0b' }}>

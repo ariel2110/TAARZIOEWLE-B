@@ -1,5 +1,5 @@
 ﻿/* ── TAZO Design System v1.1 (portable) — tokens + chrome primitives ─────────── */
-@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap');
 
 :root {
   /* Brand — primary accent (coral; unified with header chrome) */
@@ -60,7 +60,7 @@
   --tz-shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.7);
 
   /* Type */
-  --tz-font: 'Heebo', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --tz-font: 'Heebo', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --tz-text-2xs: 9px;
   --tz-text-xs: 11px;
   --tz-text-sm: 12px;

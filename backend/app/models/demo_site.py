@@ -30,6 +30,10 @@ class DemoSite(Base, TimestampMixin):
     website: Mapped[str | None] = mapped_column(String(512), nullable=True)
     business_id: Mapped[int | None] = mapped_column(Integer, ForeignKey('businesses.id', ondelete='SET NULL'), nullable=True, index=True)
 
+    # Enrichment (from Google Places Details API)
+    opening_hours: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON list of strings
+    reviews_json: Mapped[str | None] = mapped_column(Text, nullable=True)   # JSON list of {author, text, rating, time}
+
     # Lifecycle
     photo_url: Mapped[str | None] = mapped_column(String(1024), nullable=True)
     status: Mapped[str] = mapped_column(String(30), default='draft')  # draft/sent/viewed/converted/seeded/removal_requested

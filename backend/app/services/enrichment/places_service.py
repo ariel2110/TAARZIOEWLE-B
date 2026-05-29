@@ -15,11 +15,12 @@ logger = logging.getLogger(__name__)
 
 PLACES_TEXT_SEARCH_URL = "https://maps.googleapis.com/maps/api/place/textsearch/json"
 PLACES_DETAILS_URL     = "https://maps.googleapis.com/maps/api/place/details/json"
+PLACES_PHOTO_URL       = "https://maps.googleapis.com/maps/api/place/photo"
 
 DETAIL_FIELDS = (
     "name,formatted_address,formatted_phone_number,international_phone_number,"
     "website,rating,user_ratings_total,opening_hours,business_status,"
-    "url,vicinity,types,reviews,place_id,geometry"
+    "url,vicinity,types,reviews,place_id,geometry,photos"
 )
 
 # Each entry: label (Hebrew display), queries (Hebrew search phrases)
@@ -159,6 +160,8 @@ class PlacesService:
         reviews = raw.get("reviews") or []
         top_review = reviews[0].get("text", "") if reviews else ""
         geo = (raw.get("geometry") or {}).get("location", {})
+        photos = raw.get("photos") or []
+        photo_ref = photos[0].get("photo_reference") if photos else ""
         return {
             "name":            raw.get("name", ""),
             "address":         raw.get("formatted_address") or raw.get("vicinity", ""),
@@ -174,6 +177,7 @@ class PlacesService:
             "place_id":        raw.get("place_id", ""),
             "lat":             geo.get("lat"),
             "lng":             geo.get("lng"),
+            "photo_url":       f"{PLACES_PHOTO_URL}?maxwidth=1200&photo_reference={photo_ref}&key={self.api_key}" if photo_ref and self.api_key else "",
         }
 
     def _apply_filters(
@@ -208,7 +212,7 @@ class PlacesService:
             {"name": "קפה נמרוד", "address": "רחוב דיזנגוף 100, תל אביב", "phone": "03-5221100", "website": "https://cafenimrod.co.il", "rating": 4.5, "reviews_count": 312, "types": ["cafe"], "status": "OPERATIONAL", "place_id": "demo_001"},
             {"name": "מכון כושר פלאפיט", "address": "רחוב הארבעה 19, תל אביב", "phone": "03-6248800", "website": "https://flafit.co.il", "rating": 4.7, "reviews_count": 541, "types": ["gym"], "status": "OPERATIONAL", "place_id": "demo_004"},
         ]
-        rows = [dict(b, google_maps_url="", top_review="", opening_hours=[]) for b in base]
+        rows = [dict(b, google_maps_url="", top_review="", opening_hours=[], photo_url="") for b in base]
         if category:
             matched = [b for b in rows if any(category.lower() in t for t in b.get("types", []))]
             rows = matched or rows

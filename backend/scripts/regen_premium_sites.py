@@ -23,7 +23,7 @@ from dotenv import load_dotenv
 load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
 from sqlalchemy.orm import Session
-from app.core.database import SessionLocal
+from app.db.session import SessionLocal
 from app.models.demo_site import DemoSite
 from app.services.generator.template_render_service import TemplateRenderService
 
@@ -34,12 +34,15 @@ logging.basicConfig(
 log = logging.getLogger("regen")
 
 renderer = TemplateRenderService()
+PERSIST_HTML = hasattr(DemoSite, "html_content")
 
 
 def _build_context(site: DemoSite) -> dict:
     return {
         "slug":           site.slug,
         "business_name":  site.business_name,
+        "site_title":     site.business_name,
+        "hero_title":     site.business_name,
         "tagline":        site.tagline or "",
         "phone":          site.phone or "",
         "address":        site.address or "",
@@ -47,9 +50,12 @@ def _build_context(site: DemoSite) -> dict:
         "rating":         site.rating or 0,
         "reviews_count":  site.reviews_count or 0,
         "google_maps_url": site.google_maps_url or "",
+        "maps_url":       site.google_maps_url or "",
         "top_review":     site.top_review or "",
         "business_types": site.business_types or "",
         "category":       site.category or "",
+        "opening_hours":  site.opening_hours or "",
+        "reviews_json":   site.reviews_json or "",
         "photo_url":      site.photo_url or "",
         "website":        site.website or "",
     }
@@ -58,6 +64,9 @@ def _build_context(site: DemoSite) -> dict:
 def regen_all(dry_run: bool, batch_size: int, slug_filter: str | None) -> None:
     db: Session = SessionLocal()
     try:
+        if not PERSIST_HTML and not dry_run:
+            log.info("DemoSite has no html_content column; running render validation only because public demo pages are rendered on request.")
+
         query = db.query(DemoSite)
         if slug_filter:
             query = query.filter(DemoSite.slug == slug_filter)
@@ -78,7 +87,7 @@ def regen_all(dry_run: bool, batch_size: int, slug_filter: str | None) -> None:
                     ctx = _build_context(site)
                     new_html = renderer.render(ctx)
 
-                    if dry_run:
+                    if dry_run or not PERSIST_HTML:
                         log.info("[DRY-RUN] Would regen: %s (%s / %s)",
                                  site.slug, site.category or "—", site.city or "—")
                     else:

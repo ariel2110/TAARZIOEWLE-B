@@ -33,6 +33,10 @@ def _render_demo_html(demo: DemoSite) -> str:
             'rating': demo.rating,
             'reviews_count': demo.reviews_count,
             'maps_url': demo.google_maps_url,
+          'opening_hours': demo.opening_hours,
+          'reviews_json': demo.reviews_json,
+          'photo_url': demo.photo_url,
+          'website': demo.website,
             'is_demo': True,
         }
         return TemplateRenderService().render(ctx)
@@ -109,21 +113,6 @@ def site_by_host(request: Request, db: Session = Depends(get_db)):
           demo = item
           break
     if demo:
-        # For food/beauty businesses, always use the rich TAZO template
-        from app.services.generator.template_render_service import _is_food, _is_beauty
-        _use_template = _is_food(demo.category or '', demo.business_types or '') \
-                     or _is_beauty(demo.category or '', demo.business_types or '')
-        if not _use_template:
-            # Try AI-generated draft HTML for other business types
-            from app.models.business import Business
-            from sqlalchemy import desc
-            biz = db.query(Business).filter(Business.name == demo.business_name).order_by(desc(Business.id)).first()
-            if biz:
-                draft = db.query(DraftSite).filter(DraftSite.business_id == biz.id).order_by(desc(DraftSite.id)).first()
-                if draft:
-                    html_path = _draft_html_path(draft)
-                    if html_path.exists():
-                        return HTMLResponse(html_path.read_text(encoding='utf-8'))
         return HTMLResponse(_render_demo_html(demo))
 
     # 2) Draft site lookup by id suffix in subdomain label, e.g. my-biz-19

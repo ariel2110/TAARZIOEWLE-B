@@ -1209,7 +1209,7 @@ class TemplateRenderService:
 
         # Events / catering / photography
         if _is_events(cat, types):
-            return _premium_templates.render_events(c, _event_services(cat, types))
+            return _premium_templates.render_events(c, _events_services(cat, types))
 
         # Education / childcare / tutoring
         if _is_education(cat, types):

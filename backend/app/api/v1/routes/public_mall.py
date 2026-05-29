@@ -55,6 +55,7 @@ async def _notify_tazo_sync(place_id: str, name: str, phone: str, address: str,
 
 
 router = APIRouter(prefix="/public/mall", tags=["public-mall"])
+biz_live_router = APIRouter(prefix="/public", tags=["public-biz-live"])
 
 CATEGORY_KEYWORDS: dict[str, list[str]] = {
     "food":["פיצה","מסעדה","גריל","שוורמה","פלאפל","סושי","המבורגר","אוכל"],
@@ -873,7 +874,8 @@ _BIZ_LIVE_CACHE: dict[str, tuple[float, dict]] = {}  # slug → (expires_at, dat
 _BIZ_LIVE_TTL = 300  # 5-minute TTL
 
 
-@router.get("/public/biz-live/{slug}", summary="Live menu & status for a site slug")
+@biz_live_router.get("/biz-live/{slug}", summary="Live menu & status for a site slug")
+@router.get("/biz-live/{slug}", summary="Live menu & status for a site slug")
 async def get_biz_live(slug: str, db: Session = Depends(get_db)):
     """Returns live products + promotions from tazo-sync for the given demo site slug.
     Cached for 5 minutes. Falls back to minimal static info if tazo-sync is unreachable.

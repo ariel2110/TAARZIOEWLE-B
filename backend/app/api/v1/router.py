@@ -41,7 +41,7 @@ from app.api.v1.routes.admin_social import router as admin_social_router
 from app.api.v1.routes.admin_domain_approvals import router as admin_domain_approvals_router
 from app.api.v1.routes.admin_agent_connections import router as admin_agent_connections_router
 
-from app.api.v1.routes.public_mall import router as public_mall_router
+from app.api.v1.routes.public_mall import router as public_mall_router, biz_live_router
 from app.api.v1.routes.public_site_orders import router as public_site_orders_router
 from app.api.v1.routes.public_cross_auth import router as public_cross_auth_router
 
@@ -56,6 +56,7 @@ api_router.include_router(public_inbound_router)
 api_router.include_router(public_intake_router)
 api_router.include_router(public_portal.router)
 api_router.include_router(public_mall_router)
+api_router.include_router(biz_live_router)
 api_router.include_router(public_site_orders_router)
 api_router.include_router(public_cross_auth_router)
 api_router.include_router(customer_portal_router)

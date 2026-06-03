@@ -54,12 +54,27 @@ jobs:
               backend celery_worker celery_beat
 
             echo "→ Health check…"
-            sleep 10
-            curl -sf https://tazo-web.com/api/v1/health | python3 -c "
-            import sys, json
-            d = json.load(sys.stdin)
-            assert d.get('database_ok') == True, f'DB unhealthy: {d}'
-            print('Health OK:', d)
-            "
+            for i in $(seq 1 12); do
+              echo "Health check attempt $i..."
+              RESPONSE="$(curl -sS https://tazo-web.com/api/v1/health || true)"
+              if [ -n "$RESPONSE" ] && echo "$RESPONSE" | python3 -c "
+import sys, json
+try:
+    d = json.load(sys.stdin)
+    assert d.get('database_ok') == True, 'DB unhealthy: ' + str(d)
+    print('Health OK:', d)
+    sys.exit(0)
+except Exception as e:
+    print('Health check error:', e)
+    sys.exit(1)
+"; then
+                break
+              fi
+              if [ "$i" -eq 12 ]; then
+                echo "Health check failed after all retries. Last response: $RESPONSE"
+                exit 1
+              fi
+              sleep 10
+            done
 
             echo "→ Deploy complete ✓"

@@ -48,6 +48,8 @@ jobs:
 
             # ── Rebuild backend services ───────────────────────────────────
             echo "→ Rebuilding backend services…"
+            docker compose stop backend celery_worker celery_beat || true
+            docker compose rm -f backend celery_worker celery_beat || true
             docker compose up -d --build --no-deps \
               backend celery_worker celery_beat
 

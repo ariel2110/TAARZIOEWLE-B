@@ -9,3 +9,5 @@ build/
 *.sqlite3
 *.db
 .env.production
+
+CREDENTIALS.txt

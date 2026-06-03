@@ -1,5 +1,4 @@
 import re
-from html import escape as _e
 
 from app.services.generator import premium_templates as _premium_templates
 

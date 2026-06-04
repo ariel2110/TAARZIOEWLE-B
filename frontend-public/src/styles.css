@@ -1,4 +1,4 @@
-/* ── Reset + Base ──────────────────────────────────────────────────────────── */
+﻿/* ── Reset + Base ──────────────────────────────────────────────────────────── */
 *,
 *::before,
 *::after {
@@ -76,7 +76,7 @@ input {
 
 /* ── Root ──────────────────────────────────────────────────────────────────── */
 .mp-root {
-  min-height: 100vh;
+  min-height: 100vh; min-height: 100dvh;
 }
 
 /* ── Scarcity bar ──────────────────────────────────────────────────────────── */
@@ -101,7 +101,7 @@ input {
 
 /* ── Search Page ───────────────────────────────────────────────────────────── */
 .mp-search-page {
-  min-height: 100vh;
+  min-height: 100vh; min-height: 100dvh;
   background: radial-gradient(ellipse at top, #1a1f3a 0%, #0b0f1a 70%);
   display: flex;
   align-items: center;
@@ -354,7 +354,7 @@ input {
 
 /* ── Building Page ─────────────────────────────────────────────────────────── */
 .mp-building-page {
-  min-height: 100vh;
+  min-height: 100vh; min-height: 100dvh;
   padding-top: 56px;
   background: radial-gradient(ellipse at top, #0f1629 0%, #0b0f1a 70%);
   display: flex;
@@ -516,7 +516,7 @@ input {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
+  min-height: 100vh; min-height: 100dvh;
   padding: 20px;
 }
 
@@ -727,7 +727,7 @@ input {
 .mp-done-page {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  min-height: 100vh; min-height: 100dvh;
 }
 
 /* Sticky gold bar */
@@ -813,7 +813,7 @@ input {
   width: 100%;
   border: none;
   margin-top: 56px;
-  min-height: calc(100vh - 56px);
+  min-height: calc(100dvh - 56px);
 }
 
 /* ── Responsive ─────────────────────────────────────────────────────────────── */
@@ -1292,7 +1292,7 @@ input {
 ═══════════════════════════════════════════════════════════════════════════ */
 
 .if-root {
-  min-height: 100vh;
+  min-height: 100vh; min-height: 100dvh;
   background: #1A1A1A;
   direction: rtl;
 }
@@ -1686,7 +1686,7 @@ input {
 ═══════════════════════════════════════════════════════════════════════════ */
 
 .ss-root {
-  min-height: 100vh;
+  min-height: 100vh; min-height: 100dvh;
   background: #1A1A1A;
   direction: rtl;
 }

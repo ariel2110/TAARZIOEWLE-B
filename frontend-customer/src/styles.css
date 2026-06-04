@@ -1,4 +1,4 @@
-*,
+﻿*,
 *::before,
 *::after {
     box-sizing: border-box;
@@ -11,7 +11,7 @@ body {
     background: #1A1A1A;
     color: #F5F5F5;
     direction: rtl;
-    min-height: 100vh;
+    min-height: 100vh; min-height: 100dvh;
 }
 
 a {
@@ -34,7 +34,7 @@ select {
 
 /* ── Login ── */
 .login-wrap {
-    min-height: 100vh;
+    min-height: 100vh; min-height: 100dvh;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -114,7 +114,7 @@ select {
 
 /* ── Layout ── */
 .app-layout {
-    min-height: 100vh;
+    min-height: 100vh; min-height: 100dvh;
     display: flex;
     flex-direction: column;
 }
@@ -528,7 +528,7 @@ select {
     display: grid;
     grid-template-columns: 260px 1fr;
     gap: 0;
-    height: calc(100vh - 100px);
+    height: calc(100dvh - 100px);
     background: #0b0f1a;
     border-radius: 16px;
     overflow: hidden;

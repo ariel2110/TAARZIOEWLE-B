@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+﻿import { useState, useEffect, useCallback } from 'react';
 import VersionBar from './VersionBar';
 
 const API = import.meta.env.VITE_API_BASE_URL || 'https://tazo-web.com/api/v1';
@@ -868,7 +868,7 @@ function MallView({ onCategory, onSearch, onJoin, onBusinessClick, crossAuthPhon
   }, []);
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0f0f0f', color: 'white', fontFamily: '"Heebo", sans-serif', direction: 'rtl' }}>
+    <div style={{ minHeight: '100dvh', background: '#0f0f0f', color: 'white', fontFamily: '"Heebo", sans-serif', direction: 'rtl' }}>
 
       {/* NAV */}
       <nav style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.08)', position: 'sticky', top: 0, background: 'rgba(15,15,15,0.95)', backdropFilter: 'blur(12px)', zIndex: 100 }}>
@@ -991,7 +991,7 @@ function CategoryView({ category, onSearch, onBack }: {
   const [q, setQ] = useState('');
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0f0f0f', color: 'white', fontFamily: '"Heebo", sans-serif', direction: 'rtl' }}>
+    <div style={{ minHeight: '100dvh', background: '#0f0f0f', color: 'white', fontFamily: '"Heebo", sans-serif', direction: 'rtl' }}>
       <nav style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', gap: 16, borderBottom: '1px solid rgba(255,255,255,0.08)', position: 'sticky', top: 0, background: 'rgba(15,15,15,0.95)', backdropFilter: 'blur(12px)', zIndex: 100 }}>
         <button onClick={onBack} style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 18px', color: 'white', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14 }}>
           ← חזרה
@@ -1048,7 +1048,7 @@ function BuildingView({ business, buildStep, notifyPhone, setNotifyPhone, notify
   const done = buildStep >= BUILD_STEPS.length;
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0f0f0f', color: 'white', fontFamily: '"Heebo", sans-serif', direction: 'rtl', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+    <div style={{ minHeight: '100dvh', background: '#0f0f0f', color: 'white', fontFamily: '"Heebo", sans-serif', direction: 'rtl', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <button onClick={onBack} style={{ position: 'fixed', top: 20, right: 24, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 18px', color: 'white', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14 }}>
         ← חזרה
       </button>

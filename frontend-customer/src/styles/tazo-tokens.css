@@ -235,7 +235,7 @@ body {
   font-family: var(--tz-font);
   background: var(--tz-consumer-bg);
   color: var(--tz-consumer-text);
-  min-height: 100vh;
+  min-height: 100vh; min-height: 100dvh;
   direction: rtl;
 }
 

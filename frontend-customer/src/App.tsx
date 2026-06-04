@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+﻿import React, { useCallback, useEffect, useRef, useState } from 'react';
 import './styles.css';
 
 const API = import.meta.env.VITE_API_BASE_URL || 'https://api.tazo-web.com/api/v1';
@@ -598,7 +598,7 @@ export default function App() {
   function logout() { localStorage.removeItem('customer_token'); setToken(''); setMe(null); }
   function refreshMe() { if (!token) return; apiCall('/customer/me', token).then(setMe).catch(() => { }); }
 
-  if (loadingMe) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', fontSize: 32 }}>⏳</div>;
+  if (loadingMe) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100dvh', fontSize: 32 }}>⏳</div>;
   if (!token || !me) return <LoginPage onLogin={handleLogin} />;
 
   return (

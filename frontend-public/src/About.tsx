@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+﻿import { useEffect, useRef, useState } from 'react'
 
 /* ─────────────────────────────────────────────────────────────────
    TAZO About Page — "מהשטח אל העולם"
@@ -199,7 +199,7 @@ export default function AboutPage() {
 
   return (
     <div dir="rtl" style={{
-      minHeight: '100vh',
+      minHeight: '100dvh',
       background: `linear-gradient(180deg, ${C.navy} 0%, ${C.navy2} 100%)`,
       color: C.text,
       fontFamily: "'Heebo','Segoe UI',system-ui,sans-serif",

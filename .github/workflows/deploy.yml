@@ -5,6 +5,7 @@ on:
     workflows: ["CI"]
     types: [completed]
     branches: [main]
+  workflow_dispatch:
 
 # Prevent concurrent deployments
 concurrency:
@@ -15,8 +16,8 @@ jobs:
   deploy:
     name: Deploy to tazo-web.com
     runs-on: ubuntu-latest
-    # Only deploy when CI passed
-    if: github.event.workflow_run.conclusion == 'success'
+    # Only deploy when CI passed (skip check for manual dispatch)
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
 
     steps:
       - name: Deploy via SSH
@@ -26,6 +27,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
+          debug: true
           script: |
             set -e
             cd /root/TAARZIOEWLE-B

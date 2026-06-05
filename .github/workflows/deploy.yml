@@ -16,42 +16,47 @@ jobs:
     name: Deploy to tazo-web.com
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    env:
+      DEPLOY_SSH_HOST: ${{ secrets.SSH_HOST }}
+      DEPLOY_SSH_USER: ${{ secrets.SSH_USER }}
+      DEPLOY_SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+      DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
 
     steps:
       - name: Validate deploy SSH secrets
         run: |
           set -e
 
-          if [ -z "${{ secrets.SSH_HOST }}" ]; then
+          if [ -z "$DEPLOY_SSH_HOST" ]; then
             echo "❌ Missing required secret: SSH_HOST"
             exit 1
           fi
 
-          if [ -z "${{ secrets.SSH_USER }}" ]; then
+          if [ -z "$DEPLOY_SSH_USER" ]; then
             echo "❌ Missing required secret: SSH_USER"
             exit 1
           fi
 
-          if [ -z "${{ secrets.SSH_PASSWORD }}" ] && [ -z "${{ secrets.SSH_PRIVATE_KEY }}" ]; then
+          if [ -z "$DEPLOY_SSH_PASSWORD" ] && [ -z "$DEPLOY_SSH_PRIVATE_KEY" ]; then
             echo "❌ Missing SSH auth secret: set SSH_PASSWORD or SSH_PRIVATE_KEY"
             exit 1
           fi
 
-          if [ -n "${{ secrets.SSH_PASSWORD }}" ]; then
+          if [ -n "$DEPLOY_SSH_PASSWORD" ]; then
             echo "✅ Using SSH_PASSWORD auth"
           else
             echo "✅ Using SSH_PRIVATE_KEY auth"
           fi
 
       - name: Deploy via SSH (password)
-        if: ${{ secrets.SSH_PASSWORD != '' }}
+        if: secrets.SSH_PASSWORD != ''
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           password: ${{ secrets.SSH_PASSWORD }}
           port: 22
-          debug: true
+          debug: false
           script: |
             set -e
             cd /root/TAARZIOEWLE-B
@@ -95,14 +100,14 @@ jobs:
             echo "Deploy complete"
 
       - name: Deploy via SSH (private key fallback)
-        if: ${{ secrets.SSH_PASSWORD == '' && secrets.SSH_PRIVATE_KEY != '' }}
+        if: secrets.SSH_PASSWORD == '' && secrets.SSH_PRIVATE_KEY != ''
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
-          debug: true
+          debug: false
           script: |
             set -e
             cd /root/TAARZIOEWLE-B

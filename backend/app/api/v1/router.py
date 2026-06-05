@@ -44,6 +44,7 @@ from app.api.v1.routes.admin_agent_connections import router as admin_agent_conn
 from app.api.v1.routes.public_mall import router as public_mall_router, biz_live_router
 from app.api.v1.routes.public_site_orders import router as public_site_orders_router
 from app.api.v1.routes.public_cross_auth import router as public_cross_auth_router
+from app.api.v1.routes.internal_inventory import router as internal_inventory_router
 
 api_router = APIRouter()
 
@@ -65,6 +66,7 @@ api_router.include_router(webhooks_whatsapp_router)
 api_router.include_router(webhooks_morning_router)
 api_router.include_router(webhooks_twilio_router)
 api_router.include_router(internal_whatsapp_router)
+api_router.include_router(internal_inventory_router)
 
 # ── Admin routes — require portal-gateway origin (X-Odin-Origin + X-Internal-Key)
 # In production, Traefik injects these headers after ForwardAuth passes.

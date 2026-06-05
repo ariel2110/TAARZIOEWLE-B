@@ -129,6 +129,10 @@ class Settings(BaseSettings):
     customer_login_window_minutes: int = Field(default=15)
     customer_login_max_failures: int = Field(default=8)
 
+    # Tazo-Sync integration
+    tazo_sync_internal_key: str | None = Field(default=None)  # key accepted on /internal/* from tazo-sync
+    tazo_sync_url: str = Field(default='https://tazo-sync.com')
+
     # Static output
     static_output_dir: str = 'app/static_sites'
 

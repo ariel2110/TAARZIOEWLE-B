@@ -57,6 +57,14 @@ class SocialProfile:
     # Apify-fetched social media content
     instagram_media_urls: list[str] = field(default_factory=list)   # up to 3 recent IG images
     tiktok_media_urls: list[str] = field(default_factory=list)      # up to 3 recent TikTok covers
+    # Serper /places structured data
+    places_phone: str = ""
+    places_address: str = ""
+    places_rating: float = 0.0
+    places_rating_count: int = 0
+    places_category: str = ""
+    places_price_level: str = ""
+    places_cid: str = ""
 
 
 # ── Main service class ─────────────────────────────────────────────────────────

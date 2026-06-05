@@ -68,6 +68,11 @@ jobs:
         id: ssh_auth
         run: |
           set -e
+          USE_PASSWORD=false
+
+          if [ -n "$DEPLOY_SSH_PASSWORD" ] && [ -n "$(printf '%s' "$DEPLOY_SSH_PASSWORD" | tr -d '[:space:]')" ]; then
+            USE_PASSWORD=true
+          fi
 
           if [ -z "$DEPLOY_SSH_HOST" ]; then
             echo "❌ Missing required secret: SSH_HOST"
@@ -79,12 +84,12 @@ jobs:
             exit 1
           fi
 
-          if [ -z "$DEPLOY_SSH_PASSWORD" ] && [ -z "$DEPLOY_SSH_PRIVATE_KEY" ]; then
+          if [ "$USE_PASSWORD" != "true" ] && [ -z "$DEPLOY_SSH_PRIVATE_KEY" ]; then
             echo "❌ Missing SSH auth secret: set SSH_PASSWORD or SSH_PRIVATE_KEY"
             exit 1
           fi
 
-          if [ -n "$DEPLOY_SSH_PASSWORD" ]; then
+          if [ "$USE_PASSWORD" = "true" ]; then
             echo "✅ Using SSH_PASSWORD auth"
             echo "use_password=true" >> "$GITHUB_OUTPUT"
           else

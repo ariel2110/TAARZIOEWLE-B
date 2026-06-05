@@ -285,3 +285,85 @@ def customer_site_content(
         'site_preview_url': draft.preview_url if draft else None,
         'site_status':      draft.status if draft else None,
     }
+
+
+@router.post('/generate-preview')
+def customer_generate_preview(
+    db: Session = Depends(get_db),
+    account: CustomerAccount = Depends(get_current_customer),
+):
+    """
+    Trigger a full AI site build for the customer's business.
+
+    Flow:
+      1. Find (or create) a draft_site for this business.
+      2. Run AutoSitePipelineService.generate_preview() in a background thread.
+      3. Return immediately with {ok: True, draft_id} so the frontend
+         can poll /customer/site-content every few seconds.
+
+    The frontend SiteBuildingOverlay polls /site-content until
+    site_preview_url is non-null, then opens the site automatically.
+    """
+    import logging
+    import threading
+    from app.models.draft_site import DraftSite
+    from app.models.business import Business
+    from app.models.enriched_biz_cache import EnrichedBizCache
+    from app.schemas.draft_site import DraftSiteCreate
+
+    logger = logging.getLogger(__name__)
+
+    business = db.query(Business).filter(Business.id == account.business_id).first()
+    if not business:
+        raise HTTPException(status_code=404, detail='עסק לא נמצא')
+
+    # Find existing draft or create one
+    draft = (
+        db.query(DraftSite)
+        .filter(DraftSite.business_id == account.business_id)
+        .order_by(DraftSite.id.desc())
+        .first()
+    )
+    if not draft:
+        from app.services.draft_sites.draft_site_service import DraftSiteService
+        draft = DraftSiteService().create_draft(
+            db,
+            DraftSiteCreate(
+                business_id=account.business_id,
+                site_title=f"{business.name} Draft Site",
+                hero_title=business.name,
+                about_text='',
+                is_demo=True,
+            ),
+        )
+
+    draft_id = draft.id
+
+    # Fire-and-forget: run pipeline in background thread
+    # Frontend polls /site-content for preview_url
+    def _run_build():
+        try:
+            from app.db.session import SessionLocal
+            from app.services.draft_sites.draft_site_service import DraftSiteService
+            thread_db = SessionLocal()
+            try:
+                logger.info("[customer/generate-preview] Starting build for draft_id=%d business=%s",
+                            draft_id, business.name)
+                DraftSiteService().generate_preview(thread_db, draft_id)
+                logger.info("[customer/generate-preview] Build complete draft_id=%d", draft_id)
+            except Exception as exc:
+                logger.exception("[customer/generate-preview] Build failed: %s", exc)
+            finally:
+                thread_db.close()
+        except Exception:
+            pass
+
+    thread = threading.Thread(target=_run_build, daemon=True, name=f"build-{draft_id}")
+    thread.start()
+
+    return {
+        'ok': True,
+        'draft_id': draft_id,
+        'message': 'בנייה התחילה — האתר שלך יהיה מוכן תוך כ-90 שניות',
+        'poll_url': '/customer/site-content',
+    }

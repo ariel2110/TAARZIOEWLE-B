@@ -78,7 +78,7 @@ jobs:
             echo "Missing required secret: SSH_USER"
             exit 1
           fi
-          if [ -z "$SSH_PASSWORD" ] && [ -z "$SSH_PRIVATE_KEY" ]; then
+          if [ "$HAS_SSH_PASSWORD" != "true" ] && [ "$HAS_SSH_PRIVATE_KEY" != "true" ]; then
             echo "Missing SSH credentials: set SSH_PASSWORD or SSH_PRIVATE_KEY"
             exit 1
           fi

@@ -1151,7 +1151,9 @@ class AutoSitePipelineService:
         """
         try:
             import httpx
-            sync_url = "https://tazo-sync.com/api/v1/auth/merchant-claim"
+            # tazo-sync nginx: /api/ -> backend:3000/ (strips /api prefix)
+            # /api/auth/merchant-claim -> backend /auth/merchant-claim
+            sync_url = "https://tazo-sync.com/api/auth/merchant-claim"
             sync_key = "tazo-sync-internal"
 
             scraped = enrichment.get("_scraped") or {}

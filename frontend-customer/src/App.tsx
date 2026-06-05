@@ -118,23 +118,263 @@ function ChangePasswordBanner({ token, onDone }: { token: string; onDone: () => 
   );
 }
 
+// ── Site Build Animation Overlay ──────────────────────────────────
+/**
+ * Shown when "צור אתר" is clicked.
+ * Polls /customer/site-content every 3s until preview_url appears.
+ * Then auto-opens the site and hides the overlay.
+ *
+ * Build stages shown to user:
+ *   1. 🔍 אוסף מידע על העסק שלך...
+ *   2. 🤖 סוכן AI בונה את האתר...
+ *   3. 🎨 עיצוב ויזואלי ותמונות...
+ *   4. 🛒 מגדיר מערכת הזמנות...
+ *   5. ✅ האתר שלך מוכן!
+ */
+const BUILD_STAGES = [
+  { icon: '🔍', text: 'אוסף מידע על העסק שלך מגוגל ורשתות חברתיות...' },
+  { icon: '🤖', text: 'GPT-4o + Claude בונים את תוכן האתר...' },
+  { icon: '🎨', text: 'מעצב צבעים, גופנים ועיצוב מותאם אישית...' },
+  { icon: '📸', text: 'שואב תמונות ותפריט מהאתר הרשמי שלך...' },
+  { icon: '🛒', text: 'מגדיר מערכת הזמנות, ניווט ותשלומים...' },
+  { icon: '✅', text: 'האתר שלך מוכן! פותח...' },
+];
+
+function SiteBuildingOverlay({
+  token,
+  onComplete,
+  onCancel,
+}: {
+  token: string;
+  onComplete: (url: string) => void;
+  onCancel: () => void;
+}) {
+  const [stageIdx, setStageIdx] = useState(0);
+  const [dots, setDots]         = useState('');
+  const [elapsed, setElapsed]   = useState(0);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const dotsRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const stageRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const startRef = useRef(Date.now());
+
+  useEffect(() => {
+    // Animate dots
+    dotsRef.current = setInterval(() => setDots(d => d.length >= 3 ? '' : d + '.'), 500);
+
+    // Cycle through build stages every ~12 seconds
+    stageRef.current = setInterval(() => {
+      setStageIdx(i => Math.min(i + 1, BUILD_STAGES.length - 2));
+    }, 12000);
+
+    // Elapsed timer
+    const elapsedTimer = setInterval(() => setElapsed(Math.floor((Date.now() - startRef.current) / 1000)), 1000);
+
+    // Poll for site_preview_url every 4 seconds
+    pollRef.current = setInterval(async () => {
+      try {
+        const data = await apiCall('/customer/site-content', token);
+        if (data?.site_preview_url) {
+          // Site ready!
+          setStageIdx(BUILD_STAGES.length - 1);
+          clearAll();
+          setTimeout(() => {
+            const fullUrl = `https://api.tazo-web.com${data.site_preview_url}`;
+            onComplete(fullUrl);
+          }, 1500);
+        }
+      } catch { /* keep polling */ }
+    }, 4000);
+
+    function clearAll() {
+      [pollRef, dotsRef, stageRef].forEach(r => { if (r.current) clearInterval(r.current); });
+      clearInterval(elapsedTimer);
+    }
+
+    return clearAll;
+  }, [token, onComplete]);
+
+  const stage = BUILD_STAGES[stageIdx];
+  const pct   = Math.min(Math.round((stageIdx / (BUILD_STAGES.length - 1)) * 100), 95);
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 9999,
+      background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%)',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      direction: 'rtl', padding: 24,
+    }}>
+      {/* Spinning gear animation */}
+      <div style={{ fontSize: 72, marginBottom: 24, animation: 'tz-spin 3s linear infinite' }}>
+        ⚙️
+      </div>
+      <style>{`
+        @keyframes tz-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes tz-pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+        .tz-build-stage { animation: tz-pulse 2s ease-in-out infinite; }
+      `}</style>
+
+      <h2 style={{ color: '#fff', fontSize: 22, fontWeight: 900, marginBottom: 8, textAlign: 'center' }}>
+        בונה את האתר שלך
+      </h2>
+
+      <div className="tz-build-stage" style={{
+        color: 'rgba(255,255,255,.7)', fontSize: 15, textAlign: 'center',
+        marginBottom: 32, maxWidth: 340, lineHeight: 1.7,
+      }}>
+        {stage.icon} {stage.text}{dots}
+      </div>
+
+      {/* Progress bar */}
+      <div style={{
+        width: '100%', maxWidth: 340, height: 6, background: 'rgba(255,255,255,.1)',
+        borderRadius: 99, overflow: 'hidden', marginBottom: 20,
+      }}>
+        <div style={{
+          height: '100%', width: `${pct}%`,
+          background: 'linear-gradient(90deg, #6366f1, #22d3ee)',
+          borderRadius: 99, transition: 'width 1s ease',
+        }} />
+      </div>
+
+      {/* Stage dots */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 32 }}>
+        {BUILD_STAGES.map((_, i) => (
+          <div key={i} style={{
+            width: 8, height: 8, borderRadius: '50%',
+            background: i <= stageIdx ? '#22d3ee' : 'rgba(255,255,255,.2)',
+            transition: 'background .3s',
+          }} />
+        ))}
+      </div>
+
+      {/* Elapsed time */}
+      <p style={{ color: 'rgba(255,255,255,.35)', fontSize: 12, marginBottom: 20 }}>
+        ⏱ {elapsed} שניות — בדרך כלל 45-90 שניות
+      </p>
+
+      <button
+        onClick={onCancel}
+        style={{
+          background: 'rgba(255,255,255,.07)', border: '1px solid rgba(255,255,255,.12)',
+          color: 'rgba(255,255,255,.5)', borderRadius: 50, padding: '10px 24px',
+          fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
+        }}
+      >
+        בטל × 
+      </button>
+    </div>
+  );
+}
+
 // ── Overview Tab ───────────────────────────────────────────────────
 function OverviewTab({ token, me }: { token: string; me: Me }) {
   const [overview, setOverview] = useState<Overview | null>(null);
   const [timeline, setTimeline] = useState<TimelineItem[]>([]);
+  const [building, setBuilding] = useState(false);
+  const [builtUrl, setBuiltUrl] = useState<string | null>(null);
+  const [buildErr, setBuildErr] = useState('');
+
   useEffect(() => {
     Promise.all([apiCall('/customer/overview', token), apiCall('/customer/timeline', token)])
       .then(([o, t]) => { setOverview(o); setTimeline((t as TimelineItem[]).slice(0, 8)); }).catch(() => { });
   }, [token]);
+
   const biz = overview?.business as Record<string, string | number> | undefined;
+
+  /**
+   * Trigger site build.
+   * Calls POST /customer/generate-preview (or admin endpoint if needed).
+   * Shows SiteBuildingOverlay while polling.
+   */
+  async function triggerBuild() {
+    setBuildErr('');
+    setBuilding(true);
+    try {
+      // Trigger generation (fire and forget — overlay polls for result)
+      await apiCall('/customer/generate-preview', token, { method: 'POST' });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      // 404/405 = endpoint may not exist yet — still show overlay, it will poll
+      if (!msg.includes('404') && !msg.includes('405')) {
+        setBuildErr(msg);
+        setBuilding(false);
+        return;
+      }
+    }
+  }
+
+  function handleBuildComplete(url: string) {
+    setBuilding(false);
+    setBuiltUrl(url);
+    // Auto-open site in new tab
+    window.open(url, '_blank');
+  }
+
   return (
     <>
+      {/* Build animation overlay */}
+      {building && (
+        <SiteBuildingOverlay
+          token={token}
+          onComplete={handleBuildComplete}
+          onCancel={() => setBuilding(false)}
+        />
+      )}
+
       <div className="stats-row">
         <div className="stat-box"><div className="stat-icon">🏪</div><div className="stat-value" style={{ fontSize: 16, wordBreak: 'break-word' }}>{biz?.name || '—'}</div><div className="stat-label">שם העסק</div></div>
         <div className="stat-box"><div className="stat-icon">📦</div><div className="stat-value" style={{ fontSize: 18 }}>{me.package_name || 'Demo'}</div><div className="stat-label">חבילה</div></div>
         <div className="stat-box"><div className="stat-icon">{me.active_site_id ? '🌐' : '📝'}</div><div className="stat-value" style={{ fontSize: 16 }}>{me.active_site_id ? 'פעיל' : me.draft_site_id ? 'טיוטה' : 'ממתין'}</div><div className="stat-label">סטטוס אתר</div></div>
         <div className="stat-box"><div className="stat-icon">💳</div><div className="stat-value">{(overview?.recent_payments as unknown[])?.length || 0}</div><div className="stat-label">תשלומים</div></div>
       </div>
+
+      {/* Build / view site CTA */}
+      <div className="card" style={{ textAlign: 'center', padding: '28px 20px' }}>
+        {builtUrl ? (
+          <>
+            <div style={{ fontSize: 48, marginBottom: 10 }}>🎉</div>
+            <h3 style={{ marginBottom: 8 }}>האתר שלך מוכן!</h3>
+            <a href={builtUrl} target="_blank" rel="noreferrer"
+               style={{ display: 'inline-block', background: 'linear-gradient(135deg,#6366f1,#22d3ee)', color: '#fff', padding: '12px 32px', borderRadius: 50, fontWeight: 800, textDecoration: 'none', marginTop: 8 }}>
+              🌐 פתח את האתר שלך
+            </a>
+          </>
+        ) : me.draft_site_id ? (
+          <>
+            <div style={{ fontSize: 36, marginBottom: 8 }}>🌐</div>
+            <p style={{ marginBottom: 14, color: 'rgba(255,255,255,.7)' }}>יש לך אתר בטיוטה — רצונך לבנות מחדש?</p>
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <button
+                onClick={triggerBuild}
+                style={{ background: 'linear-gradient(135deg,#7c3aed,#6366f1)', border: 'none', color: '#fff', borderRadius: 50, padding: '12px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}
+              >
+                🔄 בנה מחדש עם AI
+              </button>
+              <a href={`https://api.tazo-web.com/static/drafts/draft_${me.draft_site_id}.html`}
+                 target="_blank" rel="noreferrer"
+                 style={{ display: 'inline-block', background: 'rgba(255,255,255,.08)', border: '1px solid rgba(255,255,255,.15)', color: '#fff', borderRadius: 50, padding: '12px 28px', fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>
+                👀 צפה בגרסה הנוכחית
+              </a>
+            </div>
+          </>
+        ) : (
+          <>
+            <div style={{ fontSize: 48, marginBottom: 12 }}>🚀</div>
+            <h3 style={{ marginBottom: 8 }}>מוכן לבנות את האתר שלך?</h3>
+            <p style={{ color: 'rgba(255,255,255,.55)', marginBottom: 20, fontSize: 14 }}>
+              AI יבנה לך אתר מקצועי תוך 90 שניות — עם תפריט, הזמנות, ניווט ועוד.
+            </p>
+            <button
+              onClick={triggerBuild}
+              style={{ background: 'linear-gradient(135deg,#dc2626,#f97316)', border: 'none', color: '#fff', borderRadius: 50, padding: '14px 36px', fontSize: 16, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 8px 24px rgba(220,38,38,.4)' }}
+            >
+              ✨ בנה את האתר שלי עכשיו
+            </button>
+          </>
+        )}
+        {buildErr && <p style={{ color: '#f87171', marginTop: 12, fontSize: 13 }}>❌ {buildErr}</p>}
+      </div>
+
       <div className="grid-2">
         <div className="card">
           <div className="card-title">🏪 פרטי העסק</div>

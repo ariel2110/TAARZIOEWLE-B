@@ -20,7 +20,9 @@ _WA_BASE     = 'http://sitenest-evolution:8080'
 _WA_INSTANCE = 'tazo-main'
 _WA_KEY      = 'tazo-evo-key'
 _ADMIN_PHONE = '972546363350'
-_SYNC_URL    = 'https://tazo-sync.com/api/v1/orders'
+# tazo-sync nginx: /api/ -> backend:3000/ (strips /api prefix)
+# So /api/orders maps to backend /orders route
+_SYNC_URL    = 'https://tazo-sync.com/api/orders'
 _SYNC_KEY    = 'tazo-sync-internal'
 
 
@@ -119,20 +121,33 @@ def create_site_order(order: SiteOrderIn, db: Session = Depends(get_db)):
     # --- Forward to TAZO-SYNC (background, non-blocking) ---
     sync_payload = {
         'source': 'tazo-web',
-        'business_name':  biz_name,
+        'businessName':  biz_name,       # tazo-sync requires businessName (camelCase)
         'business_phone': biz_clean or None,
+        'buyerPhone':    cust_phone,     # tazo-sync field for customer phone
         'customer_name':  customer,
         'customer_phone': cust_phone,
+        'need':          ', '.join(i.get('name','') for i in (order.items or []) if i.get('name')) or 'הזמנה',
         'items':     order.items or [],
         'total':     order.total or 0,
         'order_type': order.order_type,
         'notes':     order.notes or '',
         'creditOffer': 0,   # skip auth requirement
+        'isShadowOrder': True,           # triggers merchant WhatsApp notification
+        'shadowMerchantPhone': biz_clean or None,
     }
     # Forward to TAZO-SYNC synchronously to capture deliveryCode
     sync_resp   = _forward_to_sync(sync_payload)
-    delivery_code = sync_resp.get('deliveryCode') or sync_resp.get('data', {}).get('deliveryCode')
-    tracking_url  = f'https://tazo-sync.com/track/{delivery_code}' if delivery_code else None
+    # tazo-sync assigns deliveryCode at dispatch time (when business accepts),
+    # but we get the order _id now — build a pre-tracking URL with orderId
+    order_id      = str(sync_resp.get('_id') or sync_resp.get('id') or '')
+    delivery_code = sync_resp.get('deliveryCode') or None
+    if delivery_code:
+        tracking_url = f'https://tazo-sync.com/track/{delivery_code}'
+    elif order_id:
+        # Pre-tracking link using order ID — will show CREATED status
+        tracking_url = f'https://tazo-sync.com/track?order={order_id}'
+    else:
+        tracking_url = None
 
     return {
         'ok': True,

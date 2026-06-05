@@ -754,7 +754,11 @@ class AutoSitePipelineService:
                     logger.info("[Stage 1f] Grok Social timed-out / failed — skipping")
 
             if not content:
-                logger.warning("[Pipeline] Stage 1a failed — aborting")
+                logger.warning("[Pipeline] Stage 1a (GPT-4o) failed — trying Grok fallback")
+                content = self._stage1a_content(raw_maps_data, regeneration_note, social, enrichment, force_model="grok-3")
+            if not content:
+                logger.warning("[Pipeline] Stage 1a Grok fallback failed — aborting")
+                self._notify_admin_build_fail(enrichment.get("name") or "unknown", "Stage 1a all LLMs failed")
                 return None
 
             logger.info("[Pipeline] Stage 1a OK — business=%r industry=%s", content.business_name, content.industry_type)
@@ -769,8 +773,24 @@ class AutoSitePipelineService:
                 grok_social=grok_social,
             )
             if not html:
-                logger.warning("[Pipeline] Stage 2 (Claude HTML) failed — aborting")
-                return None
+                logger.warning("[Pipeline] Stage 2 (Claude HTML) failed — trying GPT-4o fallback")
+                html = self._stage2_build_fallback(content, design, enrichment,
+                                                   deepseek_enrichment=deepseek_enrichment,
+                                                   grok_social=grok_social)
+            if not html:
+                logger.warning("[Pipeline] Stage 2 all AI failed — using static template")
+                self._notify_admin_build_fail(enrichment.get("name") or "unknown", "Stage 2 all AI failed")
+                from app.services.generator.template_render_service import TemplateRenderService
+                from app.services.generator.context_builder import ContextBuilder
+                ctx = ContextBuilder().build(enrichment)
+                ctx.update({
+                    "menu_items": (enrichment.get("_scraped") or {}).get("menu_items"),
+                    "hero_image_url": (enrichment.get("_scraped") or {}).get("hero_image_url"),
+                    "gallery_images": (enrichment.get("_scraped") or {}).get("gallery_images"),
+                })
+                html = TemplateRenderService().render(ctx)
+                if not html:
+                    return None
 
             logger.info("[Pipeline] Stage 2 OK — %d bytes", len(html))
 
@@ -784,6 +804,10 @@ class AutoSitePipelineService:
             result._mistral  = mistral_seo          # store for variant 2 reuse
             result._cohere   = cohere_cro           # store for variant 2 reuse
             result._grok     = grok_social          # store for variant 2 reuse
+
+            # ── Stage 3: Register business on tazo-sync ───────────────────────
+            self._register_on_sync(enrichment, content)
+
             return result
 
         except Exception:
@@ -853,7 +877,53 @@ class AutoSitePipelineService:
         "  });\n"
         "})();\n"
         "</script>\n"
-        # 3. Ordering cart widget (CSS + HTML + JS) — injected when not already present
+        # 3. Navigation FAB (Waze / Maps / Menu / Claim business)
+        "<style>\n"
+        "#tz-nav-fab{position:fixed;bottom:24px;right:24px;z-index:490;}\n"
+        "#tz-nav-toggle{width:56px;height:56px;border-radius:16px;background:linear-gradient(135deg,#1d4ed8,#0ea5e9);border:none;color:#fff;font-size:24px;cursor:pointer;box-shadow:0 8px 24px rgba(29,78,216,.45);display:flex;align-items:center;justify-content:center;}\n"
+        "#tz-nav-menu{position:absolute;bottom:68px;right:0;display:none;flex-direction:column;gap:9px;align-items:flex-end;}\n"
+        "#tz-nav-fab.open #tz-nav-menu{display:flex;}\n"
+        ".tz-nav-item{display:flex;align-items:center;gap:8px;background:#fff;border:none;border-radius:13px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.14);white-space:nowrap;text-decoration:none;color:#111;direction:rtl;font-family:inherit;}\n"
+        ".tz-nav-item:hover{background:#f0f9ff;}\n"
+        ".tz-nav-claim{background:linear-gradient(135deg,#7c3aed,#6366f1)!important;color:#fff!important;}\n"
+        "</style>\n"
+        "<div id=\"tz-nav-fab\">\n"
+        "  <button id=\"tz-nav-toggle\" onclick=\"var f=document.getElementById('tz-nav-fab');f.classList.toggle('open');\" title=\"ניווט\">&#x1f4cd;</button>\n"
+        "  <div id=\"tz-nav-menu\">\n"
+        "    <a class=\"tz-nav-item\" id=\"tz-waze-lnk\" href=\"#\" target=\"_blank\">&#x1f697; Waze — קח אותי</a>\n"
+        "    <a class=\"tz-nav-item\" id=\"tz-gmap-lnk\" href=\"#\" target=\"_blank\">&#x1f5fa;&#xfe0f; גוגל מפות</a>\n"
+        "    <a class=\"tz-nav-item\" href=\"#menu\" onclick=\"document.getElementById('tz-nav-fab').classList.remove('open')\">&#x1f4cb; תפריט</a>\n"
+        "    <a class=\"tz-nav-item\" id=\"tz-nav-tel\" href=\"#\">&#x1f4de; התקשר</a>\n"
+        "    <a class=\"tz-nav-item tz-nav-claim\" id=\"tz-claim-lnk\" href=\"https://tazo-sync.com/dashboard?action=claim\" target=\"_blank\">&#x1f3ea; תבעו את העסק</a>\n"
+        "  </div>\n"
+        "</div>\n"
+        "<script>\n"
+        "(function(){\n"
+        "  var biz=window.__TZ_BIZ||{};\n"
+        "  var addr=(biz.address)||'';\n"
+        "  var lat=biz.lat||0,lng=biz.lng||0;\n"
+        "  var phone=biz.phone||(document.body.getAttribute('data-biz-phone')||'');\n"
+        "  var placeId=biz.placeId||'';\n"
+        "  var bizName=biz.name||document.title||'';\n"
+        "  if(lat&&lng){\n"
+        "    document.getElementById('tz-waze-lnk').href='https://waze.com/ul?ll='+lat+','+lng+'&navigate=yes';\n"
+        "    document.getElementById('tz-gmap-lnk').href='https://maps.google.com/?q='+lat+','+lng;\n"
+        "  } else if(addr){\n"
+        "    var e=encodeURIComponent(addr);\n"
+        "    document.getElementById('tz-waze-lnk').href='https://waze.com/ul?q='+e+'&navigate=yes';\n"
+        "    document.getElementById('tz-gmap-lnk').href='https://maps.google.com/?q='+e;\n"
+        "  }\n"
+        "  if(phone){document.getElementById('tz-nav-tel').href='tel:'+phone.replace(/\\D/g,'');}\n"
+        "  var cu='https://tazo-sync.com/dashboard?action=claim';\n"
+        "  if(placeId)cu+='&placeId='+encodeURIComponent(placeId);\n"
+        "  if(bizName)cu+='&name='+encodeURIComponent(bizName);\n"
+        "  if(phone)cu+='&phone='+encodeURIComponent(phone);\n"
+        "  if(addr)cu+='&address='+encodeURIComponent(addr);\n"
+        "  document.getElementById('tz-claim-lnk').href=cu;\n"
+        "  document.addEventListener('click',function(e){var f=document.getElementById('tz-nav-fab');if(f&&!f.contains(e.target))f.classList.remove('open');});\n"
+        "})();\n"
+        "</script>\n"
+        # 4. Ordering cart widget (CSS + HTML + JS)
         "<style>\n"
         "#tz-cart-fab{position:fixed;bottom:90px;left:24px;background:linear-gradient(135deg,#dc2626,#f97316);color:#fff;border:none;border-radius:18px;padding:14px 20px;font-size:15px;font-weight:800;cursor:pointer;z-index:500;box-shadow:0 8px 24px rgba(220,38,38,.45);display:none;align-items:center;gap:8px;font-family:inherit;direction:rtl;}\n"
         "#tz-cart-fab.has-items{display:flex;}\n"
@@ -1012,6 +1082,125 @@ class AutoSitePipelineService:
 
         return html
 
+    def _stage2_build_fallback(
+        self,
+        content: "ContentBundle",
+        design: "DesignConfig",
+        enrichment: dict,
+        deepseek_enrichment: dict | None = None,
+        grok_social: dict | None = None,
+    ) -> str | None:
+        """GPT-4o fallback for Stage 2 if Claude fails."""
+        try:
+            from app.services.llm.router_service import LLMRouterService
+            logger.info("[Stage 2 fallback] GPT-4o HTML builder")
+            phone_clean = _clean_phone(content.contact_phone)
+            wa_url = f"https://wa.me/{phone_clean}" if phone_clean else "#"
+            prompt = (
+                f"Build a complete RTL Hebrew website for: {content.business_name}\n"
+                f"Tagline: {content.tagline}\nAbout: {content.about_us}\n"
+                f"Phone: {content.contact_phone}\nCity: {enrichment.get('city','')}\n"
+                f"Category: {enrichment.get('category','')}\nWhatsApp: {wa_url}\n\n"
+                "Return ONLY the complete HTML. Must be RTL, Hebrew, mobile-first, "
+                "with hero section, services, about, and contact button to WhatsApp."
+            )
+            response = LLMRouterService().call_tracked(
+                "build_site_html_fallback", prompt,
+                system="You are an expert Hebrew website builder. Return only complete HTML.",
+                model="gpt-4o", max_tokens=8000,
+                draft_site_id=getattr(self, '_track_draft_site_id', None),
+                business_id=getattr(self, '_track_business_id', None),
+                stage="stage2_fallback",
+            )
+            if response and len(response.strip()) > 500:
+                return self._fix_html_output(response.strip())
+        except Exception:
+            logger.exception("[Stage 2 fallback] GPT-4o failed")
+        return None
+
+    def _notify_admin_build_fail(self, business_name: str, reason: str) -> None:
+        """Send WhatsApp notification to admin when site build fails."""
+        try:
+            from app.core.config import settings
+            phone = getattr(settings, "whatsapp_owner_phone", "") or ""
+            if not phone:
+                return
+            p = re.sub(r"\D", "", phone)
+            if p.startswith("0"):
+                p = "972" + p[1:]
+            msg = f"⚠️ *בניית אתר נכשלה*\n\nעסק: {business_name}\nסיבה: {reason}\n\nיש לבדוק את הלוגים."
+            import httpx
+            meta_token = getattr(settings, "meta_wa_access_token", "") or ""
+            phone_id = getattr(settings, "meta_wa_phone_number_id", "") or ""
+            if meta_token and phone_id:
+                httpx.post(
+                    f"https://graph.facebook.com/v19.0/{phone_id}/messages",
+                    json={"messaging_product": "whatsapp", "to": p,
+                          "type": "text", "text": {"body": msg}},
+                    headers={"Authorization": f"Bearer {meta_token}"},
+                    timeout=8,
+                ).raise_for_status()
+                logger.info("[notify] Admin WA sent — build fail for %s", business_name)
+        except Exception as exc:
+            logger.warning("[notify] Could not send admin WA: %s", exc)
+
+    def _register_on_sync(self, enrichment: dict, content: "ContentBundle") -> None:
+        """
+        Fire-and-forget: register/update the business on tazo-sync so orders flow
+        to their dashboard. Called after successful site build.
+        """
+        try:
+            import httpx
+            sync_url = "https://tazo-sync.com/api/v1/auth/merchant-claim"
+            sync_key = "tazo-sync-internal"
+
+            scraped = enrichment.get("_scraped") or {}
+            menu_items = scraped.get("menu_items") or []
+            # Flatten menu categories into product list
+            products = []
+            for cat in menu_items:
+                for item in (cat.get("items") or []):
+                    if item.get("name"):
+                        products.append({
+                            "name":  item["name"],
+                            "price": item.get("price") or 0,
+                            "unit":  "יחידה",
+                        })
+
+            phone = enrichment.get("phone") or content.contact_phone or ""
+            place_id = enrichment.get("place_id") or enrichment.get("google_place_id") or ""
+            address = enrichment.get("address") or enrichment.get("city") or ""
+            lat = enrichment.get("lat")
+            lng = enrichment.get("lng")
+
+            payload = {
+                "placeId":       place_id,
+                "bizName":       content.business_name or enrichment.get("name", ""),
+                "address":       address,
+                "location":      {"lat": lat, "lng": lng} if lat and lng else None,
+                "phone":         phone,
+                "whatsapp":      phone,
+                "category":      content.industry_type or enrichment.get("category", ""),
+                "description":   content.about_us or "",
+                "rating":        enrichment.get("rating") or 0,
+                "deliveryRadius": 5,
+                "products":      products[:30],
+            }
+
+            resp = httpx.post(
+                sync_url,
+                json=payload,
+                headers={"Authorization": f"Bearer {sync_key}", "Content-Type": "application/json"},
+                timeout=15,
+            )
+            if resp.status_code < 300:
+                data = resp.json()
+                logger.info("[Stage 3] tazo-sync registration OK — biz_id=%s", data.get("_id") or data.get("businessId"))
+            else:
+                logger.warning("[Stage 3] tazo-sync registration returned %d: %s", resp.status_code, resp.text[:200])
+        except Exception as exc:
+            logger.warning("[Stage 3] tazo-sync registration failed (non-critical): %s", exc)
+
     # ── Stage 0: Social & Web Intelligence ───────────────────────────────────
 
     def _stage0_social_discovery(self, enrichment: dict) -> dict:
@@ -1093,7 +1282,7 @@ class AutoSitePipelineService:
 
     # ── Stage 1a: GPT-4o (primary) / Grok (auto-fallback via router) ─────────
 
-    def _stage1a_content(self, raw: str, regeneration_note: str | None = None, social: dict | None = None, enrichment: dict | None = None) -> ContentBundle | None:
+    def _stage1a_content(self, raw: str, regeneration_note: str | None = None, social: dict | None = None, enrichment: dict | None = None, force_model: str | None = None) -> ContentBundle | None:
         try:
             from app.services.llm.router_service import LLMRouterService
             logger.info("[Stage 1a] GPT-4o Content Manager — generating copy + outreach JSON")
@@ -1142,15 +1331,21 @@ class AutoSitePipelineService:
                 if easy_services:
                     user_msg += "\n\n=== SERVICES FROM EASY DIRECTORY ===\nשירותים מאומתים מ-Easy:\n"
                     user_msg += "\n".join(f'- {s}' for s in easy_services)
-            response = LLMRouterService().call_tracked(
-                "generate_site_copy",
-                user_msg,
+            call_kwargs: dict = dict(
                 system=_CONTENT_AGENT_SYSTEM,
                 max_tokens=1200,
                 json_mode=True,
                 draft_site_id=getattr(self, '_track_draft_site_id', None),
                 business_id=getattr(self, '_track_business_id', None),
                 stage="stage1a_content",
+            )
+            if force_model:
+                call_kwargs["model"] = force_model
+                logger.info("[Stage 1a] forced model=%s", force_model)
+            response = LLMRouterService().call_tracked(
+                "generate_site_copy",
+                user_msg,
+                **call_kwargs,
             )
             data = _parse_json(response or "")
             if not data:

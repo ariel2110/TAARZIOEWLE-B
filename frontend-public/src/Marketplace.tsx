@@ -975,6 +975,12 @@ function MallView({ onCategory, onSearch, onJoin, onBusinessClick, crossAuthPhon
           © 2026 TAZO | כל הזכויות שמורות<br />
           אריאל אביב עוסק מורשה<br />
           <a href="mailto:info@tazo-web.com" style={{ color: 'rgba(255,255,255,0.3)', textDecoration: 'none' }}>info@tazo-web.com</a>
+          <br />
+          <span style={{ display: 'inline-flex', gap: 12, marginTop: 8, justifyContent: 'center' }}>
+            <a href="/terms" style={{ color: 'rgba(255,255,255,0.35)', textDecoration: 'none' }}>תנאי שימוש</a>
+            <span style={{ color: 'rgba(255,255,255,0.15)' }}>·</span>
+            <a href="/privacy" style={{ color: 'rgba(255,255,255,0.35)', textDecoration: 'none' }}>מדיניות פרטיות</a>
+          </span>
         </div>
       </footer>
       <VersionBar />

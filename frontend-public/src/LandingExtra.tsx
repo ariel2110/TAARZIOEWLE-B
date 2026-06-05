@@ -301,6 +301,10 @@ export default function LandingExtra({ onStartIntake }: Props) {
                         <a href={`https://wa.me/972546363350`} target="_blank" rel="noopener noreferrer">וואטסאפ</a>
                         <span>·</span>
                         <a href="mailto:admin@tazo-web.com">מייל</a>
+                        <span>·</span>
+                        <a href="/terms">תנאי שימוש</a>
+                        <span>·</span>
+                        <a href="/privacy">מדיניות פרטיות</a>
                     </div>
                     <p className="le-footer-copy">© 2026 tazo-web. כל הזכויות שמורות.</p>
                 </div>

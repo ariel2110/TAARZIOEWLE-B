@@ -1,6 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import Sidebar from './Sidebar'
-import PageGuide from './PageGuide';
 import TazoWebInstallBanner from './TazoWebInstallBanner';
 import './styles.css';
 
@@ -219,7 +218,6 @@ export default function App() {
         <Suspense fallback={<PageFallback />}>
           <SubmissionStatus token={statusToken} onBack={goHome} selectedPlan={selectedPlan} />
         </Suspense>
-        <PageGuide page={page} onGoTo={handleGoTo} />
       </>
     );
   }
@@ -231,7 +229,6 @@ export default function App() {
         <Suspense fallback={<PageFallback />}>
           <IntakeForm onSubmitted={goToStatus} onBack={goHome} selectedPlan={selectedPlan} />
         </Suspense>
-        <PageGuide page={page} onGoTo={handleGoTo} />
       </>
     );
   }
@@ -244,7 +241,6 @@ export default function App() {
           <MagicPortal />
           <LandingExtra onStartIntake={goToIntake} />
         </Suspense>
-        <PageGuide page={page} onGoTo={handleGoTo} />
       </>
     );
   }
@@ -257,7 +253,6 @@ export default function App() {
       <Suspense fallback={<PageFallback />}>
         <Marketplace onJoin={goToBusinessLanding} jumpCategory={jumpCategory} onClearJumpCategory={() => setJumpCategory(undefined)} />
       </Suspense>
-      <PageGuide page={page} onGoTo={handleGoTo} />
     </>
   );
 }

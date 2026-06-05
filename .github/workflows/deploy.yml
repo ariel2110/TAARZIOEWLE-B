@@ -17,6 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     env:
+      HAS_SSH_PASSWORD: ${{ secrets.SSH_PASSWORD != '' }}
+      HAS_SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY != '' }}
       DEPLOY_SCRIPT: |
         set -e
         cd /root/TAARZIOEWLE-B
@@ -82,7 +84,7 @@ jobs:
           fi
 
       - name: Deploy via SSH (password)
-        if: secrets.SSH_PASSWORD != ''
+        if: env.HAS_SSH_PASSWORD == 'true'
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -93,7 +95,7 @@ jobs:
           script: ${{ env.DEPLOY_SCRIPT }}
 
       - name: Deploy via SSH (private key fallback)
-        if: secrets.SSH_PASSWORD == '' && secrets.SSH_PRIVATE_KEY != ''
+        if: env.HAS_SSH_PASSWORD != 'true' && env.HAS_SSH_PRIVATE_KEY == 'true'
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}

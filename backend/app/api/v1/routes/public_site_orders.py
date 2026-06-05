@@ -7,6 +7,7 @@ Orders are:
 """
 from __future__ import annotations
 
+import os
 import httpx
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
@@ -22,8 +23,8 @@ _WA_KEY      = 'tazo-evo-key'
 _ADMIN_PHONE = '972546363350'
 # tazo-sync nginx: /api/ -> backend:3000/ (strips /api prefix)
 # So /api/orders maps to backend /orders route
-_SYNC_URL    = 'https://tazo-sync.com/api/orders'
-_SYNC_KEY    = 'tazo-sync-internal'
+_SYNC_URL    = os.environ.get('TAZO_SYNC_URL', 'https://tazo-sync.com') + '/api/orders'
+_SYNC_KEY    = os.environ.get('TAZO_SYNC_INTERNAL_KEY', 'tazo-sync-internal')
 
 
 class SiteOrderIn(BaseModel):

@@ -1,4 +1,4 @@
-﻿"""AutoSite Multi-Agent Generation Pipeline
+"""AutoSite Multi-Agent Generation Pipeline
 ==========================================
 Five specialized AI agents work together to produce a ready-to-send
 Hebrew landing page + personalized WhatsApp outreach message.
@@ -821,6 +821,63 @@ class AutoSitePipelineService:
             logger.exception("[Pipeline] Variant 2 generation failed")
             return None
 
+    # ── HTML post-processor ────────────────────────────────────────────────────
+
+    _FADE_UP_OBSERVER_JS = (
+        "<script>\n"
+        "(function(){\n"
+        "  var els=document.querySelectorAll('.fade-up,.fade-in,.animate-on-scroll');\n"
+        "  if(!els.length)return;\n"
+        "  function show(el){el.classList.add('visible','in-view');}\n"
+        "  if('IntersectionObserver' in window){\n"
+        "    var io=new IntersectionObserver(function(entries){\n"
+        "      entries.forEach(function(e){if(e.isIntersecting){show(e.target);io.unobserve(e.target);}});\n"
+        "    },{threshold:0.05});\n"
+        "    els.forEach(function(el){io.observe(el);});\n"
+        "    setTimeout(function(){\n"
+        "      els.forEach(function(el){\n"
+        "        var r=el.getBoundingClientRect();\n"
+        "        if(r.top<window.innerHeight)show(el);\n"
+        "      });\n"
+        "    },120);\n"
+        "  } else { els.forEach(show); }\n"
+        "})();\n"
+        "</script>"
+    )
+
+    def _fix_html_output(self, html: str) -> str:
+        """
+        Post-process Claude HTML:
+        1. Detect truncated output (missing </body>) and close it cleanly.
+        2. Inject IntersectionObserver for .fade-up/.fade-in elements.
+        """
+        if not html:
+            return html
+        hl = html.lower()
+        has_body_close = "</body>" in hl
+        has_fade = any(c in html for c in ("fade-up", "fade-in", "animate-on-scroll"))
+
+        if not has_body_close:
+            # Find last complete block-level closing tag
+            last_close = max(
+                html.rfind("</section>"),
+                html.rfind("</div>"),
+                html.rfind("</footer>"),
+                html.rfind("</article>"),
+            )
+            if last_close > 0:
+                end = html.index(">", last_close) + 1
+                html = html[:end]
+            html = html.rstrip()
+            if has_fade:
+                html += "\n" + self._FADE_UP_OBSERVER_JS
+            html += "\n</body>\n</html>"
+            logger.info("[Stage 2] HTML was truncated — added closing tags + observer")
+        elif has_fade and "IntersectionObserver" not in html:
+            html = html.replace("</body>", self._FADE_UP_OBSERVER_JS + "\n</body>", 1)
+
+        return html
+
     # ── Stage 0: Social & Web Intelligence ───────────────────────────────────
 
     def _stage0_social_discovery(self, enrichment: dict) -> dict:
@@ -1491,8 +1548,8 @@ OUTPUT RULES:
                 m = re.search(r"<!DOCTYPE.*</html>", html, re.DOTALL | re.IGNORECASE)
                 if m:
                     html = m.group()
-            if html and not html.lower().rstrip().endswith("</html>"):
-                html = html.rstrip() + "\n</html>"
+            # ── Post-process: fix truncated HTML and inject fade-up observer ──
+            html = self._fix_html_output(html)
             return html
         except Exception:
             logger.exception("[Stage 2] Unhandled error")

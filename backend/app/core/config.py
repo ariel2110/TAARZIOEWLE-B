@@ -52,6 +52,7 @@ class Settings(BaseSettings):
     # Social & Web Discovery
     serper_api_key: str | None = Field(default=None)           # https://serper.dev — 2,500 free queries/mo
     apify_api_token: str | None = Field(default=None)          # https://apify.com — social media scraping (IG/TikTok media)
+    firecrawl_api_key: str | None = Field(default=None)        # https://firecrawl.dev — official website scraping (images, menu, text)
     facebook_access_token: str | None = Field(default=None)    # Facebook Graph API token (optional)
     facebook_app_id: str | None = Field(default=None)           # Facebook App ID — required for token refresh
     facebook_app_secret: str | None = Field(default=None)       # Facebook App Secret — required for token refresh

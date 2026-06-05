@@ -91,6 +91,12 @@ class DraftSiteService:
             'rating': raw.get('rating'),
             'reviews_count': raw.get('reviews_count') or 0,
             'opening_hours': raw.get('opening_hours') or [],
+            # ── For Stage 0.5 (Firecrawl website scraper) ────────────────────
+            'website_url': raw.get('website') or '',
+            'category': raw.get('category') or '',
+            'business_types': raw.get('business_types') or '',
+            'name': raw.get('name') or '',
+            'city': raw.get('city') or '',
         }
 
         try:
@@ -104,6 +110,29 @@ class DraftSiteService:
 
         # Fallback: our own static template
         context = ContextBuilder().build(raw)
+        # Attempt to enrich context with Firecrawl scrape even in fallback path
+        website_url = raw.get('website') or ''
+        if website_url:
+            try:
+                from app.services.enrichment.website_scraper_service import WebsiteScraperService
+                scraped = WebsiteScraperService().scrape(
+                    url=website_url,
+                    category=raw.get('category', ''),
+                    business_types=raw.get('business_types', ''),
+                )
+                if scraped.scraped_ok:
+                    if scraped.hero_image_url and not context.get('hero_image_url'):
+                        context['hero_image_url'] = scraped.hero_image_url
+                    if scraped.gallery_images:
+                        context.setdefault('gallery_images', scraped.gallery_images)
+                    if scraped.about_text and not context.get('about_text'):
+                        context['about_text'] = scraped.about_text
+                    if scraped.tagline and not context.get('tagline'):
+                        context['tagline'] = scraped.tagline
+                    if scraped.menu_items and not context.get('menu_items'):
+                        context['menu_items'] = scraped.menu_items
+            except Exception:
+                pass
         return TemplateRenderService().render(context), None
 
     def _build_enriched_context(self, db: Session, item: DraftSite) -> dict:

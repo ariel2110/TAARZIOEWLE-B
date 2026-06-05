@@ -103,6 +103,7 @@ def _food_menu(category: str, types: str) -> list:
 def _render_food(c: dict) -> str:
     from html import escape as _e
     import re as _re
+    import json as _json
 
     name = _e(_re.sub(r"\s*Draft Site$", "", c.get("site_title") or c.get("hero_title") or "העסק"))
     phone = _re.sub(r"\D", "", c.get("phone") or "")
@@ -113,9 +114,14 @@ def _render_food(c: dict) -> str:
     about = _e(c.get("about_text") or "")
     tagline = _e(c.get("tagline") or "")
     is_demo = c.get("is_demo", True)
+    hero_image_url = c.get("hero_image_url") or ""
+    gallery_images: list = c.get("gallery_images") or []
+    rating = c.get("rating") or 0
+    reviews_count = c.get("reviews_count") or 0
+    maps_url = _e(c.get("maps_url") or "")
 
     menu = c.get("menu_items") or _food_menu(category, types)
-    menu_json = __import__("json").dumps(menu, ensure_ascii=False)
+    menu_json = _json.dumps(menu, ensure_ascii=False)
 
     biz_phone_attr = f'data-biz-phone="{phone}"' if phone else ""
     demo_banner = (
@@ -145,12 +151,17 @@ input,textarea{{font-family:inherit}}
 .cart-btn{{background:linear-gradient(135deg,#dc2626,#f97316);border-radius:50px;padding:10px 18px;color:white;font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px;position:relative}}
 .cart-badge{{background:white;color:#dc2626;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;min-width:20px}}
 /* HERO */
-.hero{{background:linear-gradient(135deg,#7f1d1d,#dc2626,#f97316);padding:36px 20px;text-align:center}}
+.hero{{position:relative;background:linear-gradient(135deg,#7f1d1d,#dc2626,#f97316);padding:36px 20px;text-align:center;overflow:hidden}}
+.hero-bg{{position:absolute;inset:0;object-fit:cover;width:100%;height:100%;opacity:.25;pointer-events:none}}
+.hero-content{{position:relative;z-index:1}}
 .hero h1{{font-size:clamp(26px,5vw,42px);font-weight:900;margin-bottom:8px}}
 .hero p{{color:rgba(255,255,255,.8);font-size:15px;margin-bottom:20px}}
 .order-type{{display:flex;gap:0;border-radius:10px;overflow:hidden;border:2px solid rgba(255,255,255,.3);display:inline-flex}}
 .order-type-btn{{padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;font-family:inherit;color:white;background:transparent}}
 .order-type-btn.active{{background:white;color:#dc2626}}
+/* RATING STRIP */
+.rating-strip{{display:flex;align-items:center;justify-content:center;gap:10px;padding:10px 20px;background:rgba(0,0,0,.25);font-size:13px;font-weight:700}}
+.rating-stars{{color:#fbbf24;font-size:16px;letter-spacing:1px}}
 /* MENU */
 .menu-wrap{{max-width:900px;margin:0 auto;padding:20px}}
 .cat-tabs{{display:flex;gap:8px;overflow-x:auto;padding-bottom:12px;margin-bottom:20px;scrollbar-width:none}}
@@ -160,11 +171,14 @@ input,textarea{{font-family:inherit}}
 .menu-section{{margin-bottom:32px}}
 .menu-section-title{{font-size:17px;font-weight:800;margin-bottom:14px;color:rgba(255,255,255,.8);padding:0 4px}}
 .item-grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}}
-.item-card{{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:8px;transition:all .2s}}
+.item-card{{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:16px;overflow:hidden;display:flex;flex-direction:column;transition:all .2s}}
 .item-card:hover{{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.16)}}
+.item-img{{width:100%;height:140px;object-fit:cover;display:block}}
+.item-img-placeholder{{width:100%;height:100px;background:linear-gradient(135deg,rgba(220,38,38,.25),rgba(249,115,22,.25));display:flex;align-items:center;justify-content:center;font-size:32px}}
+.item-body{{padding:14px;display:flex;flex-direction:column;gap:6px;flex:1}}
 .item-name{{font-size:15px;font-weight:700}}
 .item-desc{{font-size:13px;color:rgba(255,255,255,.5);line-height:1.5}}
-.item-footer{{display:flex;align-items:center;justify-content:space-between;margin-top:4px}}
+.item-footer{{display:flex;align-items:center;justify-content:space-between;margin-top:auto;padding-top:8px}}
 .item-price{{font-size:18px;font-weight:800;color:#f97316}}
 .qty-ctrl{{display:flex;align-items:center;gap:10px}}
 .qty-btn{{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.1);color:white;font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-family:inherit;transition:background .2s}}
@@ -215,13 +229,17 @@ input,textarea{{font-family:inherit}}
 </header>
 
 <section class="hero">
-  <h1>{name}</h1>
-  {f'<p>{tagline}</p>' if tagline else ('<p>הזמנה מהירה לדלת שלך 🚀</p>' if not tagline else '')}
-  <div class="order-type">
-    <button class="order-type-btn active" onclick="setOrderType(this,'delivery')">🛵 משלוח</button>
-    <button class="order-type-btn" onclick="setOrderType(this,'pickup')">🏃 איסוף עצמי</button>
+  {f'<img class="hero-bg" src="{_e(hero_image_url)}" alt="" loading="eager"/>' if hero_image_url else ''}
+  <div class="hero-content">
+    <h1>{name}</h1>
+    {f'<p>{tagline}</p>' if tagline else ('<p>הזמנה מהירה לדלת שלך 🚀</p>')}
+    <div class="order-type">
+      <button class="order-type-btn active" onclick="setOrderType(this,'delivery')">🛵 משלוח</button>
+      <button class="order-type-btn" onclick="setOrderType(this,'pickup')">🏃 איסוף עצמי</button>
+    </div>
   </div>
 </section>
+{f'<div class="rating-strip"><span class="rating-stars">{"★" * int(float(rating))}{"☆" * (5 - int(float(rating)))}</span><span>{rating} דירוג ({reviews_count} ביקורות)</span>{"<a href=" + chr(34) + maps_url + chr(34) + " target=_blank style=color:#fbbf24;font-size:12px>&#128205; ראה בגוגל</a>" if maps_url else ""}</div>' if rating else ''}
 
 <div class="menu-wrap">
   <div class="cat-tabs" id="cat-tabs"></div>
@@ -343,15 +361,21 @@ function renderMenu() {{
       const id = si + "-" + ii;
       const card = document.createElement("div");
       card.className = "item-card";
+      const imgHtml = item.image_url
+        ? `<img class="item-img" src="${{item.image_url}}" alt="${{item.name}}" loading="lazy" onerror="this.style.display='none'">`
+        : (ii === 0 && si === 0 ? `<div class="item-img-placeholder">🍽️</div>` : "");
       card.innerHTML = `
-        <div class="item-name">${{item.name}}</div>
-        <div class="item-desc">${{item.desc || ""}}</div>
-        <div class="item-footer">
-          <div class="item-price">₪${{item.price}}</div>
-          <div class="qty-ctrl">
-            <button class="qty-btn" onclick="changeQty('${{id}}',${{si}},${{ii}},-1)">−</button>
-            <span class="qty-num" id="qty-${{id}}">0</span>
-            <button class="qty-btn" onclick="changeQty('${{id}}',${{si}},${{ii}},1)">+</button>
+        ${{imgHtml}}
+        <div class="item-body">
+          <div class="item-name">${{item.name}}</div>
+          ${{item.desc ? `<div class="item-desc">${{item.desc}}</div>` : ""}}
+          <div class="item-footer">
+            <div class="item-price">₪${{item.price || "—"}}</div>
+            <div class="qty-ctrl">
+              <button class="qty-btn" onclick="changeQty('${{id}}',${{si}},${{ii}},-1)">−</button>
+              <span class="qty-num" id="qty-${{id}}">0</span>
+              <button class="qty-btn" onclick="changeQty('${{id}}',${{si}},${{ii}},1)">+</button>
+            </div>
           </div>
         </div>
       `;

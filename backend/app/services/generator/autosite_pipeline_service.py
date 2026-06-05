@@ -677,6 +677,24 @@ class AutoSitePipelineService:
             # Merge social profile into enrichment so Stage 2 (Claude) can use it
             enrichment = {**enrichment, "_social": social}
 
+            # ── Stage 0.5: Official Website Scraper (Firecrawl) ───────────────
+            # Resolve best website URL: from enrichment fields or from Stage 0
+            website_url = (
+                enrichment.get("website_url")
+                or enrichment.get("website")
+                or social.get("legacy_site_url")
+                or ""
+            )
+            if website_url:
+                scraped = self._stage05_website_scrape(
+                    url=website_url,
+                    category=enrichment.get("category", ""),
+                    business_types=enrichment.get("business_types", ""),
+                )
+                enrichment = {**enrichment, "_scraped": scraped}
+            else:
+                enrichment = {**enrichment, "_scraped": {}}
+
             # ── Stage 1: Parallel ─────────────────────────────────────────────
             # Stage 1a: GPT/Grok       → content.json  (hero, services, about, reviews)
             # Stage 1b: Gemini         → design.json   (colors, animations, gradients)
@@ -846,6 +864,40 @@ class AutoSitePipelineService:
             return result
         except Exception:
             logger.exception("[Stage 0] Social discovery failed — proceeding without social data")
+            return {}
+
+    # ── Stage 0.5: Official Website Scraper ───────────────────────────────────
+
+    def _stage05_website_scrape(self, url: str, category: str = "", business_types: str = "") -> dict:
+        """
+        Scrape the business's official website via Firecrawl.
+        Returns a plain dict ready to merge into enrichment as '_scraped'.
+        Never raises — any failure returns {}.
+        """
+        try:
+            from app.services.enrichment.website_scraper_service import WebsiteScraperService
+            result = WebsiteScraperService().scrape(
+                url=url,
+                category=category,
+                business_types=business_types,
+            )
+            if not result.scraped_ok:
+                return {}
+            logger.info(
+                "[Stage 0.5] Website scrape OK — images=%d menu_cats=%d tagline=%r",
+                len(result.gallery_images),
+                len(result.menu_items),
+                (result.tagline or "")[:50],
+            )
+            return {
+                "hero_image_url":  result.hero_image_url,
+                "gallery_images":  result.gallery_images,
+                "about_text":      result.about_text,
+                "tagline":         result.tagline,
+                "menu_items":      result.menu_items,
+            }
+        except Exception:
+            logger.exception("[Stage 0.5] Website scraper failed — continuing without scraped data")
             return {}
 
     # ── Stage 1a: GPT-4o (primary) / Grok (auto-fallback via router) ─────────
@@ -1308,7 +1360,11 @@ OUTPUT RULES:
             media_urls: list[str] = []
             media_urls.extend(social.get("instagram_media_urls", []))
             media_urls.extend(social.get("tiktok_media_urls", []))
-            media_urls = media_urls[:6]  # cap at 6 images in gallery
+            # Also add scraped gallery images from official website
+            scraped: dict = enrichment.get("_scraped") or {}
+            scraped_gallery = scraped.get("gallery_images") or []
+            media_urls.extend(scraped_gallery)
+            media_urls = list(dict.fromkeys(media_urls))[:8]  # dedup, cap at 8
 
             content_json = json.dumps({
                 "business_name": content.business_name,
@@ -1328,7 +1384,15 @@ OUTPUT RULES:
                 "rating": rating,
                 "reviews_count": reviews_count,
                 "opening_hours": opening_hours[:7],
-                "media_urls": media_urls,             # ← Apify-fetched IG/TikTok images
+                "media_urls": media_urls,             # ← IG/TikTok/website images
+                # ── Scraped official website data (Stage 0.5) ───────────────
+                "scraped": {
+                    "hero_image_url": scraped.get("hero_image_url", ""),
+                    "gallery_images": scraped_gallery[:6],
+                    "about_text":     scraped.get("about_text", ""),
+                    "tagline":        scraped.get("tagline", ""),
+                    "menu_items":     scraped.get("menu_items") or [],
+                },
                 # ── Social & digital assets (from Stage 0) ──────────────────
                 "social": {
                     "facebook_url": social.get("facebook_url", ""),

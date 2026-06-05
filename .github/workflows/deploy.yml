@@ -61,23 +61,28 @@ jobs:
 
     steps:
       - name: Validate deploy secrets
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
           set -e
-          if [ -z "${{ secrets.SSH_HOST }}" ]; then
+          if [ -z "$SSH_HOST" ]; then
             echo "Missing required secret: SSH_HOST"
             exit 1
           fi
-          if [ -z "${{ secrets.SSH_USER }}" ]; then
+          if [ -z "$SSH_USER" ]; then
             echo "Missing required secret: SSH_USER"
             exit 1
           fi
-          if [ -z "${{ secrets.SSH_PASSWORD }}" ] && [ -z "${{ secrets.SSH_PRIVATE_KEY }}" ]; then
+          if [ -z "$SSH_PASSWORD" ] && [ -z "$SSH_PRIVATE_KEY" ]; then
             echo "Missing SSH credentials: set SSH_PASSWORD or SSH_PRIVATE_KEY"
             exit 1
           fi
 
       - name: Deploy via SSH (password)
-        if: ${{ secrets.SSH_PASSWORD != '' }}
+        if: secrets.SSH_PASSWORD != ''
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -88,7 +93,7 @@ jobs:
           script: ${{ env.DEPLOY_SCRIPT }}
 
       - name: Deploy via SSH (private key fallback)
-        if: ${{ secrets.SSH_PASSWORD == '' && secrets.SSH_PRIVATE_KEY != '' }}
+        if: secrets.SSH_PASSWORD == '' && secrets.SSH_PRIVATE_KEY != ''
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}

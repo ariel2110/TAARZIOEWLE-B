@@ -5,4 +5,14 @@ export default defineConfig({
   plugins: [react()],
   server: { port: 5173, host: '0.0.0.0' },
   preview: { port: 5173 },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'recharts-vendor': ['recharts'],
+        },
+      },
+    },
+  },
 })

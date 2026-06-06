@@ -18,6 +18,7 @@ POST /internal/inventory/sync
 """
 from __future__ import annotations
 
+import json
 import logging
 from typing import Any
 
@@ -64,10 +65,11 @@ class InventorySyncRequest(BaseModel):
 # ── Background rebuild ────────────────────────────────────────────────────────
 
 def _rebuild_site_for_business(business_id: int, items: list[dict]) -> None:
-    """Rebuild the draft site HTML with updated product list."""
+    """Persist synced products and rebuild the draft site when one exists."""
     try:
         from app.db.session import SessionLocal
         from app.models.business import Business
+        from app.models.demo_site import DemoSite
         from app.models.draft_site import DraftSite
         from app.services.draft_sites.draft_site_service import DraftSiteService
 
@@ -78,22 +80,22 @@ def _rebuild_site_for_business(business_id: int, items: list[dict]) -> None:
                 logger.warning("[inventory-sync] business %s not found for rebuild", business_id)
                 return
 
-            draft = db.query(DraftSite).filter(DraftSite.business_id == business_id).order_by(DraftSite.id.desc()).first()
-            if not draft:
-                logger.info("[inventory-sync] no draft site for business %s — skipping rebuild", business_id)
-                return
-
-            # Inject updated products into business context and regenerate
-            if items:
-                # Store products as JSON on the business for future rebuilds
-                existing = biz.extra_data or {}
-                existing["products"] = items
-                biz.extra_data = existing
+            demo_sites = db.query(DemoSite).filter(DemoSite.business_id == business_id).all()
+            if demo_sites:
+                payload = json.dumps(items, ensure_ascii=False)
+                for demo in demo_sites:
+                    demo.menu_items_json = payload
                 db.commit()
+                logger.info("[inventory-sync] updated %d demo site(s) for business %s",
+                            len(demo_sites), business_id)
 
-            svc = DraftSiteService()
-            svc.generate_preview(db, draft.id)
-            logger.info("[inventory-sync] rebuilt site for business %s (draft %s)", business_id, draft.id)
+            draft = db.query(DraftSite).filter(DraftSite.business_id == business_id).order_by(DraftSite.id.desc()).first()
+            if draft:
+                svc = DraftSiteService()
+                svc.generate_preview(db, draft.id)
+                logger.info("[inventory-sync] rebuilt site for business %s (draft %s)", business_id, draft.id)
+            elif not demo_sites:
+                logger.info("[inventory-sync] no draft or demo site for business %s — skipping rebuild", business_id)
         finally:
             db.close()
     except Exception as exc:

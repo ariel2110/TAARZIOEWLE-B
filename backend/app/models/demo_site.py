@@ -33,6 +33,7 @@ class DemoSite(Base, TimestampMixin):
     # Enrichment (from Google Places Details API)
     opening_hours: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON list of strings
     reviews_json: Mapped[str | None] = mapped_column(Text, nullable=True)   # JSON list of {author, text, rating, time}
+    menu_items_json: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON list of synced products
 
     # Lifecycle
     photo_url: Mapped[str | None] = mapped_column(String(1024), nullable=True)

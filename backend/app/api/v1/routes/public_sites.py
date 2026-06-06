@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import html
+import json
 import re
 from pathlib import Path
 
@@ -36,9 +37,26 @@ def _render_demo_html(demo: DemoSite) -> str:
           'opening_hours': demo.opening_hours,
           'reviews_json': demo.reviews_json,
           'photo_url': demo.photo_url,
+          'hero_image_url': demo.photo_url,
+          'gallery_images': [demo.photo_url] if demo.photo_url else [],
           'website': demo.website,
             'is_demo': True,
         }
+        try:
+            products = json.loads(demo.menu_items_json) if demo.menu_items_json else []
+            menu_items = [
+                {
+                    'name': str(item.get('name') or '').strip(),
+                    'desc': str(item.get('description') or '').strip(),
+                    'price': item.get('price'),
+                }
+                for item in products
+                if item.get('available', True) is not False and str(item.get('name') or '').strip()
+            ]
+            if menu_items:
+                ctx['menu_items'] = [{'cat': '🍕 תפריט', 'items': menu_items}]
+        except Exception:
+            pass
         return TemplateRenderService().render(ctx)
     except Exception:
         pass  # Fall back to basic template on error
@@ -51,13 +69,18 @@ def _render_demo_html(demo: DemoSite) -> str:
     phone = html.escape(demo.phone or '')
     address = html.escape(demo.address or '')
     maps = html.escape(demo.google_maps_url or '#')
+    claim_url = (
+        'https://tazo-sync.com/dashboard?action=claim'
+        f'&phone={html.escape(demo.phone or "")}&business={business_name}&source=tazo-web'
+    )
 
     return f"""<!DOCTYPE html>
 <html lang=\"he\" dir=\"rtl\">
 <head>
   <meta charset=\"UTF-8\" />
   <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />
-  <title>{business_name} | tazo-web Demo</title>
+  <meta name=\"robots\" content=\"index,follow\" />
+  <title>{business_name}</title>
   <script src=\"https://cdn.tailwindcss.com\"></script>
   <link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">
   <link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>
@@ -65,9 +88,13 @@ def _render_demo_html(demo: DemoSite) -> str:
   <style>body {{ font-family: Heebo, sans-serif; }}</style>
 </head>
 <body class=\"bg-slate-950 text-white\">
+  <div class=\"bg-white text-slate-900 px-4 py-2 text-center text-sm font-extrabold\">
+    בעל/ת העסק?
+    <a href=\"{claim_url}\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"underline\">תבעו בעלות וערכו תוכן, תמונות ומחירים</a>
+  </div>
   <section class=\"min-h-screen bg-gradient-to-b from-slate-900 to-slate-950\">
     <div class=\"max-w-5xl mx-auto px-6 py-14\">
-      <div class=\"inline-flex bg-amber-400 text-slate-900 px-3 py-1 rounded-full text-sm font-bold\">tazo-web Demo</div>
+      <div class=\"inline-flex bg-emerald-400 text-slate-950 px-3 py-1 rounded-full text-sm font-bold\">אתר עסקי</div>
       <h1 class=\"text-4xl md:text-6xl font-extrabold mt-5 leading-tight\">{business_name}</h1>
       <p class=\"text-xl text-slate-300 mt-4\">{tagline}</p>
       <div class=\"mt-8 flex flex-wrap gap-3\">

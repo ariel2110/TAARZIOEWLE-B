@@ -354,7 +354,6 @@ def _render_premium_site(c: dict, kind: str, services) -> str:
     service_items = _normalize_services(services, kind)
     rating = float(c.get("rating") or 0) if c.get("rating") else 0.0
     reviews_count = int(c.get("reviews_count") or 0)
-    is_demo = bool(c.get("is_demo", True))
     today = datetime.utcnow().strftime("%d/%m/%Y")
     year = datetime.utcnow().year
 
@@ -384,12 +383,16 @@ def _render_premium_site(c: dict, kind: str, services) -> str:
         if rating and reviews_count
         else f'<div class="hero-chip">{config["eyebrow"]}</div>'
     )
-    demo_banner = (
-        '<div class="demo-banner">'
-        '⚠️ זהו אתר הדגמה של TAZO · '
-        f'<a href="https://wa.me/{wa_phone}?text={quote(f"שלום, ראיתי את אתר ההדגמה של {name_raw} ואשמח לפרטים על בניית אתר לעסק שלי")}" target="_blank" rel="noopener">לבניית האתר האמיתי</a>'
+    claim_url = (
+        "https://tazo-sync.com/dashboard?action=claim"
+        f"&phone={quote(phone_clean)}&business={quote(name_raw)}&source=tazo-web"
+    )
+    owner_bar = (
+        '<div class="owner-claim">'
+        '<span>בעל/ת העסק?</span>'
+        f'<a href="{claim_url}" target="_blank" rel="noopener">תבעו בעלות וערכו תוכן, תמונות ומחירים</a>'
         '</div>'
-    ) if is_demo else ""
+    )
 
     service_cards = "".join(
         (
@@ -452,7 +455,7 @@ def _render_premium_site(c: dict, kind: str, services) -> str:
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <meta name="robots" content="noindex,nofollow"/>
+  <meta name="robots" content="index,follow"/>
   <title>{name}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -477,9 +480,9 @@ def _render_premium_site(c: dict, kind: str, services) -> str:
     a{{color:inherit;text-decoration:none}}
     img{{display:block;max-width:100%}}
     .container{{width:min(1180px,calc(100% - 32px));margin:0 auto}}
-    .demo-banner{{background:#facc15;color:#111827;padding:11px 16px;text-align:center;font-size:13px;font-weight:800}}
-    .demo-banner a{{text-decoration:underline}}
-    .site-header{{position:sticky;top:0;z-index:40;background:rgba(8,14,27,.68);backdrop-filter:blur(18px);border-bottom:1px solid transparent;transition:.25s ease}}
+    .owner-claim{{position:sticky;top:0;z-index:80;display:flex;align-items:center;justify-content:center;gap:10px;padding:9px 14px;background:#f8fafc;color:#111827;border-bottom:1px solid rgba(15,23,42,.08);font-size:13px;font-weight:800;direction:rtl}}
+    .owner-claim a{{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:#111827;color:#fff;padding:7px 14px;font-weight:900;box-shadow:0 8px 22px rgba(15,23,42,.18)}}
+    .site-header{{position:sticky;top:39px;z-index:40;background:rgba(8,14,27,.68);backdrop-filter:blur(18px);border-bottom:1px solid transparent;transition:.25s ease}}
     .site-header.scrolled{{border-color:var(--line);box-shadow:0 16px 40px rgba(2,6,23,.35)}}
     .header-inner{{display:flex;align-items:center;justify-content:space-between;gap:20px;min-height:78px}}
     .brand-block{{display:flex;flex-direction:column;gap:4px}}
@@ -601,7 +604,7 @@ def _render_premium_site(c: dict, kind: str, services) -> str:
   </style>
 </head>
 <body>
-  {demo_banner}
+  {owner_bar}
   <header class="site-header" id="site-header">
     <div class="container header-inner">
       <div class="brand-block">
@@ -773,9 +776,9 @@ def _render_premium_site(c: dict, kind: str, services) -> str:
       <div class="verify-card reveal">
         <div>
           <div class="verify-badge">✅ עסק זה אומת ונבדק על-ידי tazo-web</div>
-          <p>דף ההדגמה מציג מבנה תוכן, עיצוב וזרימת פניות שמיועדים להפוך כניסות לאתר לשיחות ממשיות.</p>
+          <p>האתר מציג את העסק בצורה חדה, נוחה לפנייה ומוכנה לעדכון שוטף של תוכן, תמונות ומחירים.</p>
         </div>
-        {website_cta or '<span class="btn btn-ghost">Premium Demo Experience</span>'}
+        {website_cta or f'<a class="btn btn-ghost" href="{claim_url}" target="_blank" rel="noopener">ניהול ועדכון האתר</a>'}
       </div>
     </div>
   </section>
@@ -814,7 +817,7 @@ def _render_premium_site(c: dict, kind: str, services) -> str:
         <strong>{name}</strong>
         <div>{tagline}</div>
       </div>
-      <div>© {year} · {city or 'ישראל'}{' · אתר הדגמה' if is_demo else ''}</div>
+      <div>© {year} · {city or 'ישראל'}</div>
     </div>
   </footer>
 

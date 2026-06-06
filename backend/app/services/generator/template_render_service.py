@@ -90,7 +90,7 @@ def _food_menu(category: str, types: str) -> list:
     else:
         return [
             {"cat": "🍽️ תפריט ראשי", "items": [
-                {"name": "מנה ראשונה", "desc": "מנה מיוחדת של השף", "price": 45},
+                {"name": "מנת פתיחה", "desc": "לפי בחירת השף", "price": 45},
                 {"name": "מנה עיקרית", "desc": "עם תוספות ביתיות", "price": 68},
                 {"name": "מנה ילדים", "desc": "מנה קטנה ומיוחדת", "price": 35},
             ]},
@@ -104,8 +104,10 @@ def _render_food(c: dict) -> str:
     from html import escape as _e
     import re as _re
     import json as _json
+    from urllib.parse import quote as _quote
 
-    name = _e(_re.sub(r"\s*Draft Site$", "", c.get("site_title") or c.get("hero_title") or "העסק"))
+    name_raw = _re.sub(r"\s*Draft Site$", "", c.get("site_title") or c.get("hero_title") or "העסק")
+    name = _e(name_raw)
     phone = _re.sub(r"\D", "", c.get("phone") or "")
     wa_phone = c.get("wa_admin_phone") or "972546363350"
     category = c.get("category") or ""
@@ -113,7 +115,6 @@ def _render_food(c: dict) -> str:
     city = _e(c.get("city") or "")
     about = _e(c.get("about_text") or "")
     tagline = _e(c.get("tagline") or "")
-    is_demo = c.get("is_demo", True)
     hero_image_url = c.get("hero_image_url") or ""
     gallery_images: list = c.get("gallery_images") or []
     rating = c.get("rating") or 0
@@ -124,19 +125,23 @@ def _render_food(c: dict) -> str:
     menu_json = _json.dumps(menu, ensure_ascii=False)
 
     biz_phone_attr = f'data-biz-phone="{phone}"' if phone else ""
-    demo_banner = (
-        f'<div id="demo-banner" style="background:#f59e0b;color:#111;padding:10px 20px;text-align:center;font-size:13px;font-weight:700;direction:rtl">'
-        f'⚠️ זהו אתר הדגמה בלבד | '
-        f'<a href="https://wa.me/{wa_phone}?text=שלום%20אשמח%20לשמוע%20פרטים" target="_blank" style="color:#111;text-decoration:underline">לאתר האמיתי לחץ כאן</a>'
+    claim_url = (
+        "https://tazo-sync.com/dashboard?action=claim"
+        f"&phone={_quote(phone)}&business={_quote(name_raw)}&source=tazo-web"
+    )
+    owner_bar = (
+        f'<div class="owner-claim" role="region" aria-label="תביעת בעלות">'
+        f'<span>בעל/ת העסק?</span>'
+        f'<a href="{claim_url}" target="_blank" rel="noopener">תבעו בעלות וערכו תפריט, תמונות ומחירים</a>'
         f'</div>'
-    ) if is_demo else ""
+    )
 
     return f"""<!doctype html>
 <html lang="he" dir="rtl">
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<meta name="robots" content="noindex,nofollow"/>
+<meta name="robots" content="index,follow"/>
 <title>{name}</title>
 <style>
 *,*::before,*::after{{box-sizing:border-box;margin:0;padding:0}}
@@ -144,8 +149,10 @@ body{{font-family:"Heebo","Segoe UI",Arial,sans-serif;background:#111;color:#f5f
 a{{text-decoration:none;color:inherit}}
 button{{font-family:inherit;cursor:pointer;border:none}}
 input,textarea{{font-family:inherit}}
+.owner-claim{{position:sticky;top:0;z-index:260;display:flex;align-items:center;justify-content:center;gap:10px;padding:9px 14px;background:#f8fafc;color:#111827;border-bottom:1px solid rgba(15,23,42,.08);font-size:13px;font-weight:800;direction:rtl}}
+.owner-claim a{{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:#111827;color:#fff;padding:7px 14px;font-weight:900;box-shadow:0 8px 22px rgba(15,23,42,.18)}}
 /* HEADER */
-.hdr{{position:sticky;top:0;z-index:200;background:rgba(17,17,17,.95);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,.08);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}}
+.hdr{{position:sticky;top:39px;z-index:200;background:rgba(17,17,17,.95);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,.08);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}}
 .hdr-title{{font-size:18px;font-weight:800}}
 .hdr-sub{{font-size:12px;color:rgba(255,255,255,.5)}}
 .cart-btn{{background:linear-gradient(135deg,#dc2626,#f97316);border-radius:50px;padding:10px 18px;color:white;font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px;position:relative}}
@@ -215,7 +222,7 @@ input,textarea{{font-family:inherit}}
 </style>
 </head>
 <body {biz_phone_attr}>
-{demo_banner}
+{owner_bar}
 
 <header class="hdr">
   <div>
@@ -586,8 +593,8 @@ def _render_beauty(c: dict) -> str:
         f'<div style="background:linear-gradient(90deg,#9333ea,#ec4899);color:white;padding:10px 20px;'
         f'text-align:center;font-size:13px;font-weight:700">'
         f'<a href="https://tazo-web.com" style="color:white">TAZO</a> '
-        f'— אתר הדגמה | '
-        f'<a href="{wa_url}" target="_blank" style="color:white;text-decoration:underline">לאישור ועריכה — לחץ כאן</a>'
+        f'—  | '
+        f'<a href="{wa_url}" target="_blank" style="color:white;text-decoration:underline">תבעו בעלות וערכו באתר</a>'
         f'</div>'
     ) if is_demo else ''
     stars_str = ('★' * int(rating) + '☆' * (5 - int(rating))) if rating else ''
@@ -633,7 +640,7 @@ a{{text-decoration:none;color:inherit}}
 </section>
 <section style="padding:72px 24px;max-width:720px;margin:0 auto">
   <h2 style="font-size:30px;font-weight:900;text-align:center;margin-bottom:10px">השירותים שלנו</h2>
-  <p style="text-align:center;color:rgba(255,255,255,0.4);margin-bottom:44px;font-size:14px">מחירים לדוגמה — בואו להתאמה אישית</p>
+  
   <div style="display:flex;flex-direction:column;gap:12px">{svcs_html}</div>
   <div style="text-align:center;margin-top:40px"><a href="{wa_url}" target="_blank" class="book-btn">&#x2728; קביעת תור עכשיו</a></div>
 </section>
@@ -654,7 +661,7 @@ a{{text-decoration:none;color:inherit}}
   {f'<div style="margin-bottom:2px">&#128205; {city}</div>' if city else ''}
   {f'<div><a href="tel:{phone_c}" style="color:rgba(255,255,255,0.35)">{phone}</a></div>' if phone else ''}
   <div style="margin-top:10px">&#169; 2026 <a href="https://tazo-web.com" style="color:#9333ea;font-weight:700">TAZO</a> | כל הזכויות שמורות | אריאל אביב עוסק מורשה</div>
-  {'<div style="margin-top:4px;font-size:10px;color:rgba(255,255,255,0.2)">אתר הדגמה בלבד</div>' if is_demo else ''}
+  {'<div style="margin-top:4px;font-size:10px;color:rgba(255,255,255,0.2)"></div>' if is_demo else ''}
 </footer>
 </body></html>"""
 
@@ -730,7 +737,7 @@ def _render_health(c: dict) -> str:
     svcs = _health_services(cat, types)
     wa_phone = phone_c or '972546363350'
     wa_url = f"https://wa.me/{wa_phone}?text={'קביעת%20תור%20ב'+name_raw.replace(' ','%20')}"
-    demo_banner = (f'<div style="background:linear-gradient(90deg,#0f766e,#059669);color:white;padding:10px 20px;text-align:center;font-size:13px;font-weight:700">אתר הדגמה | <a href="{wa_url}" target="_blank" style="color:white;text-decoration:underline">לאישור ועריכה — לחץ כאן</a></div>') if is_demo else ''
+    demo_banner = '<div style="background:#f8fafc;color:#111827;padding:10px 16px;text-align:center;font-size:13px;font-weight:800;border-bottom:1px solid rgba(15,23,42,.08)">בעל/ת העסק? <a href="https://tazo-sync.com/dashboard?action=claim&source=tazo-web" target="_blank" rel="noopener" style="color:#111827;text-decoration:underline">תבעו בעלות וערכו באתר</a></div>'
     stars_str = ('★'*int(rating)+'☆'*(5-int(rating))) if rating else ''
     svcs_html = ''.join(
         f'<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(16,185,129,0.15);border-radius:14px;padding:18px 22px;display:flex;justify-content:space-between;align-items:center">'
@@ -762,7 +769,7 @@ def _render_health(c: dict) -> str:
 </section>
 <section style="padding:72px 24px;max-width:700px;margin:0 auto">
   <h2 style="font-size:28px;font-weight:900;text-align:center;margin-bottom:10px">השירותים שלנו</h2>
-  <p style="text-align:center;color:rgba(255,255,255,0.35);font-size:13px;margin-bottom:40px">מחירים מנחים — לפרטים מדויקים צרו קשר</p>
+  
   <div style="display:flex;flex-direction:column;gap:10px">{svcs_html}</div>
   <div style="text-align:center;margin-top:40px"><a href="{wa_url}" target="_blank" class="appt-btn">&#x1f4cb; קביעת תור</a></div>
 </section>
@@ -782,7 +789,7 @@ def _render_health(c: dict) -> str:
 </section>
 <footer style="background:#020a08;color:rgba(255,255,255,0.25);text-align:center;padding:22px;font-size:12px;border-top:1px solid rgba(16,185,129,0.08)">
   <span style="color:rgba(255,255,255,0.45);font-weight:700">{name}</span>{'  |  '+city if city else ''}
-  <div style="margin-top:8px">&#169; 2026 <a href="https://tazo-web.com" style="color:#059669;font-weight:700">TAZO</a> | כל הזכויות שמורות{'  |  <span style="font-size:10px">אתר הדגמה</span>' if is_demo else ''}</div>
+  <div style="margin-top:8px">&#169; 2026 <a href="https://tazo-web.com" style="color:#059669;font-weight:700">TAZO</a> | כל הזכויות שמורות</div>
 </footer>
 </body></html>"""
 
@@ -834,7 +841,7 @@ def _render_vehicles(c: dict) -> str:
     svcs = _vehicle_services(cat, types)
     wa_phone = phone_c or '972546363350'
     wa_url = f"https://wa.me/{wa_phone}?text={'שלום%2C%20אשמח%20לקבל%20שירות%20ב'+name_raw.replace(' ','%20')}"
-    demo_banner = (f'<div style="background:linear-gradient(90deg,#b45309,#d97706);color:white;padding:10px 20px;text-align:center;font-size:13px;font-weight:700">אתר הדגמה | <a href="{wa_url}" target="_blank" style="color:white;text-decoration:underline">לאישור ועריכה — לחץ כאן</a></div>') if is_demo else ''
+    demo_banner = '<div style="background:#f8fafc;color:#111827;padding:10px 16px;text-align:center;font-size:13px;font-weight:800;border-bottom:1px solid rgba(15,23,42,.08)">בעל/ת העסק? <a href="https://tazo-sync.com/dashboard?action=claim&source=tazo-web" target="_blank" rel="noopener" style="color:#111827;text-decoration:underline">תבעו בעלות וערכו באתר</a></div>'
     stars_str = ('★'*int(rating)+'☆'*(5-int(rating))) if rating else ''
     svcs_html = ''.join(
         f'<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(217,119,6,0.2);border-radius:14px;padding:18px 22px;display:flex;justify-content:space-between;align-items:center">'
@@ -866,7 +873,7 @@ def _render_vehicles(c: dict) -> str:
 </section>
 <section style="padding:70px 24px;max-width:700px;margin:0 auto">
   <h2 style="font-size:28px;font-weight:900;text-align:center;margin-bottom:8px">השירותים שלנו</h2>
-  <p style="text-align:center;color:rgba(255,255,255,0.3);font-size:13px;margin-bottom:38px">מחירים משוערים — לפרטים מדויקים צרו קשר</p>
+  
   <div style="display:flex;flex-direction:column;gap:10px">{svcs_html}</div>
   <div style="text-align:center;margin-top:38px"><a href="{wa_url}" target="_blank" class="svc-btn">&#x1f4ac; שלחו הודעה לקביעת תור</a></div>
 </section>
@@ -884,7 +891,7 @@ def _render_vehicles(c: dict) -> str:
 </section>
 <footer style="background:#080600;color:rgba(255,255,255,0.25);text-align:center;padding:22px;font-size:12px;border-top:1px solid rgba(180,83,9,0.1)">
   <span style="color:rgba(255,255,255,0.45);font-weight:700">{name}</span>{'  |  '+city if city else ''}
-  <div style="margin-top:8px">&#169; 2026 <a href="https://tazo-web.com" style="color:#d97706;font-weight:700">TAZO</a> | כל הזכויות שמורות{'  |  <span style="font-size:10px">אתר הדגמה</span>' if is_demo else ''}</div>
+  <div style="margin-top:8px">&#169; 2026 <a href="https://tazo-web.com" style="color:#d97706;font-weight:700">TAZO</a> | כל הזכויות שמורות</div>
 </footer>
 </body></html>"""
 
@@ -945,7 +952,7 @@ def _render_repairs(c: dict) -> str:
     svcs = _repair_services(cat, types)
     wa_phone = phone_c or '972546363350'
     wa_url = f"https://wa.me/{wa_phone}?text={'שלום%2C%20אשמח%20לקבל%20הצעת%20מחיר%20מ'+name_raw.replace(' ','%20')}"
-    demo_banner = (f'<div style="background:linear-gradient(90deg,#1d4ed8,#0ea5e9);color:white;padding:10px 20px;text-align:center;font-size:13px;font-weight:700">אתר הדגמה | <a href="{wa_url}" target="_blank" style="color:white;text-decoration:underline">לאישור ועריכה — לחץ כאן</a></div>') if is_demo else ''
+    demo_banner = '<div style="background:#f8fafc;color:#111827;padding:10px 16px;text-align:center;font-size:13px;font-weight:800;border-bottom:1px solid rgba(15,23,42,.08)">בעל/ת העסק? <a href="https://tazo-sync.com/dashboard?action=claim&source=tazo-web" target="_blank" rel="noopener" style="color:#111827;text-decoration:underline">תבעו בעלות וערכו באתר</a></div>'
     stars_str = ('★'*int(rating)+'☆'*(5-int(rating))) if rating else ''
     svcs_html = ''.join(
         f'<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(30,64,175,0.25);border-radius:14px;padding:18px 22px;display:flex;justify-content:space-between;align-items:center">'
@@ -977,7 +984,7 @@ def _render_repairs(c: dict) -> str:
 </section>
 <section style="padding:70px 24px;max-width:700px;margin:0 auto">
   <h2 style="font-size:28px;font-weight:900;text-align:center;margin-bottom:8px">השירותים שלנו</h2>
-  <p style="text-align:center;color:rgba(255,255,255,0.3);font-size:13px;margin-bottom:38px">מחירים לדוגמה — הצעת מחיר מדויקת חינם</p>
+  
   <div style="display:flex;flex-direction:column;gap:10px">{svcs_html}</div>
   <div style="text-align:center;margin-top:38px"><a href="{wa_url}" target="_blank" class="rep-btn">&#x1f527; בקשת הצעת מחיר</a></div>
 </section>
@@ -995,7 +1002,7 @@ def _render_repairs(c: dict) -> str:
 </section>
 <footer style="background:#01050f;color:rgba(255,255,255,0.25);text-align:center;padding:22px;font-size:12px;border-top:1px solid rgba(30,58,138,0.15)">
   <span style="color:rgba(255,255,255,0.45);font-weight:700">{name}</span>{'  |  '+city if city else ''}
-  <div style="margin-top:8px">&#169; 2026 <a href="https://tazo-web.com" style="color:#0ea5e9;font-weight:700">TAZO</a> | כל הזכויות שמורות{'  |  <span style="font-size:10px">אתר הדגמה</span>' if is_demo else ''}</div>
+  <div style="margin-top:8px">&#169; 2026 <a href="https://tazo-web.com" style="color:#0ea5e9;font-weight:700">TAZO</a> | כל הזכויות שמורות</div>
 </footer>
 </body></html>"""
 
@@ -1046,7 +1053,7 @@ def _render_events(c: dict) -> str:
     svcs = _events_services(cat, types)
     wa_phone = phone_c or '972546363350'
     wa_url = f"https://wa.me/{wa_phone}?text={'שלום%2C%20אשמח%20לשמוע%20פרטים%20על%20'+name_raw.replace(' ','%20')}"
-    demo_banner = (f'<div style="background:linear-gradient(90deg,#7c3aed,#a855f7);color:white;padding:10px 20px;text-align:center;font-size:13px;font-weight:700">אתר הדגמה | <a href="{wa_url}" target="_blank" style="color:white;text-decoration:underline">לאישור ועריכה — לחץ כאן</a></div>') if is_demo else ''
+    demo_banner = '<div style="background:#f8fafc;color:#111827;padding:10px 16px;text-align:center;font-size:13px;font-weight:800;border-bottom:1px solid rgba(15,23,42,.08)">בעל/ת העסק? <a href="https://tazo-sync.com/dashboard?action=claim&source=tazo-web" target="_blank" rel="noopener" style="color:#111827;text-decoration:underline">תבעו בעלות וערכו באתר</a></div>'
     stars_str = ('★'*int(rating)+'☆'*(5-int(rating))) if rating else ''
     svcs_html = ''.join(
         f'<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(167,139,250,0.2);border-radius:14px;padding:18px 22px;display:flex;justify-content:space-between;align-items:center">'
@@ -1079,7 +1086,7 @@ def _render_events(c: dict) -> str:
 </section>
 <section style="padding:70px 24px;max-width:700px;margin:0 auto">
   <h2 style="font-size:28px;font-weight:900;text-align:center;margin-bottom:8px">השירותים שלנו</h2>
-  <p style="text-align:center;color:rgba(255,255,255,0.3);font-size:13px;margin-bottom:38px">מחירים לדוגמה — לפרטים ותאומים צרו קשר</p>
+  
   <div style="display:flex;flex-direction:column;gap:10px">{svcs_html}</div>
   <div style="text-align:center;margin-top:38px"><a href="{wa_url}" target="_blank" class="evt-btn">&#x1f4ac; שלחו פרטים לקבלת הצעה</a></div>
 </section>
@@ -1097,7 +1104,7 @@ def _render_events(c: dict) -> str:
 </section>
 <footer style="background:#050209;color:rgba(255,255,255,0.25);text-align:center;padding:22px;font-size:12px;border-top:1px solid rgba(124,58,237,0.12)">
   <span style="color:rgba(255,255,255,0.45);font-weight:700">{name}</span>{'  |  '+city if city else ''}
-  <div style="margin-top:8px">&#169; 2026 <a href="https://tazo-web.com" style="color:#a855f7;font-weight:700">TAZO</a> | כל הזכויות שמורות{'  |  <span style="font-size:10px">אתר הדגמה</span>' if is_demo else ''}</div>
+  <div style="margin-top:8px">&#169; 2026 <a href="https://tazo-web.com" style="color:#a855f7;font-weight:700">TAZO</a> | כל הזכויות שמורות</div>
 </footer>
 </body></html>"""
 
@@ -1147,7 +1154,7 @@ def _render_education(c: dict) -> str:
     svcs = _education_services(cat, types)
     wa_phone = phone_c or '972546363350'
     wa_url = f"https://wa.me/{wa_phone}?text={'שלום%2C%20אשמח%20לשמוע%20פרטים%20על%20'+name_raw.replace(' ','%20')}"
-    demo_banner = (f'<div style="background:linear-gradient(90deg,#0284c7,#6366f1);color:white;padding:10px 20px;text-align:center;font-size:13px;font-weight:700">אתר הדגמה | <a href="{wa_url}" target="_blank" style="color:white;text-decoration:underline">לאישור ועריכה — לחץ כאן</a></div>') if is_demo else ''
+    demo_banner = '<div style="background:#f8fafc;color:#111827;padding:10px 16px;text-align:center;font-size:13px;font-weight:800;border-bottom:1px solid rgba(15,23,42,.08)">בעל/ת העסק? <a href="https://tazo-sync.com/dashboard?action=claim&source=tazo-web" target="_blank" rel="noopener" style="color:#111827;text-decoration:underline">תבעו בעלות וערכו באתר</a></div>'
     stars_str = ('★'*int(rating)+'☆'*(5-int(rating))) if rating else ''
     svcs_html = ''.join(
         f'<div style="background:linear-gradient(135deg,rgba(2,132,199,0.08),rgba(99,102,241,0.08));border:1px solid rgba(99,102,241,0.2);border-radius:16px;padding:18px 22px;display:flex;justify-content:space-between;align-items:center">'
@@ -1179,7 +1186,7 @@ def _render_education(c: dict) -> str:
 </section>
 <section style="padding:70px 24px;max-width:700px;margin:0 auto">
   <h2 style="font-size:28px;font-weight:900;text-align:center;margin-bottom:8px">תוכניות ושירותים</h2>
-  <p style="text-align:center;color:rgba(255,255,255,0.3);font-size:13px;margin-bottom:38px">מחירים משוערים — לפרטים מדויקים צרו קשר</p>
+  
   <div style="display:flex;flex-direction:column;gap:10px">{svcs_html}</div>
   <div style="text-align:center;margin-top:38px"><a href="{wa_url}" target="_blank" class="edu-btn">&#x1f4da; שלחו הודעה לפרטים</a></div>
 </section>
@@ -1197,7 +1204,7 @@ def _render_education(c: dict) -> str:
 </section>
 <footer style="background:#010c18;color:rgba(255,255,255,0.25);text-align:center;padding:22px;font-size:12px;border-top:1px solid rgba(2,132,199,0.1)">
   <span style="color:rgba(255,255,255,0.45);font-weight:700">{name}</span>{'  |  '+city if city else ''}
-  <div style="margin-top:8px">&#169; 2026 <a href="https://tazo-web.com" style="color:#6366f1;font-weight:700">TAZO</a> | כל הזכויות שמורות{'  |  <span style="font-size:10px">אתר הדגמה</span>' if is_demo else ''}</div>
+  <div style="margin-top:8px">&#169; 2026 <a href="https://tazo-web.com" style="color:#6366f1;font-weight:700">TAZO</a> | כל הזכויות שמורות</div>
 </footer>
 </body></html>"""
 

@@ -119,9 +119,13 @@ class PlacesService:
             f"בתי קפה {city}",
         ]
 
+    @staticmethod
+    def _normalize_language(language: str) -> str:
+        return "en" if language == "en" else "he"
+
     def _text_search_all(self, query: str, limit: int, language: str = "he", region: str = "il") -> list[dict]:
         results: list[dict] = []
-        language = "en" if language == "en" else "he"
+        language = self._normalize_language(language)
         region = (region or "il").lower()
         params: dict[str, Any] = {
             "query": query,
@@ -147,7 +151,7 @@ class PlacesService:
     def _get_place_detail(self, place_id: str, language: str = "he") -> dict | None:
         if not place_id:
             return None
-        language = "en" if language == "en" else "he"
+        language = self._normalize_language(language)
         try:
             resp = httpx.get(
                 PLACES_DETAILS_URL,

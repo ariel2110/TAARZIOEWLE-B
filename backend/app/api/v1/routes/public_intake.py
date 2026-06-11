@@ -370,7 +370,7 @@ def search_business(
     q: str = '',
     limit: int = 6,
     lang: str = Query(default='he', pattern='^(he|en)$'),
-    country: str = Query(default='il', min_length=2, max_length=2),
+    region: str = Query(default='il', alias='country', min_length=2, max_length=2),
 ) -> list[dict]:
     """Search Google Places for a business by free-text query.
     Returns up to `limit` results with name, address, phone, rating,
@@ -387,7 +387,7 @@ def search_business(
         svc = PlacesService()
         if not svc.api_key:
             return []
-        results = svc._text_search_all(q, limit * 2, language=lang, region=country)
+        results = svc._text_search_all(q, limit * 2, language=lang, region=region)
         out: list[dict] = []
         for place in results[:limit * 2]:
             pid = place.get('place_id', '')

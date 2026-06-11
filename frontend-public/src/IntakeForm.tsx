@@ -89,7 +89,8 @@ export default function IntakeForm({ onSubmitted, onBack, selectedPlan }: Props)
         searchTimerRef.current = setTimeout(async () => {
             setSearchLoading(true);
             try {
-                const uiLang = document.documentElement.lang === 'en' ? 'en' : 'he';
+                const pageLang = (document.documentElement.lang || '').toLowerCase();
+                const uiLang = pageLang.startsWith('en') ? 'en' : 'he';
                 const res = await fetch(
                     `${API}/public/search-business?q=${encodeURIComponent(q.trim())}&limit=6&lang=${uiLang}`,
                 );

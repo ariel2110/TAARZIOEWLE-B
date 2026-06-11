@@ -116,7 +116,6 @@ def _render_food(c: dict) -> str:
     about = _e(c.get("about_text") or "")
     tagline = _e(c.get("tagline") or "")
     hero_image_url = c.get("hero_image_url") or ""
-    gallery_images: list = c.get("gallery_images") or []
     rating = c.get("rating") or 0
     reviews_count = c.get("reviews_count") or 0
     maps_url = _e(c.get("maps_url") or "")

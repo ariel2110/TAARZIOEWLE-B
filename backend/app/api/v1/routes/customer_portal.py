@@ -308,7 +308,6 @@ def customer_generate_preview(
     import threading
     from app.models.draft_site import DraftSite
     from app.models.business import Business
-    from app.models.enriched_biz_cache import EnrichedBizCache
     from app.schemas.draft_site import DraftSiteCreate
 
     logger = logging.getLogger(__name__)

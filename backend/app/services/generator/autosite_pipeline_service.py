@@ -1058,8 +1058,6 @@ class AutoSitePipelineService:
             return html
         hl = html.lower()
         has_body_close = "</body>" in hl
-        has_fade = any(c in html for c in ("fade-up", "fade-in", "animate-on-scroll"))
-
         if not has_body_close:
             # Find last complete block-level closing tag
             last_close = max(

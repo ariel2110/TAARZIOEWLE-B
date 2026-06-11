@@ -13,7 +13,7 @@ import uuid
 from pathlib import Path
 
 import httpx
-from fastapi import APIRouter, BackgroundTasks, Depends, Form, HTTPException, Request, UploadFile, File
+from fastapi import APIRouter, BackgroundTasks, Depends, Form, HTTPException, Query, Request, UploadFile, File
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -366,7 +366,12 @@ def _run_intake_pipeline(token: str) -> None:
 
 # ── GET /public/search-business ────────────────────────────────────────────
 @router.get('/search-business')
-def search_business(q: str = '', limit: int = 6) -> list[dict]:
+def search_business(
+    q: str = '',
+    limit: int = 6,
+    lang: str = Query(default='he', pattern='^(he|en)$'),
+    country: str = Query(default='il', min_length=2, max_length=2),
+) -> list[dict]:
     """Search Google Places for a business by free-text query.
     Returns up to `limit` results with name, address, phone, rating,
     reviews, category and place_id — for auto-filling the intake form.
@@ -382,13 +387,13 @@ def search_business(q: str = '', limit: int = 6) -> list[dict]:
         svc = PlacesService()
         if not svc.api_key:
             return []
-        results = svc._text_search_all(q, limit * 2)
+        results = svc._text_search_all(q, limit * 2, language=lang, region=country)
         out: list[dict] = []
         for place in results[:limit * 2]:
             pid = place.get('place_id', '')
             if not pid:
                 continue
-            detail = svc._get_place_detail(pid)
+            detail = svc._get_place_detail(pid, language=lang)
             if not detail:
                 continue
             norm = svc._normalize(detail)

@@ -89,7 +89,10 @@ export default function IntakeForm({ onSubmitted, onBack, selectedPlan }: Props)
         searchTimerRef.current = setTimeout(async () => {
             setSearchLoading(true);
             try {
-                const res = await fetch(`${API}/public/search-business?q=${encodeURIComponent(q.trim())}&limit=6`);
+                const uiLang = document.documentElement.lang === 'en' ? 'en' : 'he';
+                const res = await fetch(
+                    `${API}/public/search-business?q=${encodeURIComponent(q.trim())}&limit=6&lang=${uiLang}`,
+                );
                 if (res.ok) {
                     const data: PlaceResult[] = await res.json();
                     setSearchResults(data);

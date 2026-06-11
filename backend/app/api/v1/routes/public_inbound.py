@@ -77,6 +77,8 @@ _DETAIL_FIELDS = (
 def places_autocomplete(
     input: str = Query(..., min_length=2),
     session_token: str | None = Query(default=None),
+    lang: str = Query(default='he', pattern='^(he|en)$'),
+    country: str = Query(default='il', min_length=2, max_length=2),
 ):
     """Proxy Google Places Autocomplete — keeps API key server-side."""
     api_key = settings.google_places_api_key
@@ -86,8 +88,8 @@ def places_autocomplete(
         params: dict[str, Any] = {
             'input': input,
             'key': api_key,
-            'language': 'he',
-            'components': 'country:il',
+            'language': lang,
+            'components': f'country:{country.lower()}',
             'types': 'establishment',
         }
         if session_token:
@@ -110,7 +112,11 @@ def places_autocomplete(
 
 
 @router.get('/place-detail')
-def place_detail(place_id: str = Query(...), session_token: str | None = Query(default=None)):
+def place_detail(
+    place_id: str = Query(...),
+    session_token: str | None = Query(default=None),
+    lang: str = Query(default='he', pattern='^(he|en)$'),
+):
     """Fetch details for a selected place (name, address, rating, phone)."""
     api_key = settings.google_places_api_key
     if not api_key:
@@ -120,7 +126,7 @@ def place_detail(place_id: str = Query(...), session_token: str | None = Query(d
             'place_id': place_id,
             'fields': _DETAIL_FIELDS,
             'key': api_key,
-            'language': 'he',
+            'language': lang,
         }
         if session_token:
             params['sessiontoken'] = session_token

@@ -18,12 +18,28 @@ jobs:
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
 
     steps:
+      - name: Validate deploy secrets
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          [ -n "${SSH_HOST}" ] || { echo "Missing required secret: SSH_HOST"; exit 1; }
+          [ -n "${SSH_USER}" ] || { echo "Missing required secret: SSH_USER"; exit 1; }
+          if [ -z "${SSH_PASSWORD}" ] && [ -z "${SSH_PRIVATE_KEY}" ]; then
+            echo "Missing SSH auth secret: configure SSH_PASSWORD or SSH_PRIVATE_KEY"
+            exit 1
+          fi
+
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          key: ${{ secrets.SSH_PASSWORD == '' && secrets.SSH_PRIVATE_KEY || '' }}
+          password: ${{ secrets.SSH_PASSWORD }}
           port: 22
           debug: true
           script: |

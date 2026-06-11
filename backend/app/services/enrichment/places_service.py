@@ -119,13 +119,19 @@ class PlacesService:
             f"בתי קפה {city}",
         ]
 
-    def _text_search_all(self, query: str, limit: int) -> list[dict]:
+    @staticmethod
+    def _normalize_language(language: str) -> str:
+        return "en" if language == "en" else "he"
+
+    def _text_search_all(self, query: str, limit: int, language: str = "he", region: str = "il") -> list[dict]:
         results: list[dict] = []
+        language = self._normalize_language(language)
+        region = (region or "il").lower()
         params: dict[str, Any] = {
             "query": query,
             "key": self.api_key,
-            "language": "he",
-            "region": "il",
+            "language": language,
+            "region": region,
         }
         while len(results) < limit:
             try:
@@ -142,13 +148,14 @@ class PlacesService:
             params = {"pagetoken": next_token, "key": self.api_key}
         return results[:limit]
 
-    def _get_place_detail(self, place_id: str) -> dict | None:
+    def _get_place_detail(self, place_id: str, language: str = "he") -> dict | None:
         if not place_id:
             return None
+        language = self._normalize_language(language)
         try:
             resp = httpx.get(
                 PLACES_DETAILS_URL,
-                params={"place_id": place_id, "fields": DETAIL_FIELDS, "key": self.api_key, "language": "he"},
+                params={"place_id": place_id, "fields": DETAIL_FIELDS, "key": self.api_key, "language": language},
                 timeout=10,
             )
             return resp.json().get("result")

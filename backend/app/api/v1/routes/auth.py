@@ -46,9 +46,9 @@ def google_start() -> GoogleAuthStartResponse:
     return GoogleAuthStartResponse(**data)
 
 
-@router.get('/youtube/start')
+@router.get('/youtube/start', response_class=HTMLResponse)
 def youtube_start():
-    """Generate YouTube OAuth URL with upload+read scopes."""
+    """Redirect directly to Google YouTube OAuth."""
     from urllib.parse import urlencode
     client_id = settings.google_client_id or ''
     redirect_uri = 'https://tazo-web.com/api/v1/auth/google/callback'
@@ -62,7 +62,51 @@ def youtube_start():
         'state': 'youtube',
     }
     url = 'https://accounts.google.com/o/oauth2/v2/auth?' + urlencode(params)
-    return {'auth_url': url}
+    return HTMLResponse(f"""<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+  <meta charset="UTF-8"/>
+  <title>TAZO — חיבור YouTube</title>
+  <style>
+    body {{
+      margin:0; font-family:Heebo,Arial,sans-serif;
+      background:#fff; display:flex;
+      align-items:center; justify-content:center; min-height:100vh;
+    }}
+    .card {{
+      text-align:center; padding:60px 40px;
+      border-radius:20px; box-shadow:0 4px 32px rgba(0,0,0,.08);
+      max-width:420px; width:100%;
+    }}
+    .logo {{ font-size:40px; margin-bottom:16px; }}
+    h1 {{ font-size:22px; font-weight:800; color:#111; margin:0 0 8px; }}
+    p {{ color:#888; font-size:14px; margin:0 0 32px; }}
+    a.btn {{
+      display:inline-flex; align-items:center; gap:10px;
+      background:#FF0000; color:#fff; text-decoration:none;
+      border-radius:50px; padding:14px 32px;
+      font-size:16px; font-weight:700;
+      box-shadow:0 4px 16px rgba(255,0,0,.3);
+      transition:opacity .2s;
+    }}
+    a.btn:hover {{ opacity:.85; }}
+    .yt-icon {{ width:22px; height:22px; }}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">🎬</div>
+    <h1>חיבור ערוץ YouTube ל-TAZO</h1>
+    <p>לחץ כדי לאשר גישה לערוץ ה-YouTube שלך</p>
+    <a class="btn" href="{url}">
+      <svg class="yt-icon" viewBox="0 0 24 24" fill="white">
+        <path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1C24 15.9 24 12 24 12s0-3.9-.5-5.8zM9.7 15.5V8.5l6.3 3.5-6.3 3.5z"/>
+      </svg>
+      התחבר עם Google / YouTube
+    </a>
+  </div>
+</body>
+</html>""")
 
 
 @router.get('/google/callback', response_class=HTMLResponse)

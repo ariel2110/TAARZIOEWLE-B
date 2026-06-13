@@ -285,9 +285,9 @@ _FAREWELL_WORDS = ("להתראות", "ביי", "bye")  # kept for backwards-comp
 # Twilio sends 20 ms chunks of μ-law 8 kHz audio = 160 bytes / chunk
 _FRAME_MS           = 20
 _SPEECH_THRESHOLD   = 300    # μ-law linear-energy threshold to detect voice
-_BARGE_IN_THRESHOLD = 650    # must be HIGHER than _SPEECH_THRESHOLD — only intentional interruptions
-_BARGE_IN_CONSEC    = 4      # consecutive frames required to confirm barge-in (4×20ms=80ms)
-_SILENCE_FRAMES     = 18     # 18 × 20 ms = 360 ms of silence → end of utterance
+_BARGE_IN_THRESHOLD = 500    # lower than before — detect human interruption more sensitively
+_BARGE_IN_CONSEC    = 3      # 3 consecutive frames = 60ms to confirm barge-in (faster response)
+_SILENCE_FRAMES     = 25     # 25 × 20 ms = 500 ms — wait longer before ending utterance
 _MIN_SPEECH_FRAMES  = 6      # at least 120 ms of voice before processing
 
 # ── μ-law helpers ─────────────────────────────────────────────────────────────
@@ -373,6 +373,11 @@ class VoiceSession:
     barge_in:         asyncio.Event = field(default_factory=asyncio.Event)
     barge_in_frames:  int  = 0       # consecutive high-energy frames (self-echo guard)
 
+    # Long-term memory: summaries of previous calls with this caller
+    past_calls_summary: str = ""
+    # Orders/system context fetched from backend at call start
+    orders_summary: str = ""
+
     # Guards: only one TTS stream + one utterance processor at a time
     _tts_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
     _proc_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
@@ -443,6 +448,22 @@ class VoiceSession:
                 extra += f"Caller prepaid balance: ₪{self.passenger_balance:.2f}\n"
                 extra += "If asked about balance/money, answer with this exact amount.\n"
 
+        # ── Long-term memory: past calls ────────────────────────────────────
+        if self.past_calls_summary:
+            if lang == "he":
+                extra += f"\n=== שיחות קודמות עם מתקשר זה ===\n{self.past_calls_summary}\n"
+                extra += "השתמש בהיסטוריה זו להמשכיות — אל תשאל שוב על דברים שכבר סוכמו.\n"
+            else:
+                extra += f"\n=== Previous calls with this caller ===\n{self.past_calls_summary}\n"
+                extra += "Use this history for continuity — don't ask again about things already resolved.\n"
+
+        # ── System access: orders & activity ────────────────────────────────
+        if self.orders_summary:
+            if lang == "he":
+                extra += f"\n=== הזמנות/פעילות אחרונה ===\n{self.orders_summary}\n"
+            else:
+                extra += f"\n=== Recent orders/activity ===\n{self.orders_summary}\n"
+
         return base + extra
 
     def greeting_text(self) -> str:
@@ -508,6 +529,67 @@ _ROLE_TO_LINK_TYPE: dict[str, str] = {
     "go_courier":   "courier",
     "unknown":      "general",
 }
+
+
+async def _load_caller_memory(session: VoiceSession) -> None:
+    """Load past call summaries and recent orders from backend (fire-and-forget on call start)."""
+    try:
+        async with httpx.AsyncClient(timeout=5) as client:
+            resp = await client.get(
+                f"{BACKEND_INTERNAL_URL}/api/v1/internal/voice/caller-memory",
+                params={"phone": session.caller_phone},
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                session.past_calls_summary = data.get("past_calls_summary", "")
+                session.orders_summary     = data.get("orders_summary", "")
+                if session.past_calls_summary:
+                    logger.info("[WS] call=%s loaded past call history", session.call_sid[:8])
+    except Exception as exc:
+        logger.debug("[WS] call=%s memory load failed: %s", session.call_sid[:8], exc)
+
+
+async def _save_call_memory(session: VoiceSession) -> None:
+    """Save call transcript + auto-summary to backend DB after call ends."""
+    import json as _json
+    try:
+        user_turns = [m["content"] for m in session.messages if m["role"] == "user"]
+        bot_turns  = [m["content"] for m in session.messages if m["role"] == "assistant"]
+        # Quick summary for next call context
+        summary_parts = []
+        if user_turns:
+            summary_parts.append(f"המתקשר שאל על: {'; '.join(user_turns[-3:])}")
+        if bot_turns:
+            last_bot = bot_turns[-1][:120] if bot_turns else ""
+            if last_bot:
+                summary_parts.append(f"הבוט ענה: {last_bot}")
+        outcome = "completed"
+        if session.manager_alert_sent:
+            outcome = "escalated"
+        elif any("[SEND_LINK]" in (m.get("content") or "") for m in session.messages):
+            outcome = "link_sent"
+
+        async with httpx.AsyncClient(timeout=8) as client:
+            await client.post(
+                f"{BACKEND_INTERNAL_URL}/api/v1/internal/voice/save-call-log",
+                json={
+                    "call_sid":      session.call_sid,
+                    "caller_phone":  session.caller_phone,
+                    "caller_name":   session.caller_name,
+                    "business_name": session.business_name,
+                    "user_role":     session.user_role,
+                    "language":      session.language,
+                    "transcript":    _json.dumps(session.messages, ensure_ascii=False),
+                    "summary":       " | ".join(summary_parts)[:500],
+                    "duration_turns": len(user_turns),
+                    "link_sent":     any("[SEND_LINK]" in (m.get("content") or "") for m in session.messages),
+                    "escalated":     session.manager_alert_sent,
+                    "call_outcome":  outcome,
+                },
+            )
+        logger.info("[WS] call=%s saved to call log DB", session.call_sid[:8])
+    except Exception as exc:
+        logger.debug("[WS] call=%s save memory failed: %s", session.call_sid[:8], exc)
 
 
 async def _send_whatsapp_link(session: VoiceSession, link_type_override: str = "") -> None:
@@ -657,7 +739,7 @@ async def _play_tts(session: VoiceSession, text_gen: AsyncGenerator[str, None]) 
         session.ai_speaking = False
         # Brief echo-prevention window: Twilio echoes bot audio back into the
         # input stream for ~0.5-1s after playback ends — drop it.
-        session._ready_at = time.time() + 1.5
+        session._ready_at = time.time() + 0.8
         # Send mark so we know AI audio finished
         if session.stream_sid:
             try:
@@ -753,17 +835,23 @@ async def _process_utterance(session: VoiceSession, audio: bytes) -> None:
             except Exception as _e:
                 logger.debug("[PROC] interim phrase failed: %s", _e)
 
-        # Start speaking "בודקת..." immediately — plays during Whisper + GPT latency
-        asyncio.create_task(_play_interim_phrase())
-
-        # 1. STT — use language-appropriate Whisper hint
+        # 1. STT — transcribe FIRST, then play interim phrase while GPT runs
+        # (Previously, the interim played before transcription causing race conditions
+        #  when the transcript was empty — the bot said "בודקת" then ended the loop)
         speech = await _transcribe(audio, cfg["whisper"])
         if not speech:
-            logger.warning("[PROC] Empty transcript — skipping")
+            # Play a soft "didn't hear you" prompt instead of silently dropping
+            _no_hear = {"he": "לא שמעתי, תוכל לחזור?", "en": "Sorry, I didn't catch that. Could you repeat?",
+                        "ar": "لم أسمعك، هل يمكنك الإعادة؟", "ru": "Не расслышал. Повторите, пожалуйста."}
+            async with session._tts_lock:
+                await _play_tts_rest(session, _no_hear.get(session.language, _no_hear["he"]))
             return
 
         logger.info("[PROC] call=%s user: %r", session.call_sid[:8], speech)
         session.messages.append({"role": "user", "content": speech})
+
+        # Now play interim while GPT processes — transcript is confirmed non-empty
+        asyncio.create_task(_play_interim_phrase())
 
         # 2b. Farewell shortcut — language-aware
         lower = speech.lower().strip()
@@ -794,6 +882,7 @@ async def _process_utterance(session: VoiceSession, audio: bytes) -> None:
             return
 
         # 3. GPT → collect all tokens (needed for Hebrew REST TTS and [SEND_LINK] detection)
+        # Wait for TTS lock so GPT response doesn't interrupt interim phrase mid-syllable
         tokens: list[str] = []
         async for token in _gpt_stream(session):
             tokens.append(token)
@@ -924,6 +1013,10 @@ async def _handle_media_stream(ws: WebSocket) -> None:
                 # audio into the stream before the caller actually speaks
                 session._ready_at = time.time() + 2.5
 
+                # Load past call history + orders in background (non-blocking)
+                if session.caller_phone:
+                    asyncio.create_task(_load_caller_memory(session))
+
                 logger.info(
                     "[WS] Stream started — call=%s phone=%s*** name=%r customer=%s",
                     session.call_sid[:8],
@@ -1032,6 +1125,8 @@ async def _handle_media_stream(ws: WebSocket) -> None:
             # ── stop ───────────────────────────────────────────────────────
             elif event == "stop":
                 logger.info("[WS] Stream stopped — call=%s", (session.call_sid if session else "?")[:8])
+                if session and session.caller_phone and len(session.messages) > 1:
+                    asyncio.create_task(_save_call_memory(session))
                 break
 
     except WebSocketDisconnect:
@@ -1111,7 +1206,7 @@ async def _play_tts_rest(session: VoiceSession, text: str) -> str:
         session.ai_speaking = False
         # Brief echo-prevention window: Twilio echoes bot audio back into the
         # input stream for ~0.5-1s after playback ends — drop it.
-        session._ready_at = time.time() + 1.5
+        session._ready_at = time.time() + 0.8
         if session.stream_sid:
             try:
                 await session.ws.send_text(json.dumps({

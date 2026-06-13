@@ -340,3 +340,86 @@ def _handle_inbound(db: Session, msg: dict, metadata: dict) -> None:
             )
         except Exception:  # noqa: BLE001
             pass
+
+    # ── AI Voice Bot WhatsApp: reply to customers who WhatsApp'd the support number ──
+    # If the message comes from someone who had a recent voice call or is a known customer,
+    # route their WhatsApp message to the AI voice bot for a text response.
+    if text and from_phone and not normalized_from == (getattr(settings, 'whatsapp_owner_phone', '') or '').strip():
+        try:
+            _handle_whatsapp_support(db, from_phone, text)
+        except Exception:
+            logger.debug('[WA_SUPPORT] failed to handle support message from %s', from_phone)
+
+
+def _handle_whatsapp_support(db: Session, from_phone: str, text: str) -> None:
+    """Route inbound WhatsApp message to AI support bot and reply via WhatsApp."""
+    import re as _re
+    import asyncio
+    import httpx
+
+    ai_support_number = "972533889859"  # The AI phone support number
+    # Only handle if this message was sent TO the AI support number
+    # (Meta webhook includes 'to' in metadata — but we process all inbound here as a fallback)
+
+    # Get caller memory for context
+    clean = _re.sub(r"\D", "", from_phone)
+
+    # Build a simple GPT reply based on the WhatsApp message
+    # We reuse the same backend internal endpoint that voice-stream uses
+    from app.models.voice_call_log import VoiceCallLog
+    recent_logs = (
+        db.query(VoiceCallLog)
+        .filter(VoiceCallLog.caller_phone == clean)
+        .order_by(VoiceCallLog.created_at.desc())
+        .limit(3)
+        .all()
+    )
+    past_context = "\n".join(
+        f"[{log.created_at.strftime('%d/%m')}] {log.summary}" for log in recent_logs if log.summary
+    )
+
+    # Build system prompt for WhatsApp chat
+    system = (
+        "אתה נציג שירות לקוחות של TAZO ב-WhatsApp. שמך טאזו.\n"
+        "ענה בעברית, קצר ותמציתי (עד 3 משפטים). אל תשתמש ב-Markdown.\n"
+        "TAZO כוללת: TAZO-WEB (אתרי עסקים), TAZO-GO (מוניות+שליחים), "
+        "TAZO-SYNC (חנויות), VAULT (מטבע TAZ).\n"
+    )
+    if past_context:
+        system += f"\nשיחות קודמות עם לקוח זה:\n{past_context}\n"
+
+    try:
+        import os
+        from openai import OpenAI
+        oai = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+        resp = oai.chat.completions.create(
+            model="gpt-4.1-mini",
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user", "content": text},
+            ],
+            max_tokens=120,
+            temperature=0.7,
+        )
+        reply = (resp.choices[0].message.content or "").strip()
+        if not reply:
+            return
+
+        # Send reply via Meta WhatsApp API
+        phone_id = getattr(settings, 'meta_wa_phone_number_id', None)
+        token    = getattr(settings, 'meta_wa_access_token', None)
+        if phone_id and token:
+            with httpx.Client(timeout=10) as client:
+                client.post(
+                    f"https://graph.facebook.com/v19.0/{phone_id}/messages",
+                    headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+                    json={
+                        "messaging_product": "whatsapp",
+                        "to": clean,
+                        "type": "text",
+                        "text": {"body": reply},
+                    },
+                )
+            logger.info("[WA_SUPPORT] AI replied to %s***", clean[:7])
+    except Exception as exc:
+        logger.debug("[WA_SUPPORT] AI reply failed: %s", exc)

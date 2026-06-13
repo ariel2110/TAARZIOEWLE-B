@@ -100,6 +100,17 @@ def _food_menu(category: str, types: str) -> list:
             ]},
         ]
 
+_SUPPORT_FLOAT_BTN = (
+    '<a href="tel:+972533889859" title="שירות לקוחות AI 24/7" '
+    'style="position:fixed;bottom:20px;left:16px;z-index:9990;'
+    'background:linear-gradient(135deg,#0f172a,#1d4ed8);color:white;'
+    'border-radius:50px;padding:10px 18px;font-size:13px;font-weight:700;'
+    'box-shadow:0 4px 20px rgba(0,0,0,.4);text-decoration:none;'
+    'display:flex;align-items:center;gap:8px;direction:rtl">'
+    '📞 תמיכה 24/7</a>'
+)
+
+
 def _build_site_banner(is_demo: bool, phase: str = 'beta') -> str:
     """Return sticky top banner HTML. Beta sites get a BETA tag + claim CTA."""
     if not is_demo:
@@ -108,7 +119,7 @@ def _build_site_banner(is_demo: bool, phase: str = 'beta') -> str:
         '<span style="background:#f59e0b;color:#000;border-radius:4px;padding:1px 7px;font-size:11px;font-weight:900;letter-spacing:1px;margin-left:8px">BETA</span>'
         if phase == 'beta' else ''
     )
-    return (
+    banner = (
         f'<div style="background:#0f172a;color:#f8fafc;padding:9px 16px;text-align:center;'
         f'font-size:13px;font-weight:700;position:sticky;top:0;z-index:9999;display:flex;'
         f'align-items:center;justify-content:center;gap:8px;border-bottom:2px solid #f59e0b">'
@@ -123,6 +134,7 @@ def _build_site_banner(is_demo: bool, phase: str = 'beta') -> str:
         f'בעל/ת העסק? <a href="https://tazo-sync.com/dashboard?action=claim&source=tazo-web" '
         f'target="_blank" rel="noopener" style="color:#111827;text-decoration:underline">תבעו בעלות וערכו באתר</a></div>'
     )
+    return banner + _SUPPORT_FLOAT_BTN
 
 
 def _render_food(c: dict) -> str:

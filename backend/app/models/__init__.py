@@ -38,3 +38,4 @@ from app.models.agent_usage_log import AgentUsageLog
 from app.models.system_daily_analytics import SystemDailyAnalytics
 from app.models.customer_taz_wallet import CustomerTazWallet
 from app.models.cart import Cart
+from app.models.voice_call_log import VoiceCallLog

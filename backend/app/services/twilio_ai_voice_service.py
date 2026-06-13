@@ -376,35 +376,170 @@ _LINK_URLS: dict[str, str] = {
     "sync":      "https://tazo-sync.com",
 }
 
-# Message templates per language and link type
+# Rich message templates — include all relevant links and context
 _VOICE_LINK_MESSAGES: dict[str, dict[str, str]] = {
     "he": {
-        "general":   "שלום מ-TAZO!\nהנה הקישור שלך:\n{link}\n\nשאלות? אנחנו כאן!",
-        "web":       "שלום מ-TAZO!\nהנה קישור לניהול העסק שלך:\n{link}\n\nנשמח לעזור!",
-        "driver":    "שלום מ-TAZO GO!\nאפליקציית הנהג:\n{link}\n\nבהצלחה בנסיעות!",
-        "passenger": "שלום מ-TAZO GO!\nלהזמנת נסיעה:\n{link}\n\nנסיעה בטוחה!",
-        "courier":   "שלום מ-TAZO GO!\nלאפליקציית השליח:\n{link}\n\nבהצלחה!",
+        "general": (
+            "👋 שלום מ-TAZO!\n\n"
+            "🔗 כניסה לפלטפורמה: {link}\n"
+            "🚕 הזמן נסיעה: https://tazo-go.com\n"
+            "🌐 ניהול עסק: https://tazo-web.com\n\n"
+            "📞 תמיכה 24/7: +972-53-388-9859\n"
+            "💬 WhatsApp: +972-53-388-9859"
+        ),
+        "web": (
+            "🌐 *TAZO WEB — ניהול עסק*\n\n"
+            "▶️ כניסה לדשבורד: {link}\n"
+            "🏪 תביעת אתר עסק: https://tazo-web.com/claim\n"
+            "📊 ניהול הזמנות: https://tazo-sync.com/dashboard\n\n"
+            "📞 תמיכה: +972-53-388-9859"
+        ),
+        "driver": (
+            "🚕 *TAZO GO — נהג*\n\n"
+            "▶️ אפליקציית נהג: {link}\n"
+            "📱 הורדה ישירה: https://driver.tazo-go.com/download\n"
+            "💰 בדיקת יתרת TAZ: https://driver.tazo-go.com/wallet\n"
+            "📋 פרטי נסיעות: https://driver.tazo-go.com/rides\n\n"
+            "📞 תמיכה: +972-53-388-9859"
+        ),
+        "passenger": (
+            "🚕 *TAZO GO — נוסע*\n\n"
+            "▶️ הזמן נסיעה: {link}\n"
+            "📍 מעקב נסיעה חי: https://tazo-go.com/track\n"
+            "💳 ארנק & יתרה: https://tazo-go.com/wallet\n"
+            "🕐 היסטוריית נסיעות: https://tazo-go.com/history\n\n"
+            "📞 תמיכה: +972-53-388-9859"
+        ),
+        "courier": (
+            "📦 *TAZO GO — שליח*\n\n"
+            "▶️ אפליקציית שליח: {link}\n"
+            "📋 משלוחים זמינים: https://driver.tazo-go.com/deliveries\n"
+            "💰 יתרת TAZ: https://driver.tazo-go.com/wallet\n\n"
+            "📞 תמיכה: +972-53-388-9859"
+        ),
+        "sync": (
+            "🔄 *TAZO SYNC — חנות אונליין*\n\n"
+            "▶️ דשבורד עסקי: {link}\n"
+            "📦 ניהול הזמנות: https://tazo-sync.com/orders\n"
+            "🛍️ ניהול מוצרים: https://tazo-sync.com/products\n\n"
+            "📞 תמיכה: +972-53-388-9859"
+        ),
     },
     "en": {
-        "general":   "Hello from TAZO!\nHere is your link:\n{link}\n\nQuestions? Reply here!",
-        "web":       "Hello from TAZO!\nManage your business:\n{link}\n\nWe're here to help!",
-        "driver":    "Hello from TAZO GO!\nDriver app:\n{link}\n\nHappy driving!",
-        "passenger": "Hello from TAZO GO!\nBook a ride:\n{link}\n\nSafe travels!",
-        "courier":   "Hello from TAZO GO!\nCourier app:\n{link}\n\nGood luck!",
+        "general": (
+            "👋 Hello from TAZO!\n\n"
+            "🔗 Platform access: {link}\n"
+            "🚕 Book a ride: https://tazo-go.com\n"
+            "🌐 Business portal: https://tazo-web.com\n\n"
+            "📞 Support 24/7: +972-53-388-9859"
+        ),
+        "web": (
+            "🌐 *TAZO WEB — Business Portal*\n\n"
+            "▶️ Dashboard: {link}\n"
+            "🏪 Claim business: https://tazo-web.com/claim\n"
+            "📊 Order management: https://tazo-sync.com/dashboard\n\n"
+            "📞 Support: +972-53-388-9859"
+        ),
+        "driver": (
+            "🚕 *TAZO GO — Driver App*\n\n"
+            "▶️ Driver portal: {link}\n"
+            "📱 Download: https://driver.tazo-go.com/download\n"
+            "💰 TAZ wallet: https://driver.tazo-go.com/wallet\n\n"
+            "📞 Support: +972-53-388-9859"
+        ),
+        "passenger": (
+            "🚕 *TAZO GO — Book a Ride*\n\n"
+            "▶️ Book now: {link}\n"
+            "📍 Live tracking: https://tazo-go.com/track\n"
+            "💳 Wallet: https://tazo-go.com/wallet\n\n"
+            "📞 Support: +972-53-388-9859"
+        ),
+        "courier": (
+            "📦 *TAZO GO — Courier App*\n\n"
+            "▶️ Courier portal: {link}\n"
+            "📋 Available deliveries: https://driver.tazo-go.com/deliveries\n\n"
+            "📞 Support: +972-53-388-9859"
+        ),
+        "sync": (
+            "🔄 *TAZO SYNC — Store Management*\n\n"
+            "▶️ Dashboard: {link}\n"
+            "📦 Orders: https://tazo-sync.com/orders\n\n"
+            "📞 Support: +972-53-388-9859"
+        ),
     },
     "ar": {
-        "general":   "مرحباً من TAZO!\nإليك رابطك:\n{link}\n\nأي أسئلة؟ راسلنا!",
-        "web":       "مرحباً من TAZO!\nإدارة عملك:\n{link}\n\nنحن هنا للمساعدة!",
-        "driver":    "مرحباً من TAZO GO!\nتطبيق السائق:\n{link}\n\nقيادة موفقة!",
-        "passenger": "مرحباً من TAZO GO!\nاحجز رحلتك:\n{link}\n\nرحلة آمنة!",
-        "courier":   "مرحباً من TAZO GO!\nتطبيق المندوب:\n{link}\n\nحظاً موفقاً!",
+        "general": (
+            "👋 مرحباً من TAZO!\n\n"
+            "🔗 الدخول للمنصة: {link}\n"
+            "🚕 احجز رحلة: https://tazo-go.com\n"
+            "🌐 إدارة الأعمال: https://tazo-web.com\n\n"
+            "📞 دعم 24/7: +972-53-388-9859"
+        ),
+        "web": (
+            "🌐 *TAZO WEB — بوابة الأعمال*\n\n"
+            "▶️ لوحة التحكم: {link}\n"
+            "🏪 المطالبة بالعمل: https://tazo-web.com/claim\n\n"
+            "📞 الدعم: +972-53-388-9859"
+        ),
+        "driver": (
+            "🚕 *TAZO GO — تطبيق السائق*\n\n"
+            "▶️ بوابة السائق: {link}\n"
+            "💰 محفظة TAZ: https://driver.tazo-go.com/wallet\n\n"
+            "📞 الدعم: +972-53-388-9859"
+        ),
+        "passenger": (
+            "🚕 *TAZO GO — احجز رحلة*\n\n"
+            "▶️ احجز الآن: {link}\n"
+            "📍 تتبع مباشر: https://tazo-go.com/track\n\n"
+            "📞 الدعم: +972-53-388-9859"
+        ),
+        "courier": (
+            "📦 *TAZO GO — تطبيق المندوب*\n\n"
+            "▶️ بوابة المندوب: {link}\n\n"
+            "📞 الدعم: +972-53-388-9859"
+        ),
+        "sync": (
+            "🔄 *TAZO SYNC*\n\n"
+            "▶️ لوحة التحكم: {link}\n\n"
+            "📞 الدعم: +972-53-388-9859"
+        ),
     },
     "ru": {
-        "general":   "Привет от TAZO!\nВот ваша ссылка:\n{link}\n\nЕсть вопросы? Пишите!",
-        "web":       "Привет от TAZO!\nУправление бизнесом:\n{link}\n\nМы здесь!",
-        "driver":    "Привет от TAZO GO!\nПриложение водителя:\n{link}\n\nУдачных поездок!",
-        "passenger": "Привет от TAZO GO!\nЗаказать поездку:\n{link}\n\nБезопасной дороги!",
-        "courier":   "Привет от TAZO GO!\nПриложение курьера:\n{link}\n\nУдачи!",
+        "general": (
+            "👋 Привет от TAZO!\n\n"
+            "🔗 Вход в платформу: {link}\n"
+            "🚕 Заказ поездки: https://tazo-go.com\n"
+            "🌐 Портал бизнеса: https://tazo-web.com\n\n"
+            "📞 Поддержка 24/7: +972-53-388-9859"
+        ),
+        "web": (
+            "🌐 *TAZO WEB — Бизнес портал*\n\n"
+            "▶️ Личный кабинет: {link}\n"
+            "🏪 Заявить бизнес: https://tazo-web.com/claim\n\n"
+            "📞 Поддержка: +972-53-388-9859"
+        ),
+        "driver": (
+            "🚕 *TAZO GO — Приложение водителя*\n\n"
+            "▶️ Портал водителя: {link}\n"
+            "💰 Кошелёк TAZ: https://driver.tazo-go.com/wallet\n\n"
+            "📞 Поддержка: +972-53-388-9859"
+        ),
+        "passenger": (
+            "🚕 *TAZO GO — Заказ поездки*\n\n"
+            "▶️ Заказать: {link}\n"
+            "📍 Отслеживание: https://tazo-go.com/track\n\n"
+            "📞 Поддержка: +972-53-388-9859"
+        ),
+        "courier": (
+            "📦 *TAZO GO — Курьер*\n\n"
+            "▶️ Портал курьера: {link}\n\n"
+            "📞 Поддержка: +972-53-388-9859"
+        ),
+        "sync": (
+            "🔄 *TAZO SYNC*\n\n"
+            "▶️ Личный кабинет: {link}\n\n"
+            "📞 Поддержка: +972-53-388-9859"
+        ),
     },
 }
 
@@ -480,9 +615,32 @@ def _send_voice_link_sync(phone: str, link_type: str = "general", language: str 
 
 
 async def send_voice_link(phone: str, link_type: str = "general", language: str = "he") -> bool:
-    """Async wrapper — send appropriate link to caller via WhatsApp or SMS."""
+    """Async wrapper — send via WhatsApp (SMS fallback automatic)."""
     loop = asyncio.get_event_loop()
     return await loop.run_in_executor(None, _send_voice_link_sync, phone, link_type, language)
+
+
+def _send_voice_link_sms_sync(phone: str, link_type: str = "general", language: str = "he") -> bool:
+    """Send link message via SMS only (Twilio) — no WhatsApp attempt."""
+    lang_msgs = _VOICE_LINK_MESSAGES.get(language, _VOICE_LINK_MESSAGES["he"])
+    msg_template = lang_msgs.get(link_type, lang_msgs["general"])
+    link = _LINK_URLS.get(link_type, _LINK_URLS["general"])
+    message = msg_template.format(link=link)
+    try:
+        from twilio.rest import Client as TwilioClient  # type: ignore[import]
+        client = TwilioClient(settings.twilio_account_sid, settings.twilio_auth_token)
+        client.messages.create(body=message, from_=settings.twilio_from_number, to=phone)
+        logger.info("[AIVoiceBot] SMS voice-link (%s) sent to %s***", link_type, (phone or "")[:7])
+        return True
+    except Exception as exc:
+        logger.warning("[AIVoiceBot] SMS voice-link failed: %s", exc)
+        return False
+
+
+async def send_voice_link_sms(phone: str, link_type: str = "general", language: str = "he") -> bool:
+    """Async wrapper — send link via SMS only."""
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, _send_voice_link_sms_sync, phone, link_type, language)
 
 
 def _send_direct_message_sync(phone: str, message: str) -> bool:

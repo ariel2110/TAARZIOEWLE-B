@@ -28,6 +28,40 @@ def _clean_phone(raw: str) -> str:
     return p
 
 
+class SaveCommPrefIn(BaseModel):
+    phone: str
+    comm_pref: str   # 'wa' | 'sms'
+
+@router.post("/save-comm-pref")
+def save_comm_pref(body: SaveCommPrefIn, db: Session = Depends(get_db)):
+    """Save caller's preferred communication channel (WhatsApp or SMS)."""
+    import re as _re
+    clean = _re.sub(r"\D", "", body.phone)
+    # Save on most recent call log
+    log = (
+        db.query(VoiceCallLog)
+        .filter(VoiceCallLog.caller_phone == clean)
+        .order_by(VoiceCallLog.created_at.desc())
+        .first()
+    )
+    if log:
+        log.call_outcome = log.call_outcome  # touch
+        # Store comm_pref in summary suffix
+        if body.comm_pref in ("wa", "sms"):
+            log.summary = (log.summary or "") + f" | comm_pref:{body.comm_pref}"
+            db.commit()
+    # Also update CustomerAccount if exists
+    try:
+        from app.models.customer_account import CustomerAccount
+        acct = db.query(CustomerAccount).filter(CustomerAccount.phone.in_([body.phone, clean])).first()
+        if acct and hasattr(acct, 'comm_preference'):
+            acct.comm_preference = body.comm_pref
+            db.commit()
+    except Exception:
+        pass
+    return {"ok": True, "comm_pref": body.comm_pref}
+
+
 @router.get("/caller-memory")
 def get_caller_memory(phone: str, db: Session = Depends(get_db)):
     """Return past call summaries and recent order activity for a caller phone."""
@@ -63,10 +97,21 @@ def get_caller_memory(phone: str, db: Session = Depends(get_db)):
     except Exception:
         pass
 
+    # Extract comm_pref from most recent log summary (stored as "... | comm_pref:wa")
+    comm_pref = ""
+    for log in logs:
+        if log.summary and "comm_pref:" in log.summary:
+            import re as _re2
+            m = _re2.search(r"comm_pref:(wa|sms)", log.summary)
+            if m:
+                comm_pref = m.group(1)
+                break
+
     return {
         "past_calls_summary": past_calls_summary,
         "orders_summary": orders_summary,
         "call_count": len(logs),
+        "comm_pref": comm_pref,
     }
 
 

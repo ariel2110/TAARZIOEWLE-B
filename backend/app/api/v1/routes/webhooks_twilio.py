@@ -425,6 +425,7 @@ async def ai_voice_wa(
     caller_phone: str = Form(default=""),
     link_type: str = Form(default="general"),
     language: str = Form(default="he"),
+    channel: str = Form(default="wa"),   # 'wa' | 'sms'
 ):
     """
     Internal endpoint called by the voice-stream microservice to send a
@@ -432,14 +433,21 @@ async def ai_voice_wa(
 
     link_type: general | web | driver | passenger | courier | sync
     language:  he | en | ar | ru
+    channel:   wa (WhatsApp, default) | sms
     """
     if not caller_phone:
         return {"ok": False, "reason": "no phone"}
 
-    ok = await ai_bot.send_voice_link(caller_phone, link_type, language)
+    if channel == "sms":
+        # Send via Twilio SMS directly with the rich link message
+        ok = await ai_bot.send_voice_link_sms(caller_phone, link_type, language)
+    else:
+        # WhatsApp first, SMS fallback handled inside send_voice_link
+        ok = await ai_bot.send_voice_link(caller_phone, link_type, language)
+
     logger.info(
-        "[AIVoiceWA] send link type=%s lang=%s phone=%s*** ok=%s",
-        link_type, language, (caller_phone or "")[:7], ok,
+        "[AIVoiceWA] send link type=%s lang=%s channel=%s phone=%s*** ok=%s",
+        link_type, language, channel, (caller_phone or "")[:7], ok,
     )
     return {"ok": ok}
 

@@ -113,11 +113,15 @@ _LANG_CONFIG: dict[str, dict] = {
             "• TAZO-GO נוסע: כניסה ב-tazo-go.com, מספר טלפון → קישור WhatsApp.\n"
             "• TAZO-GO נהג/שליח: רישום ב-tazo-go.com → אימות זהות (KYC) → driver.tazo-go.com.\n"
             "\n=== כלים שיש לך ===\n"
-            "• שליחת קישור ב-WhatsApp/SMS:\n"
-            "  כשהמשתמש מבקש קישור, לינק, הרשמה, או אומר 'תשלח/שלח/שלחי לי' —\n"
-            "  חובה לכתוב [SEND_LINK] כמילה הראשונה בתגובתך (לפני כל טקסט אחר).\n"
-            "  אם ברור המוצר: [SEND_LINK:driver] / [SEND_LINK:passenger] / [SEND_LINK:web].\n"
-            "  ⚠️ חשוב: אסור לומר 'שולחת/שולח/שלחתי קישור' בלי [SEND_LINK] — בלעדיו לא נשלח כלום!\n"
+            "• שליחת קישור ב-WhatsApp או SMS:\n"
+            "  כשהמשתמש מבקש קישור/לינק/הרשמה —\n"
+            "  שאל אותו: 'אשלח לך את הקישור — מה אתה מעדיף, WhatsApp או SMS?'\n"
+            "  לפי תשובתו:\n"
+            "    WhatsApp → [SEND_LINK:wa] (או [SEND_LINK:wa:driver] וכו')\n"
+            "    SMS       → [SEND_LINK:sms] (או [SEND_LINK:sms:driver] וכו')\n"
+            "  אם אמר שאין לו WhatsApp → שלח ב-SMS אוטומטית.\n"
+            "  אם לא ציין העדפה → שאל לפני שליחה.\n"
+            "  ⚠️ אסור לומר 'שולח/שלחתי קישור' בלי [SEND_LINK] — בלעדיו לא נשלח כלום!\n"
             "• הסלמה למנהל: אם המתקשר מבקש לדבר עם מנהל/אחראי, ציין [ESCALATE_MANAGER: <סיבה קצרה>]\n"
             "  בתחילת תגובתך, ואמור: 'בשמחה! הצוות יחזור אליך בהקדם. יום נעים, להתראות!'\n"
             "\n=== כללים ===\n"
@@ -377,6 +381,8 @@ class VoiceSession:
     past_calls_summary: str = ""
     # Orders/system context fetched from backend at call start
     orders_summary: str = ""
+    # Communication preference: '' (unknown) | 'wa' (WhatsApp) | 'sms'
+    comm_pref: str = ""
 
     # Guards: only one TTS stream + one utterance processor at a time
     _tts_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
@@ -543,8 +549,10 @@ async def _load_caller_memory(session: VoiceSession) -> None:
                 data = resp.json()
                 session.past_calls_summary = data.get("past_calls_summary", "")
                 session.orders_summary     = data.get("orders_summary", "")
+                session.comm_pref          = data.get("comm_pref", "")
                 if session.past_calls_summary:
-                    logger.info("[WS] call=%s loaded past call history", session.call_sid[:8])
+                    logger.info("[WS] call=%s loaded past call history (comm_pref=%s)",
+                                session.call_sid[:8], session.comm_pref or "?")
     except Exception as exc:
         logger.debug("[WS] call=%s memory load failed: %s", session.call_sid[:8], exc)
 
@@ -585,21 +593,45 @@ async def _save_call_memory(session: VoiceSession) -> None:
                     "link_sent":     any("[SEND_LINK]" in (m.get("content") or "") for m in session.messages),
                     "escalated":     session.manager_alert_sent,
                     "call_outcome":  outcome,
+                    "comm_pref":     session.comm_pref,
                 },
             )
-        logger.info("[WS] call=%s saved to call log DB", session.call_sid[:8])
+        logger.info("[WS] call=%s saved to call log DB (comm_pref=%s)", session.call_sid[:8], session.comm_pref or "—")
     except Exception as exc:
         logger.debug("[WS] call=%s save memory failed: %s", session.call_sid[:8], exc)
 
 
 async def _send_whatsapp_link(session: VoiceSession, link_type_override: str = "") -> None:
-    """
-    Fire-and-forget: call the backend to send a WhatsApp/SMS link to the caller.
-    Derives link_type from session.user_role unless link_type_override is given.
+    """Send link via WhatsApp or SMS based on:
+    1. Explicit channel in link_type_override (e.g. "wa:driver" or "sms:driver")
+    2. session.comm_pref ('wa' | 'sms' | '')
+    3. Default: try WhatsApp, fall back to SMS automatically on backend.
     """
     if not session.caller_phone:
         return
-    link_type = link_type_override or _ROLE_TO_LINK_TYPE.get(session.user_role, "general")
+
+    # Parse channel and product from override (e.g. "wa:driver" → channel="wa", product="driver")
+    channel = ""
+    product = link_type_override
+    if ":" in link_type_override:
+        parts = link_type_override.split(":", 1)
+        if parts[0] in ("wa", "sms"):
+            channel, product = parts[0], parts[1]
+        else:
+            product = link_type_override
+
+    # Use stored preference if no explicit channel in the tag
+    if not channel:
+        channel = session.comm_pref or "wa"  # default to WhatsApp
+
+    # Derive product from session role if not specified
+    link_type = product or _ROLE_TO_LINK_TYPE.get(session.user_role, "general")
+
+    # Save preference to session and backend
+    if channel in ("wa", "sms") and channel != session.comm_pref:
+        session.comm_pref = channel
+        asyncio.create_task(_save_comm_pref(session.caller_phone, channel))
+
     try:
         async with httpx.AsyncClient(timeout=10) as client:
             resp = await client.post(
@@ -608,20 +640,27 @@ async def _send_whatsapp_link(session: VoiceSession, link_type_override: str = "
                     "caller_phone": session.caller_phone,
                     "link_type":    link_type,
                     "language":     session.language,
+                    "channel":      channel,   # 'wa' or 'sms'
                 },
             )
         if resp.status_code == 200:
-            logger.info(
-                "[WS] call=%s WA link sent (type=%s)",
-                session.call_sid[:8], link_type,
-            )
+            logger.info("[WS] call=%s link sent via %s (type=%s)", session.call_sid[:8], channel, link_type)
         else:
-            logger.warning(
-                "[WS] call=%s WA link failed: HTTP %s",
-                session.call_sid[:8], resp.status_code,
-            )
+            logger.warning("[WS] call=%s link failed: HTTP %s", session.call_sid[:8], resp.status_code)
     except Exception as exc:
-        logger.warning("[WS] call=%s WA link error: %s", session.call_sid[:8], exc)
+        logger.warning("[WS] call=%s link error: %s", session.call_sid[:8], exc)
+
+
+async def _save_comm_pref(phone: str, pref: str) -> None:
+    """Persist communication preference to backend (fire-and-forget)."""
+    try:
+        async with httpx.AsyncClient(timeout=5) as client:
+            await client.post(
+                f"{BACKEND_INTERNAL_URL}/api/v1/internal/voice/save-comm-pref",
+                json={"phone": phone, "comm_pref": pref},
+            )
+    except Exception:
+        pass
 
 
 # ── GPT streaming ─────────────────────────────────────────────────────────────

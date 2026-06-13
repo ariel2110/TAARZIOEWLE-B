@@ -336,11 +336,48 @@ input,textarea{{font-family:inherit}}
       <label>הערות</label>
       <textarea id="c-notes" placeholder="ללא גלוטן, פיצוי... כל הערה שתרצה"></textarea>
     </div>
-    <button class="wa-order-btn" onclick="sendOrder()">
-      &#x1f4ac; שלח הזמנה ב-WhatsApp
+    <button class="wa-order-btn" id="submit-order-btn" onclick="startOtpFlow()">
+      &#x1f4ac; שלח הזמנה
     </button>
     <button onclick="document.getElementById('checkout-overlay').classList.remove('open')" style="width:100%;padding:12px;border-radius:12px;background:rgba(255,255,255,.06);color:white;font-size:14px;margin-top:10px;cursor:pointer;font-family:inherit">
       &#x2190; חזרה לתפריט
+    </button>
+  </div>
+</div>
+
+<!-- OTP Verification Overlay -->
+<div id="otp-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:1100;display:none;align-items:center;justify-content:center;padding:20px">
+  <div style="background:linear-gradient(135deg,#0f1723,#1a2744);border:1px solid rgba(14,230,208,0.25);border-radius:24px;padding:36px 28px;max-width:340px;width:100%;text-align:center">
+    <div style="font-size:44px;margin-bottom:12px">📲</div>
+    <h2 style="font-size:20px;font-weight:900;color:white;margin-bottom:8px">אימות מספר טלפון</h2>
+    <p id="otp-desc" style="color:rgba(255,255,255,0.55);font-size:14px;margin-bottom:24px">שלחנו קוד בן 4 ספרות ל-WhatsApp שלך</p>
+    <input id="otp-input"
+      type="text" inputmode="numeric" autocomplete="one-time-code"
+      maxlength="4" pattern="\\d{{4}}"
+      placeholder="• • • •"
+      style="width:100%;text-align:center;font-size:36px;font-weight:900;letter-spacing:16px;
+             background:rgba(255,255,255,0.07);border:2px solid rgba(14,230,208,0.3);
+             border-radius:16px;padding:18px 12px;color:#22d3ee;outline:none;
+             font-family:monospace;margin-bottom:18px"
+      oninput="if(this.value.length===4) verifyOtp()"
+    />
+    <button onclick="verifyOtp()" id="otp-confirm-btn"
+      style="width:100%;padding:14px;border-radius:50px;border:none;cursor:pointer;
+             background:linear-gradient(135deg,#0284c7,#22d3ee);color:white;
+             font-weight:800;font-size:15px;font-family:inherit;margin-bottom:10px">
+      אמת ושלח הזמנה ✓
+    </button>
+    <p id="otp-error" style="color:#f87171;font-size:13px;min-height:20px;margin-bottom:8px"></p>
+    <button id="otp-sms-btn" onclick="resendViaSms()"
+      style="width:100%;padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,0.15);
+             background:transparent;color:rgba(255,255,255,0.5);font-size:13px;cursor:pointer;
+             font-family:inherit;margin-bottom:6px">
+      📱 אין לי WhatsApp — שלח SMS במקום
+    </button>
+    <button onclick="document.getElementById('otp-overlay').style.display='none'"
+      style="width:100%;padding:8px;border:none;background:transparent;color:rgba(255,255,255,0.3);
+             font-size:12px;cursor:pointer;font-family:inherit">
+      ← ביטול
     </button>
   </div>
 </div>
@@ -490,31 +527,121 @@ function openCheckout() {{
   document.getElementById("checkout-overlay").classList.add("open");
 }}
 
+// ── OTP Flow ──────────────────────────────────────────────────────────────
+let _otpPhone = "";
+let _otpChannel = ""; // "whatsapp" or "sms"
+
+async function startOtpFlow() {{
+  const name = document.getElementById("c-name").value.trim();
+  const phone = document.getElementById("c-phone").value.trim();
+  if (!name || !phone) {{ alert("נא למלא שם וטלפון"); return; }}
+  const items = Object.values(cart);
+  if (!items.length) {{ alert("הסל ריק"); return; }}
+
+  _otpPhone = phone.replace(/\D/g,"");
+  if (_otpPhone.startsWith("0") && _otpPhone.length === 10)
+    _otpPhone = "972" + _otpPhone.slice(1);
+
+  // Show OTP overlay immediately
+  document.getElementById("otp-input").value = "";
+  document.getElementById("otp-error").textContent = "";
+  document.getElementById("otp-desc").textContent = "שולח קוד...";
+  document.getElementById("otp-overlay").style.display = "flex";
+  document.getElementById("otp-sms-btn").style.display = "";
+
+  await _sendOtp("whatsapp");
+}}
+
+async function _sendOtp(channel) {{
+  _otpChannel = channel;
+  const btn = document.getElementById("otp-sms-btn");
+  const desc = document.getElementById("otp-desc");
+  const errEl = document.getElementById("otp-error");
+  errEl.textContent = "";
+  document.getElementById("otp-input").value = "";
+  document.getElementById("otp-input").focus();
+
+  if (channel === "sms") {{
+    btn.style.display = "none";
+    desc.textContent = "שלחנו קוד ב-SMS — הקוד ימולא אוטומטית";
+  }} else {{
+    desc.textContent = "שלחנו קוד ב-WhatsApp — מלא אותו כאן";
+    btn.style.display = "";
+  }}
+
+  try {{
+    const resp = await fetch(TAZO_API + "/public/sms-otp/send", {{
+      method: "POST",
+      headers: {{"Content-Type":"application/json"}},
+      body: JSON.stringify({{ phone: _otpPhone, lang: "he" }})
+    }});
+    if (!resp.ok) {{
+      errEl.textContent = "שגיאה בשליחת הקוד. נסה שנית.";
+      return;
+    }}
+    // Android Web OTP API — auto-fill when SMS arrives
+    if (channel === "sms" && "OTPCredential" in window) {{
+      try {{
+        const credential = await navigator.credentials.get({{ otp: {{ transport: ["sms"] }}, signal: AbortSignal.timeout(60000) }});
+        if (credential && credential.code) {{
+          document.getElementById("otp-input").value = credential.code;
+          await verifyOtp();
+        }}
+      }} catch(_) {{ /* user dismissed or timed out — manual entry still works */ }}
+    }}
+  }} catch(e) {{
+    errEl.textContent = "שגיאת רשת — נסה שנית.";
+  }}
+}}
+
+async function resendViaSms() {{
+  document.getElementById("otp-desc").textContent = "שולח SMS...";
+  await _sendOtp("sms");
+}}
+
+async function verifyOtp() {{
+  const code = document.getElementById("otp-input").value.trim();
+  const errEl = document.getElementById("otp-error");
+  if (code.length !== 4) {{ errEl.textContent = "הכנס 4 ספרות"; return; }}
+  errEl.textContent = "";
+  const btn = document.getElementById("otp-confirm-btn");
+  btn.disabled = true; btn.textContent = "מאמת...";
+
+  try {{
+    const resp = await fetch(TAZO_API + "/public/sms-otp/verify", {{
+      method: "POST",
+      headers: {{"Content-Type":"application/json"}},
+      body: JSON.stringify({{ phone: _otpPhone, code }})
+    }});
+    const data = await resp.json();
+    if (!resp.ok || !data.ok) {{
+      errEl.textContent = data.detail || "קוד שגוי. נסה שנית.";
+      btn.disabled = false; btn.textContent = "אמת ושלח הזמנה ✓";
+      return;
+    }}
+    // ✅ Phone verified — close OTP overlay, send order
+    document.getElementById("otp-overlay").style.display = "none";
+    await sendOrder();
+  }} catch(e) {{
+    errEl.textContent = "שגיאת רשת.";
+    btn.disabled = false; btn.textContent = "אמת ושלח הזמנה ✓";
+  }}
+}}
+
 async function sendOrder() {{
   const name = document.getElementById("c-name").value.trim();
   const phone = document.getElementById("c-phone").value.trim();
   const address = document.getElementById("c-address")?.value.trim() || "";
   const notes = document.getElementById("c-notes").value.trim();
-  if (!name || !phone) {{ alert("נא למלא שם וטלפון"); return; }}
   const items = Object.values(cart);
-  if (!items.length) {{ alert("הסל ריק"); return; }}
   const total = items.reduce((s,i) => s + i.price*i.qty, 0);
-  let msg = `הזמנה חדשה מ-${{BIZ_NAME}}!\n\n`;
-  msg += `לקוח: ${{name}}\nטלפון: ${{phone}}\n`;
-  if (orderType === "delivery" && address) msg += `כתובת: ${{address}}\n`;
-  else msg += `סוג: איסוף עצמי\n`;
-  msg += `\nפרטי ההזמנה:\n`;
-  items.forEach(i => {{ msg += `• ${{i.name}} x${{i.qty}} = ₪${{i.price*i.qty}}\n`; }});
-  msg += `\nסה"כ: ₪${{total}}`;
-  if (notes) msg += `\n\nהערות: ${{notes}}`;
-  const target = BIZ_PHONE || "972546363350";
-  const encoded = encodeURIComponent(msg);
-  window.open(`https://wa.me/${{target}}?text=${{encoded}}`, "_blank");
 
-  // Forward to TAZO-SYNC and show tracking code
+  // Close checkout, clear cart
   document.getElementById("checkout-overlay").classList.remove("open");
   cart = {{}};
   updateCartBadge();
+
+  // Send to TAZO-SYNC and show tracking code
   try {{
     const resp = await fetch(TAZO_API + "/public/site-order", {{
       method: "POST",
@@ -527,14 +654,12 @@ async function sendOrder() {{
     }});
     const data = await resp.json();
     if (data.deliveryCode) {{
-      const overlay = document.getElementById("confirm-overlay");
       document.getElementById("confirm-code").textContent = data.deliveryCode;
       if (data.trackingUrl) {{
         const link = document.getElementById("confirm-track-link");
-        link.href = data.trackingUrl;
-        link.style.display = "inline-flex";
+        link.href = data.trackingUrl; link.style.display = "inline-flex";
       }}
-      overlay.style.display = "flex";
+      document.getElementById("confirm-overlay").style.display = "flex";
     }}
   }} catch(e) {{}}
 }}

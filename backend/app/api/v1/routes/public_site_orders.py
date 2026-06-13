@@ -56,12 +56,43 @@ class SiteOrderIn(BaseModel):
 
 
 def _send_wa(phone: str, text: str) -> None:
+    """Send WhatsApp message. Falls back to SMS via Twilio if WhatsApp fails."""
+    wa_ok = False
     try:
-        httpx.post(
+        r = httpx.post(
             f'{_WA_BASE}/message/sendText/{_WA_INSTANCE}',
             json={'number': phone, 'text': text},
             headers={'apikey': _WA_KEY},
             timeout=8,
+        )
+        wa_ok = r.status_code in (200, 201)
+    except Exception:
+        pass
+
+    if not wa_ok:
+        # WhatsApp failed — fallback to SMS
+        _send_sms_fallback(phone, text)
+
+
+def _send_sms_fallback(phone: str, text: str) -> None:
+    """Send SMS via Twilio as fallback when WhatsApp fails."""
+    from app.core.config import settings
+    import re
+    sid   = settings.twilio_account_sid
+    token = settings.twilio_auth_token
+    from_ = settings.twilio_from_number or '+972533889859'
+    if not sid or not token:
+        return
+    try:
+        clean = re.sub(r'\D', '', phone)
+        if clean.startswith('0') and len(clean) == 10:
+            clean = '972' + clean[1:]
+        to_e164 = f'+{clean}'
+        httpx.post(
+            f'https://api.twilio.com/2010-04-01/Accounts/{sid}/Messages.json',
+            data={'From': from_, 'To': to_e164, 'Body': text},
+            auth=(sid, token),
+            timeout=12,
         )
     except Exception:
         pass

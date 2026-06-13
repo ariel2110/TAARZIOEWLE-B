@@ -9,6 +9,8 @@ const LandingExtra = lazy(() => import('./LandingExtra'))
 const IntakeForm = lazy(() => import('./IntakeForm'))
 const SubmissionStatus = lazy(() => import('./SubmissionStatus'))
 const About = lazy(() => import('./About'))
+const Privacy = lazy(() => import('./Privacy'))
+const Terms = lazy(() => import('./Terms'))
 
 const PageFallback = () => (
   <div style={{ minHeight: '40vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94A3B8' }}>
@@ -60,7 +62,7 @@ function upsertJsonLd(id: string, payload: unknown) {
   script.text = JSON.stringify(payload)
 }
 
-export type AppPage = 'marketplace' | 'home' | 'intake' | 'status' | 'about';
+export type AppPage = 'marketplace' | 'home' | 'intake' | 'status' | 'about' | 'privacy' | 'terms';
 
 function normalizePath(pathname: string): string {
   const stripped = pathname.replace(/\/+$/, '')
@@ -85,6 +87,12 @@ function parseRouteFromLocation() {
   }
   if (hash === '#/about' || path === '/about') {
     return { page: 'about' as AppPage, token: '', category: undefined as string | undefined }
+  }
+  if (path === '/privacy' || path === '/privacy/') {
+    return { page: 'privacy' as AppPage, token: '', category: undefined as string | undefined }
+  }
+  if (path === '/terms' || path === '/terms/') {
+    return { page: 'terms' as AppPage, token: '', category: undefined as string | undefined }
   }
 
   const hashCategory = hash.match(/^#\/category\/([^/]+)/)
@@ -208,6 +216,22 @@ export default function App() {
           <About />
         </Suspense>
       </>
+    );
+  }
+
+  if (page === 'privacy') {
+    return (
+      <Suspense fallback={<PageFallback />}>
+        <Privacy />
+      </Suspense>
+    );
+  }
+
+  if (page === 'terms') {
+    return (
+      <Suspense fallback={<PageFallback />}>
+        <Terms />
+      </Suspense>
     );
   }
 

@@ -974,10 +974,27 @@ function MallView({ onCategory, onSearch, onJoin, onBusinessClick, crossAuthPhon
       <footer style={{ padding: '40px 24px 32px', textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>
         <div style={{ fontWeight: 900, color: 'white', marginBottom: 6, fontSize: 22, background: 'linear-gradient(135deg,#f59e0b,#ef4444)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', display: 'inline-block' }}>TAZO Mall</div>
         <div style={{ color: 'rgba(255,255,255,0.4)', marginBottom: 20 }}>המרחב הדיגיטלי של הרחוב הישראלי</div>
-        <div style={{ marginBottom: 24 }}>
+        <div style={{ marginBottom: 16 }}>
           <button onClick={onJoin} style={{ background: 'none', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 50, padding: '8px 22px', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: 13, fontFamily: 'inherit' }}>
             הצטרף כעסק →
           </button>
+        </div>
+
+        {/* Social share buttons */}
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 24 }}>
+          <a href="https://www.facebook.com/share/1BLkqqQKks/" target="_blank" rel="noopener noreferrer"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#1877F2', color: 'white', borderRadius: 50, padding: '6px 14px', fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+            Facebook
+          </a>
+          <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent('https://tazo-web.com')}`} target="_blank" rel="noopener noreferrer"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(24,119,242,0.15)', color: '#60a5fa', border: '1px solid rgba(24,119,242,0.3)', borderRadius: 50, padding: '6px 14px', fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>
+            🔗 שתף
+          </a>
+          <a href="https://wa.me/?text=TAZO Mall - גלה עסקים בסביבתך! https://tazo-web.com" target="_blank" rel="noopener noreferrer"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(37,211,102,0.15)', color: '#25d366', border: '1px solid rgba(37,211,102,0.25)', borderRadius: 50, padding: '6px 14px', fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>
+            💬 WhatsApp
+          </a>
         </div>
         <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 18, fontSize: 12, color: 'rgba(255,255,255,0.25)', lineHeight: 2 }}>
           © 2026 TAZO | כל הזכויות שמורות<br />

@@ -108,6 +108,13 @@ _SUPPORT_FLOAT_BTN = (
     'box-shadow:0 4px 20px rgba(0,0,0,.4);text-decoration:none;'
     'display:flex;align-items:center;gap:8px;direction:rtl">'
     '📞 תמיכה 24/7</a>'
+    '<a href="https://www.facebook.com/share/1BLkqqQKks/" target="_blank" rel="noopener" '
+    'title="עקוב ב-Facebook" '
+    'style="position:fixed;bottom:70px;left:16px;z-index:9990;'
+    'background:#1877F2;color:white;border-radius:50%;width:44px;height:44px;'
+    'box-shadow:0 4px 16px rgba(0,0,0,.4);text-decoration:none;'
+    'display:flex;align-items:center;justify-content:center;font-size:20px">'
+    '𝒇</a>'
 )
 
 

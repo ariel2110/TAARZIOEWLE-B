@@ -100,6 +100,31 @@ def _food_menu(category: str, types: str) -> list:
             ]},
         ]
 
+def _build_site_banner(is_demo: bool, phase: str = 'beta') -> str:
+    """Return sticky top banner HTML. Beta sites get a BETA tag + claim CTA."""
+    if not is_demo:
+        return ''
+    beta_tag = (
+        '<span style="background:#f59e0b;color:#000;border-radius:4px;padding:1px 7px;font-size:11px;font-weight:900;letter-spacing:1px;margin-left:8px">BETA</span>'
+        if phase == 'beta' else ''
+    )
+    return (
+        f'<div style="background:#0f172a;color:#f8fafc;padding:9px 16px;text-align:center;'
+        f'font-size:13px;font-weight:700;position:sticky;top:0;z-index:9999;display:flex;'
+        f'align-items:center;justify-content:center;gap:8px;border-bottom:2px solid #f59e0b">'
+        f'{beta_tag}'
+        f'אתר זה בגרסת BETA — מידע עשוי להיות חלקי &nbsp;'
+        f'<a href="https://tazo-web.com/claim" target="_blank" rel="noopener" '
+        f'style="color:#f59e0b;text-decoration:underline;font-weight:900">שדרג לגרסה מלאה ←</a>'
+        f'</div>'
+    ) if phase == 'beta' else (
+        f'<div style="background:#f8fafc;color:#111827;padding:10px 16px;text-align:center;'
+        f'font-size:13px;font-weight:800;border-bottom:1px solid rgba(15,23,42,.08)">'
+        f'בעל/ת העסק? <a href="https://tazo-sync.com/dashboard?action=claim&source=tazo-web" '
+        f'target="_blank" rel="noopener" style="color:#111827;text-decoration:underline">תבעו בעלות וערכו באתר</a></div>'
+    )
+
+
 def _render_food(c: dict) -> str:
     from html import escape as _e
     import re as _re
@@ -129,7 +154,10 @@ def _render_food(c: dict) -> str:
         "https://tazo-sync.com/dashboard?action=claim"
         f"&phone={_quote(phone)}&business={_quote(name_raw)}&source=tazo-web"
     )
+    phase = c.get('phase', 'beta')
+    beta_bar = _build_site_banner(True, phase) if phase == 'beta' else ''
     owner_bar = (
+        f'{beta_bar}'
         f'<div class="owner-claim" role="region" aria-label="תביעת בעלות">'
         f'<span>בעל/ת העסק?</span>'
         f'<a href="{claim_url}" target="_blank" rel="noopener">תבעו בעלות וערכו תפריט, תמונות ומחירים</a>'
@@ -589,14 +617,7 @@ def _render_beauty(c: dict) -> str:
     wa_phone = phone_c or '972546363350'
     wa_msg   = f'שלום! אשמח לקבוע תור ב{name_raw}'
     wa_url   = f'https://wa.me/{wa_phone}?text={wa_msg.replace(" ", "%20")}'
-    demo_banner = (
-        f'<div style="background:linear-gradient(90deg,#9333ea,#ec4899);color:white;padding:10px 20px;'
-        f'text-align:center;font-size:13px;font-weight:700">'
-        f'<a href="https://tazo-web.com" style="color:white">TAZO</a> '
-        f'—  | '
-        f'<a href="{wa_url}" target="_blank" style="color:white;text-decoration:underline">תבעו בעלות וערכו באתר</a>'
-        f'</div>'
-    ) if is_demo else ''
+    demo_banner = _build_site_banner(is_demo, c.get('phase', 'beta'))
     stars_str = ('★' * int(rating) + '☆' * (5 - int(rating))) if rating else ''
     svcs_html = ''.join(
         f'<div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);'
@@ -737,7 +758,7 @@ def _render_health(c: dict) -> str:
     svcs = _health_services(cat, types)
     wa_phone = phone_c or '972546363350'
     wa_url = f"https://wa.me/{wa_phone}?text={'קביעת%20תור%20ב'+name_raw.replace(' ','%20')}"
-    demo_banner = '<div style="background:#f8fafc;color:#111827;padding:10px 16px;text-align:center;font-size:13px;font-weight:800;border-bottom:1px solid rgba(15,23,42,.08)">בעל/ת העסק? <a href="https://tazo-sync.com/dashboard?action=claim&source=tazo-web" target="_blank" rel="noopener" style="color:#111827;text-decoration:underline">תבעו בעלות וערכו באתר</a></div>'
+    demo_banner = _build_site_banner(is_demo, c.get('phase', 'beta'))
     stars_str = ('★'*int(rating)+'☆'*(5-int(rating))) if rating else ''
     svcs_html = ''.join(
         f'<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(16,185,129,0.15);border-radius:14px;padding:18px 22px;display:flex;justify-content:space-between;align-items:center">'
@@ -841,7 +862,7 @@ def _render_vehicles(c: dict) -> str:
     svcs = _vehicle_services(cat, types)
     wa_phone = phone_c or '972546363350'
     wa_url = f"https://wa.me/{wa_phone}?text={'שלום%2C%20אשמח%20לקבל%20שירות%20ב'+name_raw.replace(' ','%20')}"
-    demo_banner = '<div style="background:#f8fafc;color:#111827;padding:10px 16px;text-align:center;font-size:13px;font-weight:800;border-bottom:1px solid rgba(15,23,42,.08)">בעל/ת העסק? <a href="https://tazo-sync.com/dashboard?action=claim&source=tazo-web" target="_blank" rel="noopener" style="color:#111827;text-decoration:underline">תבעו בעלות וערכו באתר</a></div>'
+    demo_banner = _build_site_banner(is_demo, c.get('phase', 'beta'))
     stars_str = ('★'*int(rating)+'☆'*(5-int(rating))) if rating else ''
     svcs_html = ''.join(
         f'<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(217,119,6,0.2);border-radius:14px;padding:18px 22px;display:flex;justify-content:space-between;align-items:center">'
@@ -952,7 +973,7 @@ def _render_repairs(c: dict) -> str:
     svcs = _repair_services(cat, types)
     wa_phone = phone_c or '972546363350'
     wa_url = f"https://wa.me/{wa_phone}?text={'שלום%2C%20אשמח%20לקבל%20הצעת%20מחיר%20מ'+name_raw.replace(' ','%20')}"
-    demo_banner = '<div style="background:#f8fafc;color:#111827;padding:10px 16px;text-align:center;font-size:13px;font-weight:800;border-bottom:1px solid rgba(15,23,42,.08)">בעל/ת העסק? <a href="https://tazo-sync.com/dashboard?action=claim&source=tazo-web" target="_blank" rel="noopener" style="color:#111827;text-decoration:underline">תבעו בעלות וערכו באתר</a></div>'
+    demo_banner = _build_site_banner(is_demo, c.get('phase', 'beta'))
     stars_str = ('★'*int(rating)+'☆'*(5-int(rating))) if rating else ''
     svcs_html = ''.join(
         f'<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(30,64,175,0.25);border-radius:14px;padding:18px 22px;display:flex;justify-content:space-between;align-items:center">'
@@ -1053,7 +1074,7 @@ def _render_events(c: dict) -> str:
     svcs = _events_services(cat, types)
     wa_phone = phone_c or '972546363350'
     wa_url = f"https://wa.me/{wa_phone}?text={'שלום%2C%20אשמח%20לשמוע%20פרטים%20על%20'+name_raw.replace(' ','%20')}"
-    demo_banner = '<div style="background:#f8fafc;color:#111827;padding:10px 16px;text-align:center;font-size:13px;font-weight:800;border-bottom:1px solid rgba(15,23,42,.08)">בעל/ת העסק? <a href="https://tazo-sync.com/dashboard?action=claim&source=tazo-web" target="_blank" rel="noopener" style="color:#111827;text-decoration:underline">תבעו בעלות וערכו באתר</a></div>'
+    demo_banner = _build_site_banner(is_demo, c.get('phase', 'beta'))
     stars_str = ('★'*int(rating)+'☆'*(5-int(rating))) if rating else ''
     svcs_html = ''.join(
         f'<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(167,139,250,0.2);border-radius:14px;padding:18px 22px;display:flex;justify-content:space-between;align-items:center">'
@@ -1154,7 +1175,7 @@ def _render_education(c: dict) -> str:
     svcs = _education_services(cat, types)
     wa_phone = phone_c or '972546363350'
     wa_url = f"https://wa.me/{wa_phone}?text={'שלום%2C%20אשמח%20לשמוע%20פרטים%20על%20'+name_raw.replace(' ','%20')}"
-    demo_banner = '<div style="background:#f8fafc;color:#111827;padding:10px 16px;text-align:center;font-size:13px;font-weight:800;border-bottom:1px solid rgba(15,23,42,.08)">בעל/ת העסק? <a href="https://tazo-sync.com/dashboard?action=claim&source=tazo-web" target="_blank" rel="noopener" style="color:#111827;text-decoration:underline">תבעו בעלות וערכו באתר</a></div>'
+    demo_banner = _build_site_banner(is_demo, c.get('phase', 'beta'))
     stars_str = ('★'*int(rating)+'☆'*(5-int(rating))) if rating else ''
     svcs_html = ''.join(
         f'<div style="background:linear-gradient(135deg,rgba(2,132,199,0.08),rgba(99,102,241,0.08));border:1px solid rgba(99,102,241,0.2);border-radius:16px;padding:18px 22px;display:flex;justify-content:space-between;align-items:center">'

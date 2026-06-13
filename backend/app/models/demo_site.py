@@ -37,7 +37,10 @@ class DemoSite(Base, TimestampMixin):
 
     # Lifecycle
     photo_url: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+    gallery_urls: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON list of image URLs (up to 6)
+    subcategory: Mapped[str | None] = mapped_column(String(120), nullable=True)
     status: Mapped[str] = mapped_column(String(30), default='draft')  # draft/sent/viewed/converted/seeded/removal_requested
+    phase: Mapped[str] = mapped_column(String(20), default='beta')    # beta/launched/premium
     view_count: Mapped[int] = mapped_column(Integer, default=0)
     first_viewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     whatsapp_sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

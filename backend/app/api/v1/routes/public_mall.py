@@ -12,6 +12,7 @@ from app.db.session import get_db, SessionLocal
 from app.models.business import Business
 from app.models.demo_site import DemoSite
 from app.models.draft_site import DraftSite
+from app.models.cart import Cart
 
 logger = logging.getLogger(__name__)
 
@@ -282,8 +283,9 @@ async def nearby_businesses(
     lat: float = Query(..., ge=-90, le=90),
     lng: float = Query(..., ge=-180, le=180),
     q: str = Query(..., min_length=1),
-    radius: int = Query(5000, ge=100, le=50000),
-    limit: int = Query(20, le=40),
+    radius: int = Query(5000, ge=100),     # no upper cap — use 0 for "unlimited"
+    limit: int = Query(20, le=60),
+    page: int = Query(1, ge=1),            # pagination support
     db: Session = Depends(get_db),
 ):
     """
@@ -372,6 +374,7 @@ async def nearby_businesses(
                 "subdomain": in_db.slug if in_db else None,
                 "url": f"https://{in_db.slug}.tazo-web.com" if in_db and in_db.slug else None,
                 "status": "active" if in_db else "available",
+                "phase": getattr(in_db, 'phase', 'beta') if in_db else None,
                 "photo_url": photo_url,
                 "open_now": open_now,
                 "category": place_category,
@@ -931,3 +934,90 @@ async def get_biz_live(slug: str, db: Session = Depends(get_db)):
 
     _BIZ_LIVE_CACHE[slug] = (_time.time() + _BIZ_LIVE_TTL, result)
     return result
+
+
+# ── Cart Endpoints ───────────────────────────────────────────────────────────
+
+import json as _json
+import secrets as _secrets
+
+class CartUpsertIn(BaseModel):
+    session_id: str | None = None   # if None → server generates one
+    business_phone: str
+    business_name: str | None = None
+    items: list = []                # [{name, qty, price, imageUrl?}]
+    delivery_address: str | None = None
+    customer_phone: str | None = None
+    customer_name: str | None = None
+    notes: str | None = None
+
+
+@router.post("/cart")
+def upsert_cart(body: CartUpsertIn, db: Session = Depends(get_db)):
+    """Create or update a shopping cart. Returns session_id + totals."""
+    session_id = body.session_id or _secrets.token_hex(16)
+    items = body.items or []
+    total_agora = sum(int((item.get("price") or 0) * 100) * int(item.get("qty") or 1) for item in items)
+    item_count = sum(int(item.get("qty") or 1) for item in items)
+
+    cart = db.query(Cart).filter(Cart.session_id == session_id).first()
+    if cart:
+        cart.business_phone = body.business_phone
+        cart.business_name = body.business_name
+        cart.items = _json.dumps(items, ensure_ascii=False)
+        cart.delivery_address = body.delivery_address
+        cart.customer_phone = body.customer_phone
+        cart.customer_name = body.customer_name
+        cart.notes = body.notes
+        cart.item_count = item_count
+        cart.total = total_agora
+    else:
+        cart = Cart(
+            session_id=session_id,
+            business_phone=body.business_phone,
+            business_name=body.business_name,
+            items=_json.dumps(items, ensure_ascii=False),
+            delivery_address=body.delivery_address,
+            customer_phone=body.customer_phone,
+            customer_name=body.customer_name,
+            notes=body.notes,
+            item_count=item_count,
+            total=total_agora,
+        )
+        db.add(cart)
+    db.commit()
+    return {
+        "session_id": session_id,
+        "item_count": item_count,
+        "total_ils": round(total_agora / 100, 2),
+        "business_phone": body.business_phone,
+    }
+
+
+@router.get("/cart/{session_id}")
+def get_cart(session_id: str, db: Session = Depends(get_db)):
+    """Retrieve cart by session_id."""
+    cart = db.query(Cart).filter(Cart.session_id == session_id).first()
+    if not cart:
+        return {"session_id": session_id, "items": [], "item_count": 0, "total_ils": 0}
+    items = _json.loads(cart.items or "[]")
+    return {
+        "session_id": cart.session_id,
+        "business_phone": cart.business_phone,
+        "business_name": cart.business_name,
+        "items": items,
+        "item_count": cart.item_count,
+        "total_ils": round(cart.total / 100, 2),
+        "delivery_address": cart.delivery_address,
+        "customer_phone": cart.customer_phone,
+        "customer_name": cart.customer_name,
+        "notes": cart.notes,
+    }
+
+
+@router.delete("/cart/{session_id}")
+def delete_cart(session_id: str, db: Session = Depends(get_db)):
+    """Clear / delete a cart."""
+    db.query(Cart).filter(Cart.session_id == session_id).delete()
+    db.commit()
+    return {"ok": True, "session_id": session_id}

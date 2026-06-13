@@ -9,6 +9,7 @@ class ContextBuilder:
         hero_title = raw.get('hero_title') or name
         about_text = raw.get('about_text') or ''
         is_demo = raw.get('is_demo', True)
+        phase = raw.get('phase', 'beta')  # beta/launched/premium
 
         # Business fields
         phone = raw.get('phone') or ''
@@ -42,6 +43,7 @@ class ContextBuilder:
             'hero_title': hero_title,
             'about_text': about_text,
             'is_demo': is_demo,
+            'phase': phase,
             'name': name,
             'phone': phone,
             'city': city,

@@ -21,6 +21,7 @@ interface Business {
   rating?: number;
   tagline?: string;
   status: 'active' | 'building' | 'pending';
+  phase?: 'beta' | 'launched' | 'premium';
   subdomain?: string;
   photo_url?: string;
 }
@@ -122,9 +123,16 @@ function BusinessCard({ biz, onClick }: { biz: Business; onClick: () => void }) 
         />
       )}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-        <span style={{ background: badge.bg, color: badge.color, border: `1px solid ${badge.border}`, borderRadius: 50, padding: '4px 12px', fontSize: 12, fontWeight: 600 }}>
-          {badge.text}
-        </span>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' as const }}>
+          <span style={{ background: badge.bg, color: badge.color, border: `1px solid ${badge.border}`, borderRadius: 50, padding: '4px 12px', fontSize: 12, fontWeight: 600 }}>
+            {badge.text}
+          </span>
+          {biz.phase === 'beta' && (
+            <span style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 50, padding: '4px 10px', fontSize: 11, fontWeight: 700, letterSpacing: 1 }}>
+              BETA
+            </span>
+          )}
+        </div>
         {biz.city && <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>📍 {biz.city}</span>}
       </div>
       <div style={{ fontWeight: 800, fontSize: 18, marginBottom: 6 }}>{biz.name}</div>

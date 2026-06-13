@@ -105,12 +105,17 @@ def _create_morning_topup_link(customer_phone: str, customer_name: str, amount_n
 
 # ── schemas ───────────────────────────────────────────────────────────────────
 
+_PLATFORM_FEE_PCT = Decimal('0.15')   # 15% platform commission
+_DELIVERY_FEE_TAZ = Decimal('10')     # flat delivery fee in TAZ
+
+
 class TazCheckoutIn(BaseModel):
     customer_phone: str
     customer_name: str | None = None
     business_phone: str
     items: list | None = None
-    total: float
+    total: float                       # items subtotal in TAZ
+    delivery_fee: float | None = None  # override default delivery fee (TAZ)
     order_type: str | None = 'delivery'
     notes: str | None = None
 
@@ -121,7 +126,10 @@ class TazDebitIn(BaseModel):
     business_phone: str
     business_name: str | None = None
     order_id: str
-    amount: float
+    amount: float                       # grand total (items + delivery + platform)
+    items_total: float | None = None    # items subtotal
+    delivery_fee_taz: float | None = None
+    platform_fee_taz: float | None = None
     items: list | None = None
     order_type: str | None = 'delivery'
     notes: str | None = None
@@ -132,9 +140,12 @@ class TazDebitIn(BaseModel):
 @router.post('/taz-checkout')
 def taz_checkout(payload: TazCheckoutIn, db: Session = Depends(get_db)):
     """Check TAZ balance; return approval or Morning top-up link."""
-    cust_phone = _clean_phone(payload.customer_phone)
-    biz_phone  = _clean_phone(payload.business_phone)
-    total      = Decimal(str(payload.total))
+    cust_phone    = _clean_phone(payload.customer_phone)
+    biz_phone     = _clean_phone(payload.business_phone)
+    items_total   = Decimal(str(payload.total))
+    delivery_fee  = Decimal(str(payload.delivery_fee)) if payload.delivery_fee is not None else _DELIVERY_FEE_TAZ
+    platform_fee  = (items_total * _PLATFORM_FEE_PCT).quantize(Decimal('0.01'))
+    total         = items_total + delivery_fee + platform_fee
 
     # 1. Find and verify business — try multiple phone formats
     raw_biz = payload.business_phone
@@ -177,7 +188,10 @@ def taz_checkout(payload: TazCheckoutIn, db: Session = Depends(get_db)):
             'approved': True,
             'balance': float(balance),
             'wallet_id': wallet_rec.wallet_id,
-            'total': float(total),
+            'items_total_taz': float(items_total),
+            'delivery_fee_taz': float(delivery_fee),
+            'platform_fee_taz': float(platform_fee),
+            'total_taz': float(total),
             'business_verified': True,
         }
 
@@ -202,11 +216,15 @@ def taz_checkout(payload: TazCheckoutIn, db: Session = Depends(get_db)):
         'approved': False,
         'reason': 'insufficient_balance',
         'balance': float(balance),
-        'total': float(total),
+        'items_total_taz': float(items_total),
+        'delivery_fee_taz': float(delivery_fee),
+        'platform_fee_taz': float(platform_fee),
+        'total_taz': float(total),
+        'missing_taz': float(shortfall),
         'amount_needed': float(shortfall),
         'needs_topup': True,
         'topup_url': topup_url,
-        'message': f'יתרת TAZ לא מספיקה. נדרש לטעון {float(shortfall):.0f} ₪ נוספים.',
+        'message': f'נדרשים עוד {float(shortfall):.0f} קרדיטים לביצוע ההזמנה. לחץ לרכישה.',
     }
 
 

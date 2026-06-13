@@ -136,6 +136,9 @@ class Settings(BaseSettings):
     vault_key: str | None = Field(default=None)                    # VAULT_INTERNAL_KEYS value
     vault_escrow_wallet_id: str | None = Field(default=None)       # Escrow wallet UUID
 
+    # Oxylabs AI Studio — web intelligence / scraping
+    oxylabs_aistudio_api_key: str | None = Field(default=None)
+
     # Static output
     static_output_dir: str = 'app/static_sites'
 

@@ -131,7 +131,10 @@ class Settings(BaseSettings):
 
     # Tazo-Sync integration
     tazo_sync_internal_key: str | None = Field(default=None)  # key accepted on /internal/* from tazo-sync
-    tazo_sync_url: str = Field(default='https://tazo-sync.com')
+    tazo_sync_url: str = Field(default="https://tazo-sync.com")
+    vault_url: str = Field(default="http://76.13.42.13:8000")       # Taz Currency Vault
+    vault_key: str | None = Field(default=None)                    # VAULT_INTERNAL_KEYS value
+    vault_escrow_wallet_id: str | None = Field(default=None)       # Escrow wallet UUID
 
     # Static output
     static_output_dir: str = 'app/static_sites'

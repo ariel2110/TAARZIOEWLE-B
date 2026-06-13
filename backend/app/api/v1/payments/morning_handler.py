@@ -222,11 +222,129 @@ def handle_file_infected(ctx: dict) -> dict:
 # Handler registry  ← add new events here
 # ═══════════════════════════════════════════════════════════════════════════════
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# TAZ wallet top-up handler
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def handle_taz_wallet_topup(ctx: dict) -> dict:
+    """
+    TAZ wallet top-up via Morning payment link.
+    externalId format: "taz-topup:{customer_phone}:{ref}"
+    On SUCCESS: top up customer vault wallet, then complete any pending order.
+    """
+    if ctx["status"] != "SUCCESS":
+        return {"ok": True, "detail": f"non-success: {ctx["status"]}"}
+
+    external_id = ctx.get("external_id", "")
+    if not external_id.startswith("taz-topup:"):
+        return {"ok": True, "detail": "not a taz-topup event"}
+
+    parts = external_id.split(":")
+    if len(parts) < 3:
+        logger.warning("[TazTopup] Bad externalId format: %s", external_id[:30])
+        return {"ok": False, "detail": "bad externalId format"}
+
+    customer_phone = parts[1]
+    ref            = parts[2]
+    amount_nis     = ctx["amount"]  # 1 ILS = 1 TAZ
+
+    if amount_nis <= 0:
+        return {"ok": False, "detail": "amount must be > 0"}
+
+    try:
+        from decimal import Decimal
+        from app.db.session import SessionLocal
+        from app.models.customer_taz_wallet import CustomerTazWallet
+        from app.services.vault import vault_client as vault
+        import json
+
+        db = SessionLocal()
+        try:
+            wallet_rec = db.query(CustomerTazWallet).filter(CustomerTazWallet.phone == customer_phone).first()
+            if not wallet_rec:
+                logger.warning("[TazTopup] No wallet for phone %s", customer_phone[:6])
+                return {"ok": False, "detail": "wallet not found"}
+
+            result = vault.topup_wallet(wallet_rec.wallet_id, Decimal(str(amount_nis)), reference=ref)
+            if not result:
+                logger.error("[TazTopup] topup_wallet failed for %s", wallet_rec.wallet_id[:8])
+                return {"ok": False, "detail": "vault topup failed"}
+
+            logger.info("[TazTopup] Topped up wallet %s by %s TAZ", wallet_rec.wallet_id[:8], amount_nis)
+
+            # Complete pending order if any
+            pending = wallet_rec.pending_order_ref
+            if pending:
+                try:
+                    order_data = json.loads(pending)
+                    if order_data.get("ref") == ref:
+                        _complete_pending_order(wallet_rec, order_data, db)
+                        wallet_rec.pending_order_ref = None
+                        db.commit()
+                except Exception as exc:
+                    logger.warning("[TazTopup] Could not complete pending order: %s", exc)
+
+            return {"ok": True, "topped_up": amount_nis, "wallet_id": wallet_rec.wallet_id}
+        finally:
+            db.close()
+    except Exception as exc:
+        logger.exception("[TazTopup] Unexpected error: %s", exc)
+        return {"ok": False, "detail": str(exc)}
+
+
+def _complete_pending_order(wallet_rec, order_data: dict, db) -> None:
+    """Complete an order that was pending TAZ top-up."""
+    import httpx
+    from decimal import Decimal
+    from app.services.vault import vault_client as vault
+    import re, os
+
+    def clean(p):
+        p = re.sub(r"D", "", p or "")
+        return ("972" + p[1:]) if p.startswith("0") and len(p) == 10 else p
+
+    total      = Decimal(str(order_data.get("total", 0)))
+    biz_phone  = clean(order_data.get("business_phone", ""))
+    order_id   = f"web-{wallet_rec.wallet_id[:8]}-{order_data["ref"]}"
+
+    # Escrow lock
+    lock = vault.escrow_lock(wallet_rec.wallet_id, order_id, total)
+    if not lock:
+        logger.warning("[TazTopup] escrow_lock failed for pending order %s", order_id)
+
+    # Forward to tazo-sync
+    sync_url = os.environ.get("TAZO_SYNC_URL", "https://tazo-sync.com") + "/api/orders"
+    sync_key = os.environ.get("TAZO_SYNC_INTERNAL_KEY", "")
+    try:
+        r = httpx.post(
+            sync_url,
+            json={
+                "source": "tazo-web-taz",
+                "businessName": order_data.get("business_name", "עסק"),
+                "business_phone": biz_phone,
+                "buyerPhone": wallet_rec.phone,
+                "customer_name": order_data.get("customer_name", "לקוח"),
+                "items": order_data.get("items", []),
+                "total": float(total),
+                "order_type": order_data.get("order_type", "delivery"),
+                "notes": order_data.get("notes", ""),
+                "taz_order_id": order_id,
+                "isShadowOrder": False,
+            },
+            headers={"Authorization": f"Bearer {sync_key}"},
+            timeout=12,
+        )
+        logger.info("[TazTopup] tazo-sync response: %s", r.status_code)
+    except Exception as exc:
+        logger.warning("[TazTopup] tazo-sync forward failed: %s", exc)
+
+
 EVENT_HANDLERS: dict[str, Callable[[dict], dict]] = {
     'sale-pages/order-paid':     handle_order_paid,
     'sale-pages/page-contacted': handle_page_contacted,
     'payment/received':          handle_payment_received,
     'file/infected':             handle_file_infected,
+    'sale-pages/order-paid:taz':  handle_taz_wallet_topup,  # TAZ wallet top-up
 }
 
 
@@ -253,6 +371,12 @@ def handle_morning_event(body: dict, parsed: dict) -> dict:
     if handler:
         logger.info('[MorningHandler] Dispatching event=%s status=%s', event_type, ctx['status'])
         return handler(ctx)
+
+    # TAZ top-up detection by externalId prefix (any event type)
+    external_id = ctx.get('external_id', '')
+    if external_id.startswith('taz-topup:'):
+        logger.info('[MorningHandler] TAZ top-up detected via externalId=%s', external_id[:20])
+        return handle_taz_wallet_topup(ctx)
 
     # Fallback: unknown event type
     if ctx['status'] == 'SUCCESS':

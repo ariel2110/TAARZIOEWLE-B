@@ -15,6 +15,23 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
 
+
+
+
+
+def _notify_unverified_business_wa(phone: str, name: str) -> None:
+    lines = [
+        f"שלום {name}!",
+        "",
+        "לקוח ניסה להזמין דרך TAZO אבל העסק שלך עדיין לא אומת.",
+        "להשלמת האימות: https://tazo-web.com",
+        "",
+        "TAZO",
+    ]
+    _send_wa(phone, chr(10).join(lines))
+
+
+
 router = APIRouter(prefix='/public', tags=['public-orders'])
 
 _WA_BASE     = 'http://sitenest-evolution:8080'
@@ -94,8 +111,25 @@ def create_site_order(order: SiteOrderIn, db: Session = Depends(get_db)):
             lines.append(f'\u2022 {name} x{qty} \u2014 \u20aa{price}')
         items_text = '\n'.join(lines)
 
-    # --- WhatsApp to business owner ---
+    # --- Business verification check ---
     biz_clean = _clean_phone(order.business_phone or '')
+    if True:  # Always verify business
+        from app.models.business import Business
+        business = (
+            db.query(Business)
+            .filter(Business.phone.in_([biz_clean, order.business_phone or '']))
+            .first()
+        )
+        if business and business.status not in ('active', 'paid'):
+            # Notify unverified business
+            _notify_unverified_business_wa(biz_clean, business.name)
+            return {
+                'ok': False,
+                'reason': 'business_not_verified',
+                'message': f'העסק {business.name} עדיין לא מאומת ב-TAZO. שלחנו להם הודעה.',
+            }
+
+    # --- WhatsApp to business owner ---
     if biz_clean:
         biz_msg = (
             f'\U0001f355 \u05d4\u05d6\u05de\u05e0\u05d4 \u05d7\u05d3\u05e9\u05d4 \u05de-TAZO!\n\n'

@@ -1,5 +1,6 @@
 
 from fastapi import APIRouter, Body, Depends, Query, HTTPException, Header
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.schemas.public_portal import (
@@ -92,5 +93,59 @@ def verify_otp(payload: PublicVerifyOtpRequest, db: Session = Depends(get_db)):
 def consume_magic_link(token: str = Body(..., embed=True), db: Session = Depends(get_db)):
     try:
         return service.consume_magic_link(db, token)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+# ── SMS OTP endpoints ─────────────────────────────────────────────────────────
+
+class SmsOtpRequest(BaseModel):
+    phone: str
+    lang: str = "he"   # he / en / ar / ru
+
+class SmsOtpVerifyRequest(BaseModel):
+    phone: str
+    code: str
+
+@router.post('/sms-otp/send')
+def send_sms_otp(payload: SmsOtpRequest, db: Session = Depends(get_db)):
+    """Send a 4-digit OTP via SMS to the given phone number.
+    The SMS body follows Web OTP API format for Android auto-fill.
+    """
+    import re as _re
+    from app.services.auth.login_challenge_service import LoginChallengeService
+    from app.services.auth.providers.twilio_sms_provider import TwilioSmsDeliveryProvider
+
+    # Basic phone validation
+    digits = _re.sub(r"\D", "", payload.phone)
+    if len(digits) < 8:
+        raise HTTPException(status_code=400, detail="מספר טלפון לא תקין")
+
+    svc = LoginChallengeService()
+    challenge = svc.create_otp(db, customer_phone=digits)
+
+    result = TwilioSmsDeliveryProvider().deliver(
+        to_phone=digits,
+        code=challenge.code,
+        lang=payload.lang,
+    )
+
+    if not result.ok:
+        raise HTTPException(status_code=502, detail=f"שליחת SMS נכשלה: {result.error}")
+
+    return {"ok": True, "phone": digits, "sid": result.external_reference}
+
+
+@router.post('/sms-otp/verify')
+def verify_sms_otp(payload: SmsOtpVerifyRequest, db: Session = Depends(get_db)):
+    """Verify the 4-digit SMS OTP code."""
+    import re as _re
+    from app.services.auth.login_challenge_service import LoginChallengeService
+
+    digits = _re.sub(r"\D", "", payload.phone)
+    svc = LoginChallengeService()
+    try:
+        result = svc.verify_otp(db, customer_phone=digits, code=payload.code.strip())
+        return {"ok": True, **result}
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc

@@ -138,16 +138,23 @@ _LANG_CONFIG: dict[str, dict] = {
             "1. ענה אך ורק בעברית תקינה.\n"
             "2. תשובות קצרות ותמציתיות — עד 2 משפטים (שיחת טלפון!).\n"
             "3. היה ידידותי, חם ומקצועי.\n"
-            "4. סיים שיחה רק אם הלקוח אמר בבירור שהסתיים: 'להתראות', 'ביי', 'לא מעניין', 'לא צריך' —\n"
-            "   ענה: 'תודה שפנית, יום נעים. להתראות!' ואל תוסיף שאלות.\n"
-            "   אל תסיים שיחה רק בגלל 'תודה' — יכול להיות שהשיחה נמשכת.\n"
-            "   אם שאלת שאלה ובמשיב אומר רק 'לא' — תאמר: 'בסדר גמור, אם תצטרך עזרה — אני כאן. יום נעים!'\n"
-            "5. אל תחשוף מידע פנימי: קוד, שמות לקוחות, פרטי שרת, מחירים מדויקים.\n"
-            "6. אם אינך יודע — אמור שהצוות יחזור בהקדם.\n"
-            "7. אם שאלת הלקוח מעורפלת — שאל שאלת הבהרה קצרה, אל תנחש.\n"
-            "8. אתה יכול לעזור גם בשאלות כלליות (מסלולים, שעות, מזג אוויר כללי, המלצות וכו').\n"
-            "   אם השאלה אינה קשורה ל-TAZO ואינך יכול לעזור — אמור בנימוס שאתה מתמחה ב-TAZO.\n"
-            "9. לעולם אל תדון בנושאים רגישים: נומרולוגיה, אסטרולוגיה, פוליטיקה, דת, רפואה."
+            "4. ⚠️ **איסור מוחלט על ביטויי פרידה בתשובות רגילות:**\n"
+            "   - לעולם אל תאמר 'יום נעים', 'להתראות', 'ביי', 'שיהיה לך יום טוב', 'שלום'\n"
+            "     אלא אם הלקוח אמר בפירוש אחד מהם תחילה.\n"
+            "   - אחרי עזרה — סיים תמיד ב: 'האם יש עוד משהו שאוכל לעזור לך?' או 'כיצד עוד אוכל לסייע?'\n"
+            "   - 'תודה' לבד ≠ סיום שיחה. המשתמש עשוי להמשיך.\n"
+            "5. סיום שיחה — רק אם הלקוח אמר: 'להתראות', 'ביי', 'לא צריך', 'לא מעניין', 'סיימתי'.\n"
+            "   אז ורק אז: 'תודה שפנית לטאזו! יום נעים. להתראות!' ואל תוסיף שאלות.\n"
+            "6. אל תחשוף מידע פנימי: קוד, שמות לקוחות, פרטי שרת, מחירים מדויקים.\n"
+            "7. אם אינך יודע — אמור שהצוות יחזור בהקדם.\n"
+            "8. אם שאלת הלקוח מעורפלת — שאל שאלת הבהרה קצרה, אל תנחש.\n"
+            "9. **שאלות שאינן קשורות ל-TAZO** (פוליטיקה, דת, רפואה, נומרולוגיה וכו'):\n"
+            "   - פעם ראשונה: 'אני מתמחה ב-TAZO בלבד — אשמח לעזור בנושאי TAZO.'\n"
+            "     כתוב [OFFTOPIC] בתחילת תגובתך.\n"
+            "   - פעם שנייה ואילך: 'כפי שציינתי — אני עונה רק על שאלות TAZO.'\n"
+            "     כתוב [OFFTOPIC] בתחילת תגובתך.\n"
+            "   - אחרי 3 שאלות שלא לעניין: כתוב [SUSPEND_CALLER: off-topic repeated abuse] בתחילת תגובתך\n"
+            "     ואמור: 'לאחר מספר ניסיונות שלא לעניין — השיחה מושהית ל-24 שעות. תוכל לנסות שוב מחר.'"
         ),
         "farewell_reply": "תודה שפנית לטאזו! יום נעים ומוצלח. להתראות!",
         "lang_change_ack": "עוברים לעברית.",
@@ -189,14 +196,18 @@ _LANG_CONFIG: dict[str, dict] = {
             "1. Respond only in English.\n"
             "2. Keep answers short — up to 2 sentences (this is a phone call!).\n"
             "3. Be friendly, warm, and professional.\n"
-            "4. End the call ONLY if the caller explicitly says 'goodbye', 'bye', or 'not interested'.\n"
-            "   Reply: 'Thank you for calling TAZO! Have a great day. Goodbye!'\n"
-            "   Do NOT end the call just because someone says 'thanks' — the conversation may continue.\n"
-            "5. Do not reveal internal info: code, customer names, server details, exact prices.\n"
-            "6. If you don't know — say the team will follow up soon.\n"
-            "7. If the caller's question is ambiguous — ask one short clarifying question instead of guessing.\n"
-            "8. Never discuss topics unrelated to TAZO: numerology, astrology, politics, religion, medicine, math theory —\n"
-            "   respond only: 'I can only assist with TAZO-related topics.'"
+            "4. ⚠️ NEVER use farewell phrases ('goodbye', 'have a great day', 'bye') in regular responses.\n"
+            "   After helping, always end with: 'Is there anything else I can help you with?'\n"
+            "   'Thanks' alone does NOT mean the conversation is over — the caller may continue.\n"
+            "5. End the call ONLY if the caller explicitly says 'goodbye', 'bye', or 'not interested'.\n"
+            "   Then reply: 'Thank you for calling TAZO! Have a great day. Goodbye!'\n"
+            "6. Do not reveal internal info: code, customer names, server details, exact prices.\n"
+            "7. If you don't know — say the team will follow up soon.\n"
+            "8. If the caller's question is ambiguous — ask one short clarifying question instead of guessing.\n"
+            "9. Off-topic questions (politics, religion, medicine, numerology etc.):\n"
+            "   - First time: write [OFFTOPIC] at start, say: 'I specialize in TAZO topics only.'\n"
+            "   - After 3 off-topic messages: write [SUSPEND_CALLER: off-topic repeated abuse] at start,\n"
+            "     say: 'After repeated off-topic requests, this line is suspended for 24 hours.'"
         ),
         "farewell_reply": "Thank you for calling TAZO! Have a wonderful day. Goodbye!",
         "lang_change_ack": "Switching to English.",
@@ -238,14 +249,17 @@ _LANG_CONFIG: dict[str, dict] = {
             "1. أجب فقط باللغة العربية.\n"
             "2. إجابات قصيرة — جملتان كحد أقصى (هذه مكالمة هاتفية!).\n"
             "3. كن ودياً ومحترفاً.\n"
-            "4. أنهِ المكالمة فقط إذا قال المتصل صراحةً: 'مع السلامة'، 'وداعاً'، 'لا يهمني' —\n"
-            "   قل: 'شكراً لاتصالك بتازو! يوم سعيد. مع السلامة!'\n"
-            "   لا تنهِ المكالمة لمجرد قوله 'شكراً'.\n"
-            "5. لا تكشف معلومات داخلية.\n"
-            "6. إذا لم تكن متأكداً — قل إن الفريق سيتابع قريباً.\n"
-            "7. إذا كان سؤال المتصل غامضاً — اطرح سؤالاً توضيحياً قصيراً بدلاً من التخمين.\n"
-            "8. لا تناقش أبداً موضوعات غير متعلقة بـ TAZO: علم الأرقام، التنجيم، السياسة، الدين، الطب —\n"
-            "   قل فقط: 'أستطيع المساعدة فقط في مواضيع TAZO.'"
+            "4. ⚠️ لا تستخدم أبداً عبارات وداع ('مع السلامة'، 'يوم سعيد') في الردود العادية.\n"
+            "   بعد المساعدة، اختم دائماً بـ: 'هل هناك شيء آخر يمكنني مساعدتك به؟'\n"
+            "   'شكراً' وحدها لا تعني نهاية المحادثة.\n"
+            "5. أنهِ المكالمة فقط إذا قال المتصل صراحةً: 'مع السلامة'، 'وداعاً'، 'لا يهمني'.\n"
+            "   حينئذٍ قل: 'شكراً لاتصالك بتازو! يوم سعيد. مع السلامة!'\n"
+            "6. لا تكشف معلومات داخلية.\n"
+            "7. إذا لم تكن متأكداً — قل إن الفريق سيتابع قريباً.\n"
+            "8. إذا كان سؤال المتصل غامضاً — اطرح سؤالاً توضيحياً قصيراً بدلاً من التخمين.\n"
+            "9. مواضيع خارج نطاق TAZO (سياسة، دين، طب، تنجيم):\n"
+            "   - أول مرة: اكتب [OFFTOPIC] أولاً وقل: 'أتخصص فقط في مواضيع TAZO.'\n"
+            "   - بعد 3 محاولات: اكتب [SUSPEND_CALLER: off-topic repeated abuse] وأبلغ بالتعليق 24 ساعة."
         ),
         "farewell_reply": "شكراً لاتصالك بتازو! يوم سعيد ومبارك. مع السلامة!",
         "lang_change_ack": "ننتقل إلى العربية.",
@@ -287,14 +301,17 @@ _LANG_CONFIG: dict[str, dict] = {
             "1. Отвечайте только на русском языке.\n"
             "2. Краткие ответы — максимум 2 предложения (это телефонный звонок!).\n"
             "3. Будьте дружелюбны и профессиональны.\n"
-            "4. Завершайте звонок ТОЛЬКО если клиент явно говорит: 'до свидания', 'пока', 'не интересует' —\n"
-            "   ответьте: 'Спасибо за звонок в TAZO! Хорошего дня. До свидания!'\n"
-            "   Не завершайте звонок только из-за слова 'спасибо' — разговор может продолжаться.\n"
-            "5. Не раскрывайте внутреннюю информацию.\n"
-            "6. Если не знаете — скажите, что команда свяжется.\n"
-            "7. Если вопрос клиента неясен — задайте один уточняющий вопрос вместо угадывания.\n"
-            "8. Никогда не обсуждайте темы, не связанные с TAZO: нумерология, астрология,\n"
-            "   политика, религия, медицина — отвечайте только: 'Я могу помочь только по вопросам TAZO.'"
+            "4. ⚠️ НИКОГДА не используйте прощальные фразы ('до свидания', 'хорошего дня') в обычных ответах.\n"
+            "   После помощи всегда заканчивайте: 'Могу ли я помочь ещё чем-нибудь?'\n"
+            "   'Спасибо' само по себе ≠ конец разговора.\n"
+            "5. Завершайте звонок ТОЛЬКО если клиент явно говорит: 'до свидания', 'пока', 'не интересует'.\n"
+            "   Тогда: 'Спасибо за звонок в TAZO! Хорошего дня. До свидания!'\n"
+            "6. Не раскрывайте внутреннюю информацию.\n"
+            "7. Если не знаете — скажите, что команда свяжется.\n"
+            "8. Если вопрос клиента неясен — задайте один уточняющий вопрос вместо угадывания.\n"
+            "9. Темы вне TAZO (политика, религия, медицина, нумерология):\n"
+            "   - Первый раз: напишите [OFFTOPIC] в начале и скажите: 'Я специализируюсь только на TAZO.'\n"
+            "   - После 3 попыток: напишите [SUSPEND_CALLER: off-topic repeated abuse] и сообщите о блокировке на 24ч."
         ),
         "farewell_reply": "Спасибо за звонок в TAZO! Хорошего дня. До свидания!",
         "lang_change_ack": "Переключаемся на русский.",
@@ -303,6 +320,15 @@ _LANG_CONFIG: dict[str, dict] = {
 
 # DTMF digit → language code
 _DTMF_TO_LANG: dict[str, str] = {"1": "he", "2": "en", "3": "ar", "4": "ru"}
+
+# ── Off-topic / abuse tracking ────────────────────────────────────────────────
+# phone → suspension_until (epoch float)
+_SUSPENDED_CALLERS: dict[str, float] = {}
+# phone → list of timestamps of off-topic calls in last 30 min
+_OFFTOPIC_CALL_LOG: dict[str, list[float]] = {}
+
+_OFFTOPIC_CALLS_LIMIT = 3   # suspend after this many off-topic calls in 30 min
+_SUSPENSION_HOURS = 24
 
 # Multilingual menu played at call start before greeting
 _LANG_MENU = (
@@ -320,8 +346,8 @@ _FAREWELL_WORDS = ("להתראות", "ביי", "bye")  # kept for backwards-comp
 # Twilio sends 20 ms chunks of μ-law 8 kHz audio = 160 bytes / chunk
 _FRAME_MS           = 20
 _SPEECH_THRESHOLD   = 380    # higher threshold → filters breathing, background noise, faint echoes
-_BARGE_IN_THRESHOLD = 520    # slightly higher — only clear human speech triggers barge-in
-_BARGE_IN_CONSEC    = 3      # 3 consecutive frames = 60ms to confirm barge-in
+_BARGE_IN_THRESHOLD = 380    # matches speech threshold — clear human voice triggers barge-in
+_BARGE_IN_CONSEC    = 2      # 2 consecutive frames = 40ms to confirm barge-in (faster interrupt)
 _SILENCE_FRAMES     = 32     # 32 × 20ms = 640ms — give user more time to finish sentence
 _MIN_SPEECH_FRAMES  = 8      # at least 160ms of clear voice before processing (filters short noise)
 
@@ -396,6 +422,8 @@ class VoiceSession:
     # Conversation history for GPT
     messages: list[dict] = field(default_factory=list)
     manager_alert_sent: bool = False
+    offtopic_count: int = 0          # off-topic messages in this call
+    offtopic_warned: bool = False    # already warned once this call
 
     # VAD state
     audio_buffer:  bytearray = field(default_factory=bytearray)
@@ -703,6 +731,28 @@ async def _send_whatsapp_link(session: VoiceSession, link_type_override: str = "
         logger.warning("[WS] call=%s link error: %s", session.call_sid[:8], exc)
 
 
+def _is_suspended(phone: str) -> float:
+    """Returns suspension_until epoch if caller is currently suspended, else 0."""
+    until = _SUSPENDED_CALLERS.get(phone, 0.0)
+    if until and time.time() < until:
+        return until
+    elif until:
+        del _SUSPENDED_CALLERS[phone]  # expired
+    return 0.0
+
+
+def _suspend_caller(phone: str, reason: str = "") -> None:
+    """Suspend a caller for SUSPENSION_HOURS hours. Log the off-topic call."""
+    now = time.time()
+    log = _OFFTOPIC_CALL_LOG.setdefault(phone, [])
+    log.append(now)
+    # Keep only last 30 min
+    _OFFTOPIC_CALL_LOG[phone] = [t for t in log if now - t < 1800]
+    if len(_OFFTOPIC_CALL_LOG[phone]) >= _OFFTOPIC_CALLS_LIMIT:
+        _SUSPENDED_CALLERS[phone] = now + _SUSPENSION_HOURS * 3600
+        logger.warning("[SUSPEND] phone=%s*** suspended 24h (reason=%r)", phone[:7], reason)
+
+
 async def _save_comm_pref(phone: str, pref: str) -> None:
     """Persist communication preference to backend (fire-and-forget)."""
     try:
@@ -725,8 +775,8 @@ async def _gpt_stream(session: VoiceSession) -> AsyncGenerator[str, None]:
             model="gpt-4.1-mini",
             messages=[{"role": "system", "content": session.system_prompt()}]
             + session.messages[-20:],
-            max_tokens=100,
-            temperature=0.7,
+            max_tokens=120,
+            temperature=0.4,
             stream=True,
         )
         async for chunk in stream:
@@ -985,17 +1035,30 @@ async def _process_utterance(session: VoiceSession, audio: bytes) -> None:
         spoken_text = "".join(tokens)
 
         if spoken_text:
-            # Detect [SEND_LINK] / [SEND_LINK:type] and [ESCALATE_MANAGER: reason] before speaking
+            # Detect action tags before speaking
             import re as _re
-            _tag_pat = _re.compile(r"\[SEND_LINK(?::([a-z_]+))?\]", _re.IGNORECASE)
-            _esc_pat = _re.compile(r"\[ESCALATE_MANAGER:\s*([^\]]+)\]", _re.IGNORECASE)
-            tag_match = _tag_pat.search(spoken_text)
-            esc_match = _esc_pat.search(spoken_text)
+            _tag_pat  = _re.compile(r"\[SEND_LINK(?::([a-z_:]+))?\]", _re.IGNORECASE)
+            _esc_pat  = _re.compile(r"\[ESCALATE_MANAGER:\s*([^\]]+)\]", _re.IGNORECASE)
+            _ot_pat   = _re.compile(r"\[OFFTOPIC\]", _re.IGNORECASE)
+            _susp_pat = _re.compile(r"\[SUSPEND_CALLER:\s*([^\]]+)\]", _re.IGNORECASE)
+            tag_match  = _tag_pat.search(spoken_text)
+            esc_match  = _esc_pat.search(spoken_text)
+            ot_match   = _ot_pat.search(spoken_text)
+            susp_match = _susp_pat.search(spoken_text)
             link_type_override = tag_match.group(1) if tag_match and tag_match.group(1) else ""
             should_send_link = tag_match is not None
-            should_escalate = esc_match is not None
-            escalate_reason = esc_match.group(1).strip() if esc_match else ""
-            tts_text = _esc_pat.sub("", _tag_pat.sub("", spoken_text)).strip()
+            should_escalate  = esc_match is not None
+            escalate_reason  = esc_match.group(1).strip() if esc_match else ""
+            is_offtopic      = ot_match is not None
+            should_suspend   = susp_match is not None
+            suspend_reason   = susp_match.group(1).strip() if susp_match else ""
+            # Strip all tags from text that will be spoken
+            tts_text = _susp_pat.sub("", _ot_pat.sub("", _esc_pat.sub("", _tag_pat.sub("", spoken_text)))).strip()
+
+            # Track off-topic counter
+            if is_offtopic:
+                session.offtopic_count += 1
+                session.offtopic_warned = True
 
             if should_escalate:
                 _ESC_ACK = {
@@ -1065,6 +1128,13 @@ async def _process_utterance(session: VoiceSession, audio: bytes) -> None:
                     session.call_sid[:8], escalate_reason[:60],
                 )
 
+            if should_suspend and session.caller_phone:
+                _suspend_caller(session.caller_phone, suspend_reason)
+                logger.info(
+                    "[PROC] call=%s [SUSPEND_CALLER] triggered (reason=%r)",
+                    session.call_sid[:8], suspend_reason[:60],
+                )
+
             session.messages.append({"role": "assistant", "content": tts_text})
             logger.info("[PROC] call=%s bot: %r", session.call_sid[:8], tts_text[:80])
 
@@ -1120,6 +1190,24 @@ async def _handle_media_stream(ws: WebSocket) -> None:
                     session.caller_name,
                     session.is_customer,
                 )
+
+                # Check if caller is suspended
+                if session.caller_phone:
+                    suspended_until = _is_suspended(session.caller_phone)
+                    if suspended_until:
+                        import datetime as _dt
+                        until_str = _dt.datetime.fromtimestamp(suspended_until).strftime("%d/%m/%Y %H:%M")
+                        _SUSP_MSG = {
+                            "he": f"שלום! הגישה שלך מושהית עקב שיחות שלא לעניין. תוכל לנסות שוב ב-{until_str}. להתראות!",
+                            "en": f"Hello! Your access is suspended due to repeated off-topic requests. Try again at {until_str}. Goodbye!",
+                            "ar": f"مرحباً! تم تعليق وصولك بسبب طلبات خارج الموضوع. حاول مرة أخرى في {until_str}. مع السلامة!",
+                            "ru": f"Здравствуйте! Ваш доступ заблокирован из-за повторных нецелевых запросов. Повторите попытку в {until_str}. До свидания!",
+                        }
+                        pre_lang_susp = params.get("lang", "he") if params.get("lang", "") in _LANG_CONFIG else "he"
+                        susp_text = _SUSP_MSG.get(pre_lang_susp, _SUSP_MSG["he"])
+                        logger.info("[WS] call=%s suspended caller — playing suspend message", session.call_sid[:8])
+                        asyncio.create_task(_play_greeting(session, susp_text))
+                        continue  # skip to next message (stream will stop shortly)
 
                 # If language was already chosen via Twilio <Gather>, skip ElevenLabs menu
                 pre_lang = params.get("lang", "")

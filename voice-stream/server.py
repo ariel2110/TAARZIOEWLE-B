@@ -97,9 +97,19 @@ _LANG_CONFIG: dict[str, dict] = {
             "תודה שלום", "ביי ביי", "הכל בסדר תודה", "הכל טוב תודה",
         ),
         "system": (
-            "אתה נציג שירות לקוחות של TAZO — קבוצת שירותים דיגיטליים ישראלית.\n"
+            "אתה הסוכן הקולי הראשי של TAZO — קבוצת שירותים דיגיטליים ישראלית.\n"
             "שמך הוא טאזו. תמיד דבר בגוף ראשון.\n"
             "השתמש בשמו הפרטי של המתקשר במהלך השיחה כשזה טבעי.\n"
+            "\n=== הנחיות סוכן קולי ===\n"
+            "1. **זיהוי והתאמה:** השתמש בפרטי המתקשר שניתנו לך (שם, עסק, יתרה, היסטוריה).\n"
+            "   התאם כל תשובה להקשר הספציפי שלו — אל תדבר בסגנון כללי.\n"
+            "2. **איכות שיחה:** ענה באופן טבעי, שוטף ואנושי — לא תשובות קבועות מראש.\n"
+            "   כל שיחה ייחודית; צור את התשובה ברגע הנתון.\n"
+            "3. **סינון רעשים:** אם הקלט קצר מאוד, לא ברור, או נשמע כרעש/נשימה —\n"
+            "   שאל בעדינות: 'לא שמעתי היטב, תוכל לחזור על כך?' ואל תנחש.\n"
+            "4. **עיבוד וזרימה:** אם דרושה שנייה — השתמש בביטויי גישור: 'רגע...', 'כן, שמעתי...',\n"
+            "   'בוודאי...', 'אני בודקת...' — אל תשתוק לחלוטין.\n"
+            "5. **שפה:** זהה את שפת הדובר וענה אך ורק בשפתו. בשיחה עברית — עברית תקינה בלבד.\n"
             "\n=== שירותי TAZO ===\n"
             "• TAZO-WEB (tazo-web.com): בניית אתרי עסקים, דף עסקי, קבלת הזמנות WhatsApp,\n"
             "  ניהול לקוחות ונאמנות, שיווק אוטומטי וסטטיסטיקות. לבעלי עסקים.\n"
@@ -148,8 +158,15 @@ _LANG_CONFIG: dict[str, dict] = {
         "lang_code": "en",
         "farewell": ("goodbye", "bye", "not interested", "no thanks"),
         "system": (
-            "You are a customer service representative for TAZO — an Israeli digital services group.\n"
+            "You are the primary voice agent of TAZO — an Israeli digital services group.\n"
             "Your name is Tazo. Always speak in first person.\n"
+            "\n=== Voice Agent Guidelines ===\n"
+            "1. **Identify & Adapt:** Use the caller's details (name, business, balance, history) — tailor every answer.\n"
+            "2. **Natural Quality:** Respond naturally and fluidly — no scripted answers; create each response live.\n"
+            "3. **Noise Filtering:** If input is very short, unclear, or sounds like noise/breathing,\n"
+            "   ask gently: 'Sorry, I didn't catch that — could you repeat?' Don't guess.\n"
+            "4. **Flow:** If you need a moment to think, use natural fillers: 'Just a second...', 'Sure, let me check...' — avoid silence.\n"
+            "5. **Language:** Detect the speaker's language and respond only in that language.\n"
             "\n=== TAZO Services ===\n"
             "• TAZO-WEB (tazo-web.com): business website builder, WhatsApp ordering, customer management,\n"
             "  loyalty programs, automated marketing and analytics. For business owners.\n"
@@ -190,8 +207,15 @@ _LANG_CONFIG: dict[str, dict] = {
         "lang_code": "ar",
         "farewell": ("مع السلامة", "باي", "وداعاً", "لا يهمني"),
         "system": (
-            "أنت ممثل خدمة العملاء في شركة TAZO — مجموعة خدمات رقمية إسرائيلية.\n"
+            "أنت الوكيل الصوتي الرئيسي لشركة TAZO — مجموعة خدمات رقمية إسرائيلية.\n"
             "اسمك تازو. تحدث دائماً بضمير المتكلم.\n"
+            "\n=== إرشادات الوكيل الصوتي ===\n"
+            "1. **التعرف والتكيف:** استخدم تفاصيل المتصل (الاسم، العمل، الرصيد، التاريخ) — خصّص كل إجابة.\n"
+            "2. **جودة المحادثة:** تحدث بشكل طبيعي وسلس — لا إجابات جاهزة؛ ابتكر كل رد في اللحظة.\n"
+            "3. **تصفية الضوضاء:** إن كان الإدخال قصيراً أو غير واضح أو يبدو ضوضاء، قل:\n"
+            "   'لم أسمعك جيداً، هل يمكنك الإعادة؟' لا تخمّن.\n"
+            "4. **الانسيابية:** إذا احتجت لحظة، استخدم: 'لحظة...'، 'نعم، سمعتك...' — تجنّب الصمت.\n"
+            "5. **اللغة:** تعرّف على لغة المتحدث وأجب دائماً بلغته فقط.\n"
             "\n=== خدمات TAZO ===\n"
             "• TAZO-WEB (tazo-web.com): بناء مواقع للأعمال، طلبات واتساب، إدارة العملاء،\n"
             "  برامج الولاء، التسويق الآلي والإحصاءات. لأصحاب الأعمال.\n"
@@ -232,8 +256,15 @@ _LANG_CONFIG: dict[str, dict] = {
         "lang_code": "ru",
         "farewell": ("до свидания", "пока", "не интересует", "не нужно"),
         "system": (
-            "Вы представитель службы поддержки компании TAZO — израильской группы цифровых услуг.\n"
+            "Вы главный голосовой агент компании TAZO — израильской группы цифровых услуг.\n"
             "Вас зовут Тазо. Говорите всегда от первого лица.\n"
+            "\n=== Инструкции голосового агента ===\n"
+            "1. **Идентификация:** Используйте данные звонящего (имя, бизнес, баланс, историю) — адаптируйте каждый ответ.\n"
+            "2. **Качество:** Говорите естественно и живо — не по скриптам; создавайте каждый ответ в моменте.\n"
+            "3. **Фильтрация шумов:** Если ввод очень короткий, неясный или похож на шум/дыхание,\n"
+            "   скажите: 'Не расслышал — не могли бы вы повторить?' Не угадывайте.\n"
+            "4. **Плавность:** Если нужна секунда — используйте: 'Секунду...', 'Да, слушаю...' — не молчите.\n"
+            "5. **Язык:** Определите язык звонящего и отвечайте только на его языке.\n"
             "\n=== Услуги TAZO ===\n"
             "• TAZO-WEB (tazo-web.com): конструктор сайтов для бизнеса, заказы WhatsApp, управление\n"
             "  клиентами, программы лояльности, автоматизированный маркетинг. Для владельцев бизнеса.\n"
@@ -288,11 +319,11 @@ _FAREWELL_WORDS = ("להתראות", "ביי", "bye")  # kept for backwards-comp
 
 # Twilio sends 20 ms chunks of μ-law 8 kHz audio = 160 bytes / chunk
 _FRAME_MS           = 20
-_SPEECH_THRESHOLD   = 300    # μ-law linear-energy threshold to detect voice
-_BARGE_IN_THRESHOLD = 500    # lower than before — detect human interruption more sensitively
-_BARGE_IN_CONSEC    = 3      # 3 consecutive frames = 60ms to confirm barge-in (faster response)
-_SILENCE_FRAMES     = 25     # 25 × 20 ms = 500 ms — wait longer before ending utterance
-_MIN_SPEECH_FRAMES  = 6      # at least 120 ms of voice before processing
+_SPEECH_THRESHOLD   = 380    # higher threshold → filters breathing, background noise, faint echoes
+_BARGE_IN_THRESHOLD = 520    # slightly higher — only clear human speech triggers barge-in
+_BARGE_IN_CONSEC    = 3      # 3 consecutive frames = 60ms to confirm barge-in
+_SILENCE_FRAMES     = 32     # 32 × 20ms = 640ms — give user more time to finish sentence
+_MIN_SPEECH_FRAMES  = 8      # at least 160ms of clear voice before processing (filters short noise)
 
 # ── μ-law helpers ─────────────────────────────────────────────────────────────
 
@@ -508,8 +539,23 @@ class VoiceSession:
 
 # ── Whisper STT ───────────────────────────────────────────────────────────────
 
+_WHISPER_CONTEXT = {
+    "he": "שירות לקוחות TAZO. עברית.",
+    "en": "TAZO customer service call.",
+    "ar": "خدمة عملاء TAZO.",
+    "ru": "Служба поддержки TAZO.",
+}
+
+# Short transcripts that Whisper produces for silence/noise — discard them
+_NOISE_TRANSCRIPTS = {
+    "", ".", "..", "...", ",", "-", "–", "—", "?", "!", " ",
+    "תודה", "אה", "אמ", "אממ", "ממ", "הממ", "אה.",
+    "mm", "hmm", "uh", "um", "ah", "oh", "yeah", "ok",
+}
+
+
 async def _transcribe(mulaw_bytes: bytes, whisper_lang: str = "he") -> str:
-    """Convert μ-law buffer → WAV → Whisper transcription."""
+    """Convert μ-law buffer → WAV → Whisper transcription with noise filtering."""
     wav = _ulaw_to_wav(mulaw_bytes)
     try:
         oai = AsyncOpenAI(api_key=OPENAI_API_KEY)
@@ -517,8 +563,14 @@ async def _transcribe(mulaw_bytes: bytes, whisper_lang: str = "he") -> str:
             model="whisper-1",
             file=("audio.wav", io.BytesIO(wav), "audio/wav"),
             language=whisper_lang,
+            prompt=_WHISPER_CONTEXT.get(whisper_lang, ""),
         )
-        return result.text.strip()
+        text = result.text.strip()
+        # Filter: very short/noisy transcripts that are background noise or breath
+        if text.lower() in _NOISE_TRANSCRIPTS or len(text) < 2:
+            logger.debug("[STT] Noise transcript filtered: %r", text)
+            return ""
+        return text
     except Exception as exc:
         logger.error("[STT] Whisper error: %s", exc)
         return ""
@@ -688,11 +740,13 @@ async def _gpt_stream(session: VoiceSession) -> AsyncGenerator[str, None]:
 
 # ── ElevenLabs TTS stream ──────────────────────────────────────────────────────
 
-async def _play_tts(session: VoiceSession, text_gen: AsyncGenerator[str, None]) -> str:
+async def _play_tts(session: VoiceSession, text_gen: AsyncGenerator[str, None], post_ready_delay: float = 0.35) -> str:
     """
     Stream text from `text_gen` to ElevenLabs and forward mulaw audio to Twilio.
     Returns the full text that was spoken (for conversation history).
     Respects barge-in: exits cleanly when session.barge_in is set.
+    post_ready_delay: seconds to block audio after TTS ends (echo prevention).
+                      Pass 0.0 for interim phrases so no deaf window is added.
     """
     if not ELEVENLABS_API_KEY or not ELEVENLABS_VOICE_ID:
         logger.warning("[TTS] ElevenLabs not configured — skipping TTS")
@@ -776,9 +830,10 @@ async def _play_tts(session: VoiceSession, text_gen: AsyncGenerator[str, None]) 
         logger.error("[TTS] Unexpected TTS error: %s", exc)
     finally:
         session.ai_speaking = False
-        # Brief echo-prevention window: Twilio echoes bot audio back into the
-        # input stream for ~0.5-1s after playback ends — drop it.
-        session._ready_at = time.time() + 0.8
+        # Echo-prevention: Twilio echoes bot audio ~200-400ms after playback.
+        # Use post_ready_delay=0.0 for interim phrases (no deaf window needed).
+        if post_ready_delay > 0:
+            session._ready_at = time.time() + post_ready_delay
         # Send mark so we know AI audio finished
         if session.stream_sid:
             try:
@@ -868,9 +923,11 @@ async def _process_utterance(session: VoiceSession, audio: bytes) -> None:
             try:
                 async with session._tts_lock:
                     if session.language == "he":
-                        await _play_tts_rest(session, phrase)
+                        # post_ready_delay=0.0 — no deaf window after interim phrase
+                        # so the bot immediately starts listening while GPT generates
+                        await _play_tts_rest(session, phrase, post_ready_delay=0.0)
                     else:
-                        await _play_tts(session, _iter_str(phrase))
+                        await _play_tts(session, _iter_str(phrase), post_ready_delay=0.0)
             except Exception as _e:
                 logger.debug("[PROC] interim phrase failed: %s", _e)
 
@@ -1174,11 +1231,13 @@ async def _handle_media_stream(ws: WebSocket) -> None:
         logger.error("[WS] Unexpected error: %s", exc)
 
 
-async def _play_tts_rest(session: VoiceSession, text: str) -> str:
+async def _play_tts_rest(session: VoiceSession, text: str, post_ready_delay: float = 0.35) -> str:
     """
     Use ElevenLabs REST streaming TTS with eleven_v3 (supports Hebrew + 70 languages).
     Streams raw μ-law 8 kHz audio bytes directly to Twilio.
     Returns the spoken text (for conversation history).
+    post_ready_delay: seconds to block audio after TTS ends (echo prevention).
+                      Pass 0.0 for interim phrases so no deaf window is added.
     """
     if not ELEVENLABS_API_KEY or not ELEVENLABS_VOICE_ID:
         logger.warning("[TTS-REST] ElevenLabs not configured — skipping")
@@ -1189,7 +1248,7 @@ async def _play_tts_rest(session: VoiceSession, text: str) -> str:
     session.barge_in_frames = 0
     # Brief immunity at TTS start: prevents the bot's own echo (arrives ~50-200ms
     # after playback begins via Twilio loopback) from immediately triggering barge-in.
-    session._ready_at = time.time() + 0.5
+    session._ready_at = time.time() + 0.4
 
     try:
         url = (
@@ -1243,9 +1302,9 @@ async def _play_tts_rest(session: VoiceSession, text: str) -> str:
         logger.error("[TTS-REST] Error: %s", exc)
     finally:
         session.ai_speaking = False
-        # Brief echo-prevention window: Twilio echoes bot audio back into the
-        # input stream for ~0.5-1s after playback ends — drop it.
-        session._ready_at = time.time() + 0.8
+        # Echo-prevention after TTS ends. Use 0.0 for interim phrases.
+        if post_ready_delay > 0:
+            session._ready_at = time.time() + post_ready_delay
         if session.stream_sid:
             try:
                 await session.ws.send_text(json.dumps({
